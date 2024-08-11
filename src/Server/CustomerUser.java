@@ -9,11 +9,91 @@ import java.util.Date;
 public class CustomerUser extends User {
     private List<Order> orderHistory;
     private Map<String, String> preferences;
+    private CreditCard creditCard;
+
+    public String getCreditCardNumber() {
+        return creditCard.getCreditCardNumber();
+    }
+
+    public String getExpirationDate() {
+        return creditCard.getExpirationDate();
+    }
+
+    public String getCvv() {
+        return creditCard.getCvv();
+    }
+
+    class CreditCard {
+        private String creditCardNumber;
+        private String expirationDate;
+        private String cvv;
+
+
+        public CreditCard(String creditCardNumber, String expirationDate, String cvv) {
+            this.creditCardNumber = creditCardNumber;
+            this.expirationDate = expirationDate;
+            this.cvv = cvv;
+        }
+
+        public String getCreditCardNumber() {
+            return creditCardNumber;
+        }
+
+        public String getExpirationDate() {
+            return expirationDate;
+        }
+
+        public String getCvv() {
+            return cvv;
+        }
+
+
+        public void setCreditCardNumber(String creditCardNumber) {
+            this.creditCardNumber = creditCardNumber;
+        }
+
+        public void setExpirationDate(String expirationDate) {
+            this.expirationDate = expirationDate;
+        }
+
+        public void setCvv(String cvv) {
+            this.cvv = cvv;
+        }
+
+
+        public void makePayment(double amount) {
+            // Implementation for making a payment
+            System.out.println("Making payment of $" + amount + "...");
+        }
+
+        public void printCreditCardInfo() {
+            System.out.println("Credit Card Number: " + creditCardNumber);
+            System.out.println("Expiration Date: " + expirationDate);
+            System.out.println("CVV: " + cvv);
+        }
+
+        public void printPaymentConfirmation(double amount) {
+            System.out.println("Payment of $" + amount + " was successful!");
+        }
+
+        public void printPaymentError() {
+            System.out.println("Payment failed. Please check your credit card information and try again.");
+        }
+
+        public void printInsufficientFundsError() {
+            System.out.println("Payment failed due to insufficient funds. Please try again with a different card.");
+        }
+
+        public void printInvalidCardError() {
+            System.out.println("Payment failed due to an invalid credit card. Please check your information and try again.");
+        }
+    }
 
     public CustomerUser(String userName, String hashedPassword, String address, String phoneNumber, String email) {
         super(userName, hashedPassword, address, phoneNumber, email);
         this.orderHistory = new ArrayList<>();
         this.preferences = new HashMap<>();
+        this.creditCard = new CreditCard("", "", "");
     }
 
     // Getters and Setters
@@ -66,4 +146,17 @@ public class CustomerUser extends User {
         System.out.println("Order History: " + customer.getOrderHistory());
         System.out.println("Preferences: " + customer.getPreferences());
     }
+
+    public void setCreditCardNumber(String creditCardNumber) {
+        creditCard.setCreditCardNumber(creditCardNumber);
+    }
+
+    public void setExpirationDate(String expirationDate) {
+        creditCard.setExpirationDate(expirationDate);
+    }
+
+    public void setCvv(String cvv) {
+        creditCard.setCvv(cvv);
+    }
+
 }

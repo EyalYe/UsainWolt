@@ -97,6 +97,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private String handleDefault() {
+        return createResponse(false, "Invalid request type");
+    }
+
     private Map<String, String> parseRequest(String inputLine) {
         Type type = new TypeToken<HashMap<String, String>>() {}.getType();
         return gson.fromJson(inputLine, type);
@@ -218,10 +222,6 @@ public class ClientHandler implements Runnable {
         String customerNote = params.get("customerNote");
         String status = params.get("status");
 
-        // Credit card information
-        String creditCardNumber = params.get("creditCardNumber");
-        String expirationDate = params.get("expirationDate");
-        String cvv = params.get("cvv");
 
         // Authenticate the customer
         CustomerUser customer = null;
@@ -233,6 +233,22 @@ public class ClientHandler implements Runnable {
         }
         if (customer == null) {
             return createResponse(false, "Authentication failed or customer not found");
+        }
+
+        // Credit card information
+
+        String creditCardNumber;
+        String expirationDate;
+        String cvv;
+
+        if(params.get("useSavedCard").equals("false")){
+            creditCardNumber = params.get("creditCardNumber");
+            expirationDate = params.get("expirationDate");
+            cvv = params.get("cvv");
+        } else {
+            creditCardNumber = customer.getCreditCardNumber();
+            expirationDate = customer.getExpirationDate();
+            cvv = customer.getCvv();
         }
 
         // Check if the restaurant is logged in
@@ -303,44 +319,175 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleUpdateCreditCard(Map<String, String> params) {
+        String username = params.get("username");
+        String password = params.get("password");
+        String creditCardNumber = params.get("creditCardNumber");
+        String expirationDate = params.get("expirationDate");
+        String cvv = params.get("cvv");
+
+        // Authenticate the user
+        CustomerUser customer = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof CustomerUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+                customer = (CustomerUser) user;
+                break;
+            }
+        }
+        if (customer == null) {
+            return createResponse(false, "Authentication failed or customer not found");
+        }
+
+        // Authenticate the credit card
+        if (!creditCardAuthenticator.authenticate(creditCardNumber, expirationDate, cvv)) {
+            return createResponse(false, "Credit card authentication failed");
+        }
+
+        // Update the credit card information (mocked)
+        customer.setCreditCardNumber(creditCardNumber); // Assume setCreditCardNumber exists
         return createResponse(true, "Credit card updated successfully");
     }
 
     private String handleGetOrdersHistory(Map<String, String> params) {
         String username = params.get("username");
+        String password = params.get("password");
+
+        // Authenticate the user
+        User authenticatedUser = null;
         for (User user : ServerApp.allUsers) {
-            if (user.getUserName().equals(username)) {
-                if (user instanceof CustomerUser) {
-                    return gson.toJson(((CustomerUser) user).getOrderHistory());
-                } else if (user instanceof RestaurantUser) {
-                    return gson.toJson(((RestaurantUser) user).getOrders());
-                }
+            if (user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+                authenticatedUser = user;
+                break;
             }
         }
-        return createResponse(false, "User not found");
+        if (authenticatedUser == null) {
+            return createResponse(false, "Authentication failed or user not found");
+        }
+
+        // Return the order history
+        if (authenticatedUser instanceof CustomerUser) {
+            return gson.toJson(((CustomerUser) authenticatedUser).getOrderHistory());
+        } else if (authenticatedUser instanceof RestaurantUser) {
+            return gson.toJson(((RestaurantUser) authenticatedUser).getOrders());
+        }
+        return createResponse(false, "User type not recognized");
     }
 
     private String handleMarkOrderComplete(Map<String, String> params) {
-        return createResponse(true, "Order marked as complete");
+        String username = params.get("username");
+        String password = params.get("password");
+        int orderId = Integer.parseInt(params.get("orderId"));
+
+        // Authenticate the restaurant
+        RestaurantUser restaurant = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+                restaurant = (RestaurantUser) user;
+                break;
+            }
+        }
+        if (restaurant == null) {
+            return createResponse(false, "Authentication failed or restaurant not found");
+        }
+
+        // Mark the order as complete (assuming orders are stored in the restaurant user)
+        for (Order order : restaurant.getOrders()) {
+            if (order.getOrderId() == orderId) {
+                order.setStatus("Complete");
+                return createResponse(true, "Order marked as complete");
+            }
+        }
+
+        return createResponse(false, "Order not found");
     }
 
     private String handleDisableMenuItems(Map<String, String> params) {
+        String username = params.get("username");
+        String password = params.get("password");
+
+        // Authenticate the restaurant
+        RestaurantUser restaurant = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+                restaurant = (RestaurantUser) user;
+                break;
+            }
+        }
+        if (restaurant == null) {
+            return createResponse(false, "Authentication failed or restaurant not found");
+        }
+        String menuItemName = params.get("menuItemName");
+        // Disable all menu items with the given name
+        restaurant.disableMenuItem(menuItemName);
         return createResponse(true, "Menu items disabled");
     }
 
     private String handleEnableMenuItems(Map<String, String> params) {
+        String username = params.get("username");
+        String password = params.get("password");
+
+        // Authenticate the restaurant
+        RestaurantUser restaurant = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+                restaurant = (RestaurantUser) user;
+                break;
+            }
+        }
+        if (restaurant == null) {
+            return createResponse(false, "Authentication failed or restaurant not found");
+        }
+
+        String menuItemName = params.get("menuItemName");
+        // Enable all menu items with the given name
+        restaurant.enableMenuItem(menuItemName);
         return createResponse(true, "Menu items enabled");
     }
 
     private String handleGetCurrentOrders(Map<String, String> params) {
-        return createResponse(true, "Retrieved current orders");
+        String username = params.get("username");
+        String password = params.get("password");
+
+        // Authenticate the restaurant
+        RestaurantUser restaurant = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+                restaurant = (RestaurantUser) user;
+                break;
+            }
+        }
+        if (restaurant == null) {
+            return createResponse(false, "Authentication failed or restaurant not found");
+        }
+
+        // Retrieve and return current orders
+        return gson.toJson(restaurant.getCurrentOrders()); // Assume getCurrentOrders method exists
     }
 
     private String handleDisconnect(Map<String, String> params) {
+        String username = params.get("username");
+        String password = params.get("password");
+
+        // Authenticate the user
+        User userToDisconnect = null;
+        for (User user : ServerApp.allUsers) {
+            if (user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+                userToDisconnect = user;
+                break;
+            }
+        }
+
+        if (userToDisconnect == null) {
+            return createResponse(false, "Authentication failed or user not found");
+        }
+
+        // If the user is a restaurant, remove it from the logged-in restaurants list
+        if (userToDisconnect instanceof RestaurantUser) {
+            ServerApp.loggedInRestaurants.remove(userToDisconnect);
+            System.out.println("Restaurant " + userToDisconnect.getUserName() + " has been logged out.");
+        }
+
+        // Any additional cleanup (if needed)
         return createResponse(true, "Disconnected successfully");
     }
 
-    private String handleDefault() {
-        return createResponse(false, "Unknown request type");
-    }
 }

@@ -27,10 +27,12 @@ public class Order {
     public static class Item {
         private String name;
         private double price;
+        private boolean available;
 
         public Item(String name, double price) {
             this.name = name;
             this.price = price;
+            this.available = true;
         }
 
         public String getName() {
@@ -44,6 +46,10 @@ public class Order {
         @Override
         public String toString() {
             return name + " ($" + price + ")";
+        }
+
+        public void setAvailable(boolean b) {
+            this.available = b;
         }
     }
 
@@ -146,6 +152,7 @@ public class Order {
         System.out.println("Items: " + items);
         System.out.println("Total Price: $" + totalPrice);
         System.out.println("Status: " + status);
+        System.out.println("Customer Note: " + customerNote);
     }
 
     public List<Item> searchItems(String keyword) {

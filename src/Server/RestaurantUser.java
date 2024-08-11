@@ -96,4 +96,32 @@ public class RestaurantUser extends User {
         System.out.println("Menu: " + restaurant.getMenu());
         System.out.println("Orders: " + restaurant.getOrders());
     }
+
+    public void disableAllMenuItems() {
+        for (Order.Item item : menu) {
+            item.setAvailable(false);
+        }
+    }
+
+    public void disableMenuItem(String menuItemName) {
+        for (Order.Item item : menu) {
+            if (item.getName().equals(menuItemName)) {
+                item.setAvailable(false);
+                break;
+            }
+        }
+    }
+
+    public void enableMenuItem(String menuItemName) {
+        for (Order.Item item : menu) {
+            if (item.getName().equals(menuItemName)) {
+                item.setAvailable(true);
+                break;
+            }
+        }
+    }
+
+    public List<Order> getCurrentOrders() {
+        return orders;
+    }
 }
