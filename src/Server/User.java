@@ -57,6 +57,10 @@ public abstract class User {
         this.email = email;
     }
 
+    public boolean checkPassword(String password) {
+        return hashedPassword.equals(password);
+    }
+
     // Abstract method to be implemented by subclasses
     public abstract void performUserSpecificAction();
 

@@ -11,6 +11,9 @@ import java.lang.reflect.Type;
 import java.net.Socket;
 import java.util.*;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
     private Gson gson;
@@ -101,13 +104,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private String handleGetAvailableCuisines() {
-        return createResponse(true, ServerApp.getAvailableCuisines());
-    }
-
-    private String handleDefault() {
-        return createResponse(false, "Invalid request type");
-    }
 
     private Map<String, String> parseRequest(String inputLine) {
         Type type = new TypeToken<HashMap<String, String>>() {}.getType();
@@ -123,17 +119,67 @@ public class ClientHandler implements Runnable {
         return gson.toJson(response);
     }
 
-    private String handleLogin(Map<String, String> params) {
-        String username = params.get("username");
-        String password = params.get("password");
+    public static String hashPassword(String password) {
+        try {
+            // Create a MessageDigest instance for SHA-256
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-        for (User user : ServerApp.allUsers) {
-            if (user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
-                if (user instanceof RestaurantUser) {
-                    ServerApp.addLoggedInRestaurant((RestaurantUser) user);
+            // Apply the hash function to the input password
+            byte[] encodedHash = digest.digest(password.getBytes());
+
+            // Convert the byte array into a hexadecimal string
+            StringBuilder hexString = new StringBuilder(2 * encodedHash.length);
+            for (byte b : encodedHash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
                 }
-                return createResponse(true, "Login successful");
+                hexString.append(hex);
             }
+
+            // Return the hashed password as a hexadecimal string
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            // Handle the exception (SHA-256 algorithm not found)
+            throw new RuntimeException("Error: SHA-256 algorithm not found!", e);
+        }
+    }
+
+    private boolean authenticateUser(Map<String, String> params) {
+        String username = params.get("username");
+        String password_not_hashed = params.get("password");
+        String password = hashPassword(password_not_hashed);
+        User authenticatedUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user.getUserName().equals(username) && user.checkPassword(password)) {
+                authenticatedUser = user;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean emailExists(String email) {
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof CustomerUser && user.getEmail().equals(email)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean usernameExists(String username) {
+        for (User user : ServerApp.allUsers) {
+            if (user.getUserName().equals(username)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String handleLogin(Map<String, String> params) {
+        if (authenticateUser(params)) {
+            return createResponse(true, "Login successful");
         }
         return createResponse(false, "Invalid username or password");
     }
@@ -150,11 +196,20 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Invalid address");
         }
 
-        CustomerUser newUser = new CustomerUser(username, password, address, phoneNumber, email);
+        if (usernameExists(username)) {
+            return createResponse(false, "Username already exists");
+        }
+
+        if (emailExists(email)) {
+            return createResponse(false, "Email already exists");
+        }
+
+        CustomerUser newUser = new CustomerUser(username, hashPassword(password), address, phoneNumber, email);
         ServerApp.addUser(newUser);
 
         return createResponse(true, "Customer signup successful");
     }
+
 
     private String handleSignupRestaurant(Map<String, String> params) throws IOException {
         String username = params.get("username");
@@ -170,7 +225,15 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Invalid address");
         }
 
-        RestaurantUser newRestaurant = new RestaurantUser(username, password, address, phoneNumber, email, businessPhoneNumber, cuisine, 0.0);
+        if (usernameExists(username)) {
+            return createResponse(false, "Username already exists");
+        }
+
+        if (emailExists(email)) {
+            return createResponse(false, "Email already exists");
+        }
+
+        RestaurantUser newRestaurant = new RestaurantUser(username, hashPassword(password), address, phoneNumber, email, businessPhoneNumber, cuisine, 0.0);
         ServerApp.addUser(newRestaurant);
 
         return createResponse(true, "Restaurant signup successful");
@@ -235,12 +298,15 @@ public class ClientHandler implements Runnable {
 
         // Authenticate the customer
         CustomerUser customer = null;
-        for (User user : ServerApp.allUsers) {
-            if (user instanceof CustomerUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
-                customer = (CustomerUser) user;
-                break;
+        if (authenticateUser(params)) {
+            for (User user : ServerApp.allUsers) {
+                if (user instanceof CustomerUser && user.getUserName().equals(username)) {
+                    customer = (CustomerUser) user;
+                    break;
+                }
             }
         }
+
         if (customer == null) {
             return createResponse(false, "Authentication failed or customer not found");
         }
@@ -307,7 +373,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the restaurant
         RestaurantUser restaurant = null;
         for (User user : ServerApp.allUsers) {
-            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.checkPassword(password)) {
                 restaurant = (RestaurantUser) user;
                 break;
             }
@@ -338,7 +404,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the user
         CustomerUser customer = null;
         for (User user : ServerApp.allUsers) {
-            if (user instanceof CustomerUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user instanceof CustomerUser && user.getUserName().equals(username) && user.checkPassword(password)) {
                 customer = (CustomerUser) user;
                 break;
             }
@@ -364,7 +430,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the user
         User authenticatedUser = null;
         for (User user : ServerApp.allUsers) {
-            if (user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user.getUserName().equals(username) && user.checkPassword(password)) {
                 authenticatedUser = user;
                 break;
             }
@@ -390,7 +456,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the restaurant
         RestaurantUser restaurant = null;
         for (User user : ServerApp.allUsers) {
-            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.checkPassword(password)) {
                 restaurant = (RestaurantUser) user;
                 break;
             }
@@ -417,7 +483,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the restaurant
         RestaurantUser restaurant = null;
         for (User user : ServerApp.allUsers) {
-            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.checkPassword(password)) {
                 restaurant = (RestaurantUser) user;
                 break;
             }
@@ -438,7 +504,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the restaurant
         RestaurantUser restaurant = null;
         for (User user : ServerApp.allUsers) {
-            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.checkPassword(password)) {
                 restaurant = (RestaurantUser) user;
                 break;
             }
@@ -460,7 +526,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the restaurant
         RestaurantUser restaurant = null;
         for (User user : ServerApp.allUsers) {
-            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(username) && user.checkPassword(password)) {
                 restaurant = (RestaurantUser) user;
                 break;
             }
@@ -480,7 +546,7 @@ public class ClientHandler implements Runnable {
         // Authenticate the user
         User userToDisconnect = null;
         for (User user : ServerApp.allUsers) {
-            if (user.getUserName().equals(username) && user.getHashedPassword().equals(password)) {
+            if (user.getUserName().equals(username) && user.checkPassword(password)) {
                 userToDisconnect = user;
                 break;
             }
@@ -500,4 +566,11 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Disconnected successfully");
     }
 
+    private String handleGetAvailableCuisines() {
+        return createResponse(true, ServerApp.getAvailableCuisines());
+    }
+
+    private String handleDefault() {
+        return createResponse(false, "Invalid request type");
+    }
 }

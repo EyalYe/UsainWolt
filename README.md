@@ -1,65 +1,59 @@
 # UsainWolt
 
 ## Introduction
-**UsainWolt** is a Java-based clone of the Wolt food delivery application. It allows customers to browse restaurants, view menus, place orders, and track their order history. Restaurants can update their menus, manage orders, and track their revenue. The project is built using Java and utilizes a client-server architecture, where the server manages user data, orders, and restaurant information, and the client interacts with the server through a graphical user interface (GUI).
-
-## Project Checklist
-
-### Completed Features
-- [x] **User Authentication**:
-    - Implemented login and signup features for both customers and restaurants.
-- [x] **Customer GUI**:
-    - Developed the GUI for customer login, signup, and main menu navigation.
-- [x] **Server Handling**:
-    - Created the server that listens for client connections and processes requests using the `ClientHandler` class.
-- [x] **Order Placement**:
-    - Customers can place orders through the GUI.
-- [x] **Menu Management**:
-    - Restaurants can update their menus.
-- [x] **Order History**:
-    - Customers can view their past orders.
-- [x] **Restaurant Management**:
-    - Restaurants can track current and past orders.
-- [x] **Data Persistence**:
-    - Users, menus, and orders are persisted in CSV files.
-- [x] **Disconnect Handling**:
-    - When a user exits the application, a disconnect request is sent to the server.
-
-### Features in Progress or Planned
-- [ ] **Customer Preferences (In Progress)**:
-    - Map to store customer preferences for cuisine and distance.
-- [ ] **Restaurant Location and Distance Calculation** (Planned):
-    - Calculate the distance between the customer and restaurants using latitude and longitude.
-- [ ] **Credit Card Validation** (In Progress):
-    - Implement a mock credit card validation system.
-- [ ] **Admin Interface (Planned)**:
-    - A GUI for an admin to manage users and restaurants.
+**UsainWolt** is a Java-based clone of the Wolt food delivery application. The system allows customers to browse nearby restaurants, view menus, place orders, and track their order history. For restaurants, it provides functionality to update menus, manage orders, and track revenue. The project is built using object-oriented design principles and follows a client-server architecture, with separate packages for client and server functionalities.
 
 ## Project Requirements Checklist
 
+### Completed Requirements
+- [x] **Object-Oriented Design**:
+  - Implemented with multiple classes, including abstract classes and interfaces, demonstrating inheritance and polymorphism.
+- [x] **Collection Usage**:
+  - Utilized collections such as `List` to manage users, orders, and menus.
+- [x] **Dynamic System**:
+  - The system supports dynamic actions like adding, removing, and searching through menus and orders.
+- [x] **User Interface**:
+  - A GUI for customers has been developed using `JOptionPane` and Swing components.
+- [x] **Error Handling**:
+  - Implemented error handling using exceptions for edge cases and invalid inputs.
+- [x] **Code Quality**:
+  - The code is well-structured and documented, adhering to good coding standards.
+
+### Partially Completed or Planned Requirements
+- [ ] **Customer Preferences**:
+  - Implementing a map to store customer preferences for cuisine and distance. (In Progress)
+- [ ] **Distance Calculation**:
+  - Implementing the calculation of distance between customers and restaurants using latitude and longitude. (Planned)
+- [ ] **Credit Card Validation**:
+  - A mock credit card validation system is partially implemented. (In Progress)
+- [ ] **Restaurant GUI**:
+  - GUI for restaurant management is planned but not yet implemented. (Planned)
+- [ ] **Admin Interface**:
+  - A GUI for an admin to manage users and restaurants is planned. (Planned)
+
+## Project Requirements from Assignment Document
+
 ### Met Requirements
-- [x] **User Authentication**:
-    - Implemented secure login and signup for customers and restaurants.
-- [x] **GUI for Customers**:
-    - Created a user-friendly interface for customers to interact with the application.
-- [x] **Order Management**:
-    - Customers can browse restaurants, view menus, and place orders.
-- [x] **Menu Management**:
-    - Restaurants can update their menus through the GUI.
-- [x] **Data Persistence**:
-    - User data, menus, and orders are stored in CSV files for persistence.
-- [x] **Client-Server Architecture**:
-    - The application uses a client-server architecture, allowing multiple clients to connect to the server.
-- [x] **Logout/Disconnect Handling**:
-    - Users can log out, and the server is notified when a user disconnects.
+- [x] **Minimum 5 Classes**:
+  - Implemented with multiple classes including `User`, `CustomerUser`, `RestaurantUser`, `Order`, and `ClientHandler`.
+- [x] **Use of Collections**:
+  - `List` is used to manage users, orders, and menu items dynamically.
+- [x] **Dynamic System Operations**:
+  - The system supports dynamic operations such as adding, removing, searching, sorting, and updating records.
+- [x] **Inheritance and Polymorphism**:
+  - The project uses inheritance (e.g., `CustomerUser` and `RestaurantUser` extend `User`) and polymorphism.
+- [x] **User-Friendly Interface**:
+  - A GUI for customers is developed using Swing components, following a user-friendly design.
+- [x] **Exception Handling**:
+  - Exception handling is implemented to manage errors and edge cases, ensuring robustness.
 
 ### Unmet or Partially Met Requirements
-- [ ] **Distance Calculation for Nearby Restaurants** (Planned):
-    - Implementing distance-based filtering for restaurant search.
-- [ ] **Customer Preferences System** (In Progress):
-    - Adding a system for customers to save their cuisine and distance preferences.
-- [ ] **Full Admin Functionality** (Planned):
-    - Adding an admin interface to manage users and restaurants.
+- [ ] **Full Feature Set in GUI**:
+  - GUI for restaurants and an admin interface are planned but not yet implemented.
+- [ ] **Advanced Location Features**:
+  - Distance calculation and location-based filtering are planned but not yet implemented.
+- [ ] **Credit Card Validation**:
+  - A mock system for credit card validation is under development.
 
 ## File Structure
 
@@ -69,26 +63,24 @@ UsainWolt/
 ├── README.md                   # This file
 ├── src/
 │   ├── Client/
-│   │   ├── ClientApp.java       # The client-side application logic for interacting with the server.
+│   │   ├── ClientApp.java       # Handles communication between client GUI and server.
 │   │   ├── CustomerGUI.java     # GUI for customers to log in, sign up, and manage orders.
-│   │   └── (RestaurantGUI.java) # GUI for restaurants to manage their menus and orders. (In Construction)
+│   │   ├── (RestaurantGUI.java) # Planned GUI for restaurant management. (In Construction)
+│   │   └── (AdminApp.java)      # Planned GUI for admin functionalities. (In Construction)
 │   │
 │   ├── Server/
-│   │   ├── ServerApp.java       # The main server application that manages client connections.
-│   │   ├── ClientHandler.java   # Handles individual client requests in a separate thread.
-│   │   ├── User.java            # Abstract class representing a general user.
-│   │   ├── CustomerUser.java    # Extends User to represent customers and their specific actions.
-│   │   ├── RestaurantUser.java  # Extends User to represent restaurants and their specific actions.
-│   │   ├── Order.java           # Represents orders, including order items and status.
-│   │   ├── LocationService.java # Handles location-based services like distance calculation. (In Construction)
-│   │   └── (AdminApp.java)      # GUI for admin functionalities. (In Construction)
+│   │   ├── ServerApp.java       # Main server application that handles client connections.
+│   │   ├── ClientHandler.java   # Manages individual client requests in separate threads.
+│   │   ├── User.java            # Abstract class representing general users.
+│   │   ├── CustomerUser.java    # Extends `User` to represent customers.
+│   │   ├── RestaurantUser.java  # Extends `User` to represent restaurants.
+│   │   ├── Order.java           # Represents orders including items and statuses.
+│   │   ├── LocationService.java # Handles location-based services like distance calculation. (Planned)
 │   │
-│   └── resources/
-│       ├── users.csv            # CSV file for storing user information.
-│       ├── menus.csv            # CSV file for storing restaurant menus.
-│       └── orders.csv           # CSV file for storing order information.
-│
-└── pom.xml                      # Maven configuration file if you're using Maven for project management.
+└── resources/                   # Contains dynamically generated CSV files (not included in the repository).
+    ├── users.csv                # Stores user information.
+    ├── menus.csv                # Stores menu items for restaurants.
+    └── orders.csv               # Stores order information.
 ```
 
 ## Explanation of Each File

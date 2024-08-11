@@ -10,36 +10,103 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ClientApp {
+public class ClientApp implements Runnable {
     private Socket clientSocket;
     private BufferedReader in;
     private PrintWriter out;
     private Gson gson;
+    private String serverAddress;
+    private int port;
+    private boolean running;
 
-    public ClientApp(String serverAddress, int port) throws Exception {
-        // Establish a connection to the server
-        clientSocket = new Socket(serverAddress, port);
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
-        gson = new Gson();
+    public ClientApp(String serverAddress, int port) {
+        this.serverAddress = serverAddress;
+        this.port = port;
+        this.gson = new Gson();
     }
 
-    // Helper method to send a request and return the response
-    private Map<String, String> sendRequest(Map<String, String> request) throws Exception {
-        String jsonRequest = gson.toJson(request);
-        out.println(jsonRequest);
-        String jsonResponse = in.readLine();
+    @Override
+    public void run() {
+        try {
+            // Attempt to establish a connection to the server
+            System.out.println("Attempting to connect to the server at " + serverAddress + ":" + port);
+            clientSocket = new Socket(serverAddress, port);
+            out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            running = true;
 
-        // Check if the response is a JSON object
-        if (jsonResponse.startsWith("{")) {
-            return gson.fromJson(jsonResponse, Map.class);
+            System.out.println("Connected to the server at " + serverAddress + ":" + port);
+
+            // Main loop to handle incoming messages from the server
+            while (running) {
+                String serverMessage = in.readLine();
+                if (serverMessage != null) {
+                    handleServerMessage(serverMessage);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeConnection();
+        }
+    }
+
+
+    // Handle messages received from the server
+    private void handleServerMessage(String serverMessage) {
+        try {
+            // Assume the message is in JSON format
+            Map<String, String> messageMap = gson.fromJson(serverMessage, Map.class);
+            String messageType = messageMap.get("type");
+
+            switch (messageType) {
+                case "notification":
+                    // Example: Display a notification to the user
+                    System.out.println("Notification from server: " + messageMap.get("content"));
+                    break;
+                case "update":
+                    // Example: Update local data based on the server's message
+                    System.out.println("Update from server: " + messageMap.get("content"));
+                    break;
+                default:
+                    // Handle unknown or unexpected messages
+                    System.out.println("Unknown message type received from server: " + serverMessage);
+                    break;
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to handle server message: " + serverMessage);
+            e.printStackTrace();
+        }
+    }
+
+    private Map<String, String> sendRequest(Map<String, String> request) throws Exception {
+        if (out == null) {
+            System.out.println("Output stream is not initialized. Attempting to establish a connection...");
+            // Try to re-establish the connection if out is not initialized
+            if (clientSocket == null || clientSocket.isClosed()) {
+                clientSocket = new Socket(serverAddress, port);
+                out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            }
+        }
+
+        if (out != null) {
+            String jsonRequest = gson.toJson(request);
+            System.out.println("Sending request: " + jsonRequest);
+            out.println(jsonRequest);
+            String jsonResponse = in.readLine();
+            System.out.println("Received response: " + jsonResponse);
+
+            if (jsonResponse != null && jsonResponse.startsWith("{")) {
+                return gson.fromJson(jsonResponse, Map.class);
+            } else {
+                System.out.println("Unexpected server response: " + jsonResponse);
+                return Map.of("success", "false", "message", "Unexpected server response: " + jsonResponse);
+            }
         } else {
-            // Handle the case where the response is just a plain string
-            System.out.println("Unexpected server response: " + jsonResponse);
-            Map<String, String> response = new HashMap<>();
-            response.put("success", "false");
-            response.put("message", "Unexpected server response: " + jsonResponse);
-            return response;
+            System.out.println("Failed to initialize the output stream.");
+            return Map.of("success", "false", "message", "Failed to establish connection.");
         }
     }
 
@@ -145,6 +212,7 @@ public class ClientApp {
         return sendRequest(request);
     }
 
+    // Method to get available cuisines
     public Map<String, String> getAvailableCuisines() throws Exception {
         Map<String, String> request = new HashMap<>();
         request.put("type", "getAvailableCuisines");
@@ -152,13 +220,23 @@ public class ClientApp {
     }
 
     // Close the connection to the server
-    public void closeConnection() throws Exception {
-        clientSocket.close();
+    public void closeConnection() {
+        try {
+            running = false;  // Stop the client loop
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                clientSocket.close();
+                System.out.println("Connection closed.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
         try {
             ClientApp clientApp = new ClientApp("localhost", 8080);
+            Thread clientThread = new Thread(clientApp);
+            clientThread.start();
 
             // Example of logging in a user
             Map<String, String> response = clientApp.login("john_doe", "password123");
