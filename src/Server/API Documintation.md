@@ -91,7 +91,7 @@ Replace `<server_address>` and `<port>` with the actual address and port of the 
 - `username` (string): The customer's username.
 - `password` (string): The customer's password.
 - `restaurantName` (string): The name of the restaurant.
-- `items` (string): A JSON string of items (e.g., `"[{"name":"Pizza", "price": 12.99}, {"name":"Soda", "price": 2.50}]"`).
+- `items` A semicolon-separated string of items, where each item is formatted as `"itemName:price"`, e.g., `"Pizza:12.99;Soda:2.50"`.
 - `customerNote` (string): Optional note from the customer.
 - `creditCardNumber` (string): Customer's credit card number.
 - `expirationDate` (string): Credit card expiration date.
@@ -201,6 +201,24 @@ Replace `<server_address>` and `<port>` with the actual address and port of the 
 **Response:**
 - Success: `{"success": "true", "message": "Order marked as complete"}`
 - Failure: `{"success": "false", "message": "Authentication failed or restaurant not found"}`
+
+---
+
+#### Get Available Cuisines
+
+**Endpoint:** `/getAvailableCuisines`
+
+**Method:** `POST`
+
+**Description:** Retrieves a list of available cuisines.
+
+**Parameters:**
+- None
+
+**Response:**
+- Success: `{"success": "true", "cuisines": ["Cuisine1", "Cuisine2", ...]}`
+- Failure: `{"success": "false", "message": "Failed to retrieve cuisines"}`
+
 
 ---
 

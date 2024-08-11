@@ -75,6 +75,9 @@ public class ClientHandler implements Runnable {
                     case "getCurrentOrders":
                         response = handleGetCurrentOrders(request);
                         break;
+                    case "getAvailableCuisines":
+                        response = handleGetAvailableCuisines();
+                        break;
                     case "disconnect":
                         response = handleDisconnect(request);
                         break;
@@ -84,6 +87,7 @@ public class ClientHandler implements Runnable {
                 }
 
                 // Send the response back to the client
+                System.out.println("Sending to client: " + response);
                 out.println(response);
             }
         } catch (IOException e) {
@@ -95,6 +99,10 @@ public class ClientHandler implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    private String handleGetAvailableCuisines() {
+        return createResponse(true, ServerApp.getAvailableCuisines());
     }
 
     private String handleDefault() {
@@ -110,6 +118,8 @@ public class ClientHandler implements Runnable {
         Map<String, String> response = new HashMap<>();
         response.put("success", String.valueOf(success));
         response.put("message", message);
+        System.out.println("am i getting in here?");
+        System.out.println("Response: " + gson.toJson(response));
         return gson.toJson(response);
     }
 

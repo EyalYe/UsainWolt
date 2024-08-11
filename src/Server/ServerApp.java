@@ -11,6 +11,7 @@ public class ServerApp {
     private static final String USERS_FILE = "users.csv";
     private static final String MENUS_FILE = "menus.csv";
     private static final String ORDERS_FILE = "orders.csv";
+    private static final String[] RESTAURANT_CUISINES = {"American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
 
     public static List<User> allUsers = new ArrayList<>();
     public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
@@ -36,8 +37,8 @@ public class ServerApp {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected");
 
-                // Create a new thread to handle the client
-                Thread clientThread = new Thread(() -> handleClient(clientSocket));
+                // Create a new thread to handle the client using ClientHandler
+                Thread clientThread = new Thread(new ClientHandler(clientSocket));
                 clientThread.start();
             }
 
@@ -204,5 +205,13 @@ public class ServerApp {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static String getAvailableCuisines() {
+        StringBuilder sb = new StringBuilder();
+        for (String cuisine : RESTAURANT_CUISINES) {
+            sb.append(cuisine).append(",");
+        }
+        return sb.toString();
     }
 }
