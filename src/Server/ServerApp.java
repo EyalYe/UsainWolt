@@ -11,13 +11,25 @@ public class ServerApp {
     private static final String USERS_FILE = "users.csv";
     private static final String MENUS_FILE = "menus.csv";
     private static final String ORDERS_FILE = "orders.csv";
-    private static final String[] RESTAURANT_CUISINES = {"American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
+    private static final String[] RESTAURANT_CUISINES = {"American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian","All"};
+    public static final String SERVER_IP = "localhost";
+    private static final int SERVER_PORT = 12345;
+    public static final int IMAGE_SERVER_PORT = 8080;
 
     public static List<User> allUsers = new ArrayList<>();
     public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
 
     public static void main(String[] args) {
         try {
+            // Start the image server in a new thread
+            new Thread(() -> {
+                try {
+                    ImageServer.startServer(IMAGE_SERVER_PORT); // Start the image server
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
             // Create the files if they don't exist
             createFileIfNotExists(USERS_FILE);
             createFileIfNotExists(MENUS_FILE);
@@ -29,7 +41,7 @@ public class ServerApp {
             loadOrdersFromCSV();
 
             // Set up server socket
-            ServerSocket serverSocket = new ServerSocket(12345);
+            ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
             System.out.println("Server is listening on port 12345");
 
             // Server loop to handle clients
@@ -59,66 +71,64 @@ public class ServerApp {
         BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE));
         String line;
         while ((line = reader.readLine()) != null) {
-            String[] parts = line.split(",");
-            String userType = parts[0];
-            String username = parts[1];
-            String hashedPassword = parts[2];
-            String address = parts[3];
-            String phoneNumber = parts[4];
-            String email = parts[5];
-
-            if ("Customer".equals(userType)) {
-                CustomerUser customer = new CustomerUser(username, hashedPassword, address, phoneNumber, email);
-                allUsers.add(customer);
-            } else if ("Restaurant".equals(userType)) {
-                String businessPhoneNumber = parts[6];
-                String cuisine = parts[7];
-                double revenue = Double.parseDouble(parts[8]);
-                RestaurantUser restaurant = new RestaurantUser(username, hashedPassword, address, phoneNumber, email, businessPhoneNumber, cuisine, revenue);
-                allUsers.add(restaurant);
+            if (line.startsWith("Customer")) {
+                allUsers.add(new CustomerUser(line));
+            } else if (line.startsWith("Restaurant")) {
+                allUsers.add(new RestaurantUser(line));
             }
         }
         reader.close();
     }
 
     private static void loadMenusFromCSV() throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(MENUS_FILE));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] parts = line.split(",");
-            String restaurantUsername = parts[0];
-            String itemName = parts[1];
-            double price = Double.parseDouble(parts[2]);
+        File menuDirectory = new File("menu_data");
+        if (!menuDirectory.exists() || !menuDirectory.isDirectory()) {
+            System.out.println("No menu directory found. Skipping menu loading.");
+            return;
+        }
 
+        // Loop through each file in the menu_data directory
+        File[] menuFiles = menuDirectory.listFiles((dir, name) -> name.endsWith(".csv"));
+        if (menuFiles == null) {
+            System.out.println("No menu files found.");
+            return;
+        }
+
+        for (File menuFile : menuFiles) {
+            String restaurantUsername = menuFile.getName().replace(".csv", ""); // Extract restaurant username from the filename
+
+            // Find the corresponding RestaurantUser
+            RestaurantUser restaurantUser = null;
             for (User user : allUsers) {
                 if (user instanceof RestaurantUser && user.getUserName().equals(restaurantUsername)) {
-                    ((RestaurantUser) user).addMenuItem(itemName, price);
+                    restaurantUser = (RestaurantUser) user;
                     break;
                 }
             }
+
+            if (restaurantUser == null) {
+                System.out.println("Restaurant user " + restaurantUsername + " not found. Skipping file " + menuFile.getName());
+                continue;
+            }
+
+            // Read and load the menu items from the file
+            try (BufferedReader reader = new BufferedReader(new FileReader(menuFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // Each line is expected to represent an item in the menu
+                    restaurantUser.addMenuItem(new Order.Item(line));
+                }
+            }
         }
-        reader.close();
     }
 
     private static void loadOrdersFromCSV() throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(ORDERS_FILE));
         String line;
         while ((line = reader.readLine()) != null) {
-            String[] parts = line.split(",");
-            int orderId = Integer.parseInt(parts[0]);
-            String orderDate = parts[1];
-            String itemsString = parts[2];
-            double totalPrice = Double.parseDouble(parts[3]);
-            String customerName = parts[4];
-            String restaurantName = parts[5];
-            String status = parts[6];
-            String customerNote = parts[7];
-
-            List<Order.Item> items = parseItems(itemsString);
-            Order order = new Order(orderId, Timestamp.valueOf(orderDate), items, customerName, restaurantName, status, customerNote);
-
+            Order order = new Order(line);
             for (User user : allUsers) {
-                if (user.getUserName().equals(customerName)) {
+                if (user.getUserName().equals(order.getCustomerName())) {
                     if (user instanceof CustomerUser) {
                         ((CustomerUser) user).addOrder(order);
                     } else if (user instanceof RestaurantUser) {
@@ -130,88 +140,83 @@ public class ServerApp {
         reader.close();
     }
 
-    static List<Order.Item> parseItems(String itemsString) {
-        List<Order.Item> items = new ArrayList<>();
-        String[] itemArray = itemsString.split(";");
-        for (String item : itemArray) {
-            String[] parts = item.split(":");
-            String itemName = parts[0];
-            double price = Double.parseDouble(parts[1]);
-            items.add(new Order.Item(itemName, price));
-        }
-        return items;
-    }
-
     public static void addUser(User user) throws IOException {
         allUsers.add(user);
         BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, true));
-        if (user instanceof CustomerUser) {
-            writer.write("Customer," + user.getUserName() + "," + user.getHashedPassword() + "," +
-                    user.getAddress() + "," + user.getPhoneNumber() + "," + user.getEmail() + "\n");
-        } else if (user instanceof RestaurantUser) {
-            writer.write("Restaurant," + user.getUserName() + "," + user.getHashedPassword() + "," +
-                    user.getAddress() + "," + user.getPhoneNumber() + "," + user.getEmail() + "," +
-                    ((RestaurantUser) user).getBusinessPhoneNumber() + "," + ((RestaurantUser) user).getCuisine() + "\n");
+        writer.write(user.toString() + "\n");
+        writer.close();
+
+        if (user instanceof RestaurantUser) {
             saveMenu((RestaurantUser) user);
         }
-        writer.close();
     }
 
     static void saveMenu(RestaurantUser restaurant) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(MENUS_FILE, true));
-        for (Order.Item item : restaurant.getMenu()) {
-            writer.write(restaurant.getUserName() + "," + item.getName() + "," + item.getPrice() + "\n");
+        File directory = new File("menu_data");
+        if (!directory.exists()) {
+            directory.mkdirs(); // Create directory if it doesn't exist
         }
-        writer.close();
+
+        File menuFile = new File(directory, restaurant.getUserName() + ".csv");
+
+        // Writing the restaurant's menu to its dedicated file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(menuFile))) {
+            for (Order.Item item : restaurant.getMenu()) {
+                writer.write(item.toString() + "\n");
+            }
+        }
     }
+
+
 
     public static void saveOrder(Order order) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(ORDERS_FILE, true));
-        writer.write(order.getOrderId() + "," + order.getOrderDate() + "," + formatItems(order.getItems()) + "," +
-                order.getTotalPrice() + "," + order.getCustomerName() + "," + order.getRestaurantName() + "," +
-                order.getStatus() + "," + order.getCustomerNote() + "\n");
+        writer.write(order.toString() + "\n");
         writer.close();
-    }
-
-    private static String formatItems(List<Order.Item> items) {
-        StringBuilder sb = new StringBuilder();
-        for (Order.Item item : items) {
-            sb.append(item.getName()).append(":").append(item.getPrice()).append(";");
-        }
-        return sb.toString();
     }
 
     public static void addLoggedInRestaurant(RestaurantUser restaurant) {
         loggedInRestaurants.add(restaurant);
     }
 
-    private static void handleClient(Socket clientSocket) {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+    public static String getAvailableCuisines() {
+        return String.join(",", RESTAURANT_CUISINES);
+    }
 
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                System.out.println("Received: " + inputLine);
-                // Handle request here
-                // For example: parse JSON, process request, and send response
-                out.println("Response: " + inputLine); // Echo back the input for demonstration
+    public static void updateUserInCSV(User user) {
+        try {
+            // Read all existing users into memory
+            List<String> lines = new ArrayList<>();
+            BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts[1].equals(user.getUserName())) {
+                    lines.add(user.toString()); // Replace the line with the updated user
+                } else {
+                    lines.add(line); // Keep the line unchanged
+                }
             }
+            reader.close();
+
+            // Write the updated list back to the CSV file
+            BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE));
+            for (String updatedLine : lines) {
+                writer.write(updatedLine + "\n");
+            }
+            writer.close();
+
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
-    public static String getAvailableCuisines() {
-        StringBuilder sb = new StringBuilder();
-        for (String cuisine : RESTAURANT_CUISINES) {
-            sb.append(cuisine).append(",");
+    public static List<Order.Item> parseItems(String items) {
+        List<Order.Item> itemList = new ArrayList<>();
+        String[] itemStrings = items.split(";");
+        for (String itemString : itemStrings) {
+            itemList.add(new Order.Item(itemString));
         }
-        return sb.toString();
+        return itemList;
     }
 }

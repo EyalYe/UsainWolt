@@ -15,44 +15,7 @@ public class Order {
     private String status; // e.g., "Pending", "In Progress", "Delivered"
     private String customerNote;
 
-    public String getCustomerNote() {
-        return customerNote;
-    }
-
-    public void setCustomerNote(String customerNote) {
-        this.customerNote = customerNote;
-    }
-
-    // Inner class to represent an item with its price
-    public static class Item {
-        private String name;
-        private double price;
-        private boolean available;
-
-        public Item(String name, double price) {
-            this.name = name;
-            this.price = price;
-            this.available = true;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public double getPrice() {
-            return price;
-        }
-
-        @Override
-        public String toString() {
-            return name + " ($" + price + ")";
-        }
-
-        public void setAvailable(boolean b) {
-            this.available = b;
-        }
-    }
-
+    // Constructor
     public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote) {
         this.orderId = orderId;
         this.orderDate = orderDate;
@@ -64,8 +27,25 @@ public class Order {
         this.customerNote = customerNote;
     }
 
-    // Getters and Setters
+    // Constructor from string
+    public Order(String orderString) {
+        String[] parts = orderString.split(",");
+        this.orderId = Integer.parseInt(parts[0]);
+        this.orderDate = new Date(Long.parseLong(parts[1]));  // Assuming date is stored as a long timestamp
+        this.customerName = parts[2];
+        this.restaurantName = parts[3];
+        this.status = parts[4];
+        this.customerNote = parts[5];
+        this.items = new ArrayList<>();
 
+        for (int i = 6; i < parts.length; i++) {
+            this.items.add(new Item(parts[i]));
+        }
+
+        this.totalPrice = calculateTotalPrice();
+    }
+
+    // Getters and Setters
     public int getOrderId() {
         return orderId;
     }
@@ -119,8 +99,92 @@ public class Order {
         this.status = status;
     }
 
-    // Additional methods
+    public String getCustomerNote() {
+        return customerNote;
+    }
 
+    public void setCustomerNote(String customerNote) {
+        this.customerNote = customerNote;
+    }
+
+    // Inner class to represent an item with its properties
+    public static class Item {
+        private String name;
+        private double price;
+        private boolean available;
+        private String photoUrl;
+        private String description;
+
+        // Constructor
+        public Item(String name, double price) {
+            this.name = name;
+            this.price = price;
+            this.available = true;
+        }
+
+        // Constructor with all fields
+        public Item(String name, double price, String photoUrl, String description) {
+            this.name = name;
+            this.price = price;
+            this.photoUrl = photoUrl;
+            this.description = description;
+            this.available = true;
+        }
+
+        // Constructor from string
+        public Item(String itemString) {
+            String[] parts = itemString.split(";");
+            this.name = parts[0];
+            this.price = Double.parseDouble(parts[1]);
+            this.available = Boolean.parseBoolean(parts[2]);
+            this.photoUrl = parts[3];
+            this.description = parts[4];
+        }
+
+        // Getters and Setters
+        public String getName() {
+            return name;
+        }
+
+        public double getPrice() {
+            return price;
+        }
+
+        public boolean isAvailable() {
+            return available;
+        }
+
+        public void setAvailable(boolean available) {
+            this.available = available;
+        }
+
+        public String getPhotoUrl() {
+            return photoUrl;
+        }
+
+        public void setPhotoUrl(String photoUrl) {
+            this.photoUrl = photoUrl;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            return name + ";" + price + ";" + available + ";" + photoUrl + ";" + description;
+        }
+
+        public void setPrice(double price) {
+            this.price = price;
+        }
+    }
+
+    // Additional methods
     public void addItem(String itemName, double price) {
         if (itemName == null || itemName.isEmpty()) {
             throw new IllegalArgumentException("Item name cannot be null or empty");
@@ -169,9 +233,30 @@ public class Order {
         return items.stream().mapToDouble(Item::getPrice).sum();
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(orderId).append(",")
+                .append(orderDate.getTime()).append(",")
+                .append(customerName).append(",")
+                .append(restaurantName).append(",")
+                .append(status).append(",")
+                .append(customerNote);
+
+        for (Item item : items) {
+            sb.append(",").append(item.toString());
+        }
+
+        return sb.toString();
+    }
+
     // Main method for testing purposes
     public static void main(String[] args) {
-        List<Item> initialItems = List.of(new Item("Pizza", 12.99), new Item("Burger", 8.99), new Item("Salad", 5.99));
+        List<Item> initialItems = List.of(
+                new Item("Pizza", 12.99, "pizza.jpg", "Delicious cheese pizza"),
+                new Item("Burger", 8.99, "burger.jpg", "Juicy beef burger"),
+                new Item("Salad", 5.99, "salad.jpg", "Fresh garden salad")
+        );
         Order order = new Order(1, new Date(), initialItems, "John Doe", "Fast Food Inc.", "Pending", "Extra ketchup");
 
         // Print initial order
@@ -191,6 +276,12 @@ public class Order {
         // Sort items
         order.sortItems();
         order.printOrder();
+
+        // Convert to string and back to object
+        String orderString = order.toString();
+        System.out.println("Order as String: " + orderString);
+
+        Order reconstructedOrder = new Order(orderString);
+        reconstructedOrder.printOrder();
     }
 }
-

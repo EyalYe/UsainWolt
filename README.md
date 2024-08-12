@@ -131,10 +131,10 @@ Stores information about each order, including order ID, customer name, restaura
 ## Tasks
 
 ### Server Side
-- [ ] **Add a change password method to ClientHandler**: Implemented to allow users to change their passwords securely.
-- [ ] **Add a change email method to ClientHandler**: Allows users to update their email address.
-- [ ] **Add photo to restaurant and item capabilities**: Enhance the system to allow restaurants to upload photos for both their profile and individual menu items.
-- [ ] **Add the distance to the message sent to the client when calling getRestaurants**: Ensure that the distance from the customer to each restaurant is included in the response when retrieving nearby restaurants.
+- [x ] **Add a change password method to ClientHandler**: Implemented to allow users to change their passwords securely.
+- [x ] **Add a change email method to ClientHandler**: Allows users to update their email address.
+- [ x] **Add photo to restaurant and item capabilities**: Enhance the system to allow restaurants to upload photos for both their profile and individual menu items.
+- [ x] **Add the distance to the message sent to the client when calling getRestaurants**: Ensure that the distance from the customer to each restaurant is included in the response when retrieving nearby restaurants.
 
 ### Customer GUI
 - [ ] **Add functionality to the buttons in the User tab**: Implement the "Change Password", "Change Email", and "Get Order History" features in the user interface.

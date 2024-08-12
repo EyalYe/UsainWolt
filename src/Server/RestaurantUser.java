@@ -1,5 +1,10 @@
 package Server;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
@@ -10,7 +15,11 @@ public class RestaurantUser extends User {
     private String businessPhoneNumber;
     private String cuisine;
     private double revenue;
+    private boolean hasProfilePicture;
+    private String profilePictureUrl;
 
+
+    // Constructor for RestaurantUser
     public RestaurantUser(String userName, String hashedPassword, String address, String phoneNumber, String email, String businessPhoneNumber, String cuisine, double revenue) {
         super(userName, hashedPassword, address, phoneNumber, email);
         this.orders = new ArrayList<>();
@@ -18,12 +27,49 @@ public class RestaurantUser extends User {
         this.businessPhoneNumber = businessPhoneNumber;
         this.cuisine = cuisine;
         this.revenue = revenue;
+        this.hasProfilePicture = false;
+        this.profilePictureUrl = "";
     }
+
+    // Constructor to create RestaurantUser from CSV line
+    public RestaurantUser(String csvLine) {
+        super(csvLine);
+        String[] fields = csvLine.split(",");
+        this.businessPhoneNumber = fields[6];
+        this.cuisine = fields[7];
+        try {
+            this.revenue = Double.parseDouble(fields[8]);
+        } catch (NumberFormatException e) {
+            this.revenue = 0.0;
+        }
+        this.hasProfilePicture = fields[9].equals("true");
+
+        if (hasProfilePicture) {
+            try {
+                File profilePicture = new File("profile_pictures/" + this.getUserName() + ".jpg");
+                if (!profilePicture.exists()) {
+                    this.hasProfilePicture = false;
+                } else {
+                    this.profilePictureUrl = "profile_pictures/" + this.getUserName() + ".jpg";
+                }
+            } catch (Exception e) {
+                this.hasProfilePicture = false;
+            }
+        }
+
+        this.orders = new ArrayList<>();
+        this.menu = new ArrayList<>();
+    }
+
 
     // Getters and Setters
 
     public List<Order> getOrders() {
         return new ArrayList<>(orders);
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
     }
 
     public void setOrders(List<Order> orders) {
@@ -38,20 +84,37 @@ public class RestaurantUser extends User {
         this.menu = new ArrayList<>(menu);
     }
 
-    public void setCuisine(String cuisine) {
-        this.cuisine = cuisine;
-    }
-
-    public String getCuisine() {
-        return cuisine;
-    }
-
     public String getBusinessPhoneNumber() {
         return businessPhoneNumber;
     }
 
     public void setBusinessPhoneNumber(String businessPhoneNumber) {
         this.businessPhoneNumber = businessPhoneNumber;
+    }
+
+    public String getCuisine() {
+        return cuisine;
+    }
+
+    public void setCuisine(String cuisine) {
+        this.cuisine = cuisine;
+    }
+
+    public double getRevenue() {
+        return revenue;
+    }
+
+    public void setRevenue(double revenue) {
+        this.revenue = revenue;
+    }
+
+    public boolean hasProfilePicture() {
+        return hasProfilePicture;
+    }
+
+    public void setProfilePicture(byte[] hasProfilePicture) {
+        this.hasProfilePicture = true;
+        this.profilePictureUrl = "profile_pictures/" + this.getUserName() + ".jpg";
     }
 
     @Override
@@ -70,37 +133,12 @@ public class RestaurantUser extends User {
         menu.add(item);
     }
 
+    public void addMenuItem(Order.Item item) {
+        menu.add(item);
+    }
+
     public void removeMenuItem(String itemName) {
         menu.removeIf(item -> item.getName().equals(itemName));
-    }
-
-    public void addOrder(Order order) {
-        orders.add(order);
-    }
-
-    public void removeOrder(int orderId) {
-        orders.removeIf(order -> order.getOrderId() == orderId);
-    }
-
-    // Main method for testing purposes
-    public static void main(String[] args) {
-        RestaurantUser restaurant = new RestaurantUser("restaurant_owner", "hashed_password", "456 Elm St", "555-5678", "restaurant@example.com", "555-5678", "Fast Food", 1000.0);
-        restaurant.addMenuItem("Burger", 8.99);
-        restaurant.addMenuItem("Salad", 5.99);
-
-        // Create an order and add it to the restaurant's orders
-        Order order = new Order(1, new Date(), List.of(new Order.Item("Burger", 8.99)), "John Doe", "Fast Food Inc.", "Pending", "Extra ketchup");
-        restaurant.addOrder(order);
-
-        restaurant.performUserSpecificAction();
-        System.out.println("Menu: " + restaurant.getMenu());
-        System.out.println("Orders: " + restaurant.getOrders());
-    }
-
-    public void disableAllMenuItems() {
-        for (Order.Item item : menu) {
-            item.setAvailable(false);
-        }
     }
 
     public void disableMenuItem(String menuItemName) {
@@ -121,7 +159,27 @@ public class RestaurantUser extends User {
         }
     }
 
+    public void disableAllMenuItems() {
+        for (Order.Item item : menu) {
+            item.setAvailable(false);
+        }
+    }
+
+    public void addOrder(Order order) {
+        orders.add(order);
+    }
+
+    public void removeOrder(int orderId) {
+        orders.removeIf(order -> order.getOrderId() == orderId);
+    }
+
     public List<Order> getCurrentOrders() {
         return orders;
     }
+
+    @Override
+    public String toString() {
+        return "Restaurant," + super.toString() + "," + businessPhoneNumber + "," + cuisine + "," + revenue + "," + hasProfilePicture;
+    }
+
 }

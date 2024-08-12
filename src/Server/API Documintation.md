@@ -1,252 +1,359 @@
-# UsainWolt API Documentation
+### UsainWolt API Documentation
 
-## Overview
-
-This document provides an overview of how to interact with the UsainWolt server API. The API allows users to perform various actions such as logging in, signing up, placing orders, updating menus, and more.
-
-### Base URL
-
-All requests should be sent to the base URL of the server:
-
-```
-http://<server_address>:<port>/
-```
-
-Replace `<server_address>` and `<port>` with the actual address and port of the server.
+This API allows clients to interact with the UsainWolt server to manage users, orders, and restaurant-related functionalities. The API supports customer and restaurant signups, order placements, menu updates, and image handling. All communication is done through JSON over a socket connection.
 
 ---
 
-## Authentication
+### General Request and Response Format
 
-### Login
-
-**Endpoint:** `/login`
-
-**Method:** `POST`
-
-**Description:** Authenticates a user with their username and password.
-
-**Parameters:**
-- `username` (string): The username of the user.
-- `password` (string): The user's password.
+**Request:**
+- All requests are sent as JSON objects.
+- Each request must include a `type` field that indicates the type of action being requested.
 
 **Response:**
-- Success: `{"success": "true", "message": "Login successful"}`
-- Failure: `{"success": "false", "message": "Invalid username or password"}`
+- Responses are JSON objects.
+- Each response will include a `success` field (`true` or `false`) and a `message` field containing additional details or error information.
+- Some responses may include additional fields based on the request.
 
 ---
 
-### Signup (Customer)
+### API Endpoints
 
-**Endpoint:** `/signupCustomer`
+#### 1. **Login**
+- **Type**: `login`
+- **Description**: Authenticates a user with their username and password.
+- **Request**:
+  ```json
+  {
+    "type": "login",
+    "username": "user_name",
+    "password": "user_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Login successful"
+  }
+  ```
 
-**Method:** `POST`
+#### 2. **Signup Customer**
+- **Type**: `signupCustomer`
+- **Description**: Registers a new customer.
+- **Request**:
+  ```json
+  {
+    "type": "signupCustomer",
+    "username": "user_name",
+    "password": "user_password",
+    "address": "customer_address",
+    "phoneNumber": "customer_phone_number",
+    "email": "customer_email"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Customer signup successful"
+  }
+  ```
 
-**Description:** Registers a new customer user.
+#### 3. **Signup Restaurant**
+- **Type**: `signupRestaurant`
+- **Description**: Registers a new restaurant.
+- **Request**:
+  ```json
+  {
+    "type": "signupRestaurant",
+    "username": "restaurant_name",
+    "password": "restaurant_password",
+    "address": "restaurant_address",
+    "phoneNumber": "restaurant_phone_number",
+    "email": "restaurant_email",
+    "businessPhoneNumber": "business_phone_number",
+    "cuisine": "cuisine_type"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Restaurant signup successful"
+  }
+  ```
 
-**Parameters:**
-- `username` (string): Desired username.
-- `password` (string): Desired password.
-- `address` (string): The customer's address.
-- `phoneNumber` (string): The customer's phone number.
-- `email` (string): The customer's email address.
+#### 4. **Get Restaurants**
+- **Type**: `getRestaurants`
+- **Description**: Retrieves a list of restaurants filtered by distance and cuisine.
+- **Request**:
+  ```json
+  {
+    "type": "getRestaurants",
+    "username": "customer_username",
+    "password": "customer_password",
+    "distance": "max_distance_in_km",
+    "cuisine": "optional_cuisine_filter"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": [
+      {
+        "restaurantName": "restaurant_name",
+        "address": "restaurant_address",
+        "distance": "distance_in_km",
+        "cuisine": "cuisine_type",
+        "profilePicture": "Base64_encoded_image_string_or_null"
+      }
+    ]
+  }
+  ```
 
-**Response:**
-- Success: `{"success": "true", "message": "Customer signup successful"}`
-- Failure: `{"success": "false", "message": "Invalid address"}`
+#### 5. **Get Menu**
+- **Type**: `getMenu`
+- **Description**: Retrieves the menu for a specific restaurant.
+- **Request**:
+  ```json
+  {
+    "type": "getMenu",
+    "restaurantName": "restaurant_name"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": [
+      {
+        "itemName": "menu_item_name",
+        "description": "menu_item_description",
+        "price": "menu_item_price",
+        "image": "Base64_encoded_image_string_or_null"
+      }
+    ]
+  }
+  ```
 
-### Signup (Restaurant)
+#### 6. **Place Order**
+- **Type**: `placeOrder`
+- **Description**: Places a new order for a customer.
+- **Request**:
+  ```json
+  {
+    "type": "placeOrder",
+    "username": "customer_username",
+    "password": "customer_password",
+    "restaurantName": "restaurant_name",
+    "items": "item1;item2;item3",  // Items separated by semicolons
+    "customerNote": "optional_note",
+    "useSavedCard": "true_or_false",  // Whether to use a saved credit card
+    "creditCardNumber": "card_number_if_not_saved",
+    "expirationDate": "MM/YY",
+    "cvv": "cvv_code"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Order placed successfully with ID: order_id"
+  }
+  ```
 
-**Endpoint:** `/signupRestaurant`
+#### 7. **Update Menu**
+- **Type**: `updateMenu`
+- **Description**: Updates or adds a menu item for a restaurant.
+- **Request**:
+  ```json
+  {
+    "type": "updateMenu",
+    "username": "restaurant_username",
+    "password": "restaurant_password",
+    "restaurantName": "restaurant_name",
+    "itemName": "item_name",
+    "price": "item_price",
+    "description": "item_description"
+  }
+  ```
+  - **Image**: The image data should be sent as a binary stream immediately after the JSON request.
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Menu item added/updated successfully"
+  }
+  ```
 
-**Method:** `POST`
+#### 8. **Get Orders History**
+- **Type**: `getOrdersHistory`
+- **Description**: Retrieves the order history for a customer or restaurant.
+- **Request**:
+  ```json
+  {
+    "type": "getOrdersHistory",
+    "username": "user_name",
+    "password": "user_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": [
+      {
+        "orderId": order_id,
+        "orderDate": "order_date",
+        "items": ["item1", "item2"],
+        "status": "order_status",
+        "customerNote": "optional_note"
+      }
+    ]
+  }
+  ```
 
-**Description:** Registers a new restaurant user.
+#### 9. **Change Password**
+- **Type**: `changePassword`
+- **Description**: Changes the password for a user.
+- **Request**:
+  ```json
+  {
+    "type": "changePassword",
+    "username": "user_name",
+    "oldPassword": "old_password",
+    "newPassword": "new_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Password changed successfully"
+  }
+  ```
 
-**Parameters:**
-- `username` (string): Desired username.
-- `password` (string): Desired password.
-- `address` (string): The restaurant's address.
-- `phoneNumber` (string): The restaurant's phone number.
-- `email` (string): The restaurant's email address.
-- `businessPhoneNumber` (string): The restaurant's business phone number.
+#### 10. **Change Email**
+- **Type**: `changeEmail`
+- **Description**: Changes the email address for a user.
+- **Request**:
+  ```json
+  {
+    "type": "changeEmail",
+    "username": "user_name",
+    "password": "user_password",
+    "newEmail": "new_email_address"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Email changed successfully"
+  }
+  ```
 
-**Response:**
-- Success: `{"success": "true", "message": "Restaurant signup successful"}`
-- Failure: `{"success": "false", "message": "Invalid address"}`
+#### 11. **Get Image**
+- **Type**: `getImage`
+- **Description**: Retrieves an image from the server given a path.
+- **Request**:
+  ```json
+  {
+    "type": "getImage",
+    "imagePath": "relative_image_path"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Image retrieved successfully",
+    "imageData": "Base64_encoded_image_string"
+  }
+  ```
+
+#### 12. **Upload Profile Picture**
+- **Type**: `uploadProfilePicture`
+- **Description**: Uploads a profile picture for a restaurant.
+- **Request**:
+  ```json
+  {
+    "type": "uploadProfilePicture",
+    "username": "restaurant_username"
+  }
+  ```
+  - **Image**: The image data should be sent as a binary stream immediately after the JSON request.
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Profile picture uploaded successfully"
+  }
+  ```
+
+#### 13. **Disconnect**
+- **Type**: `disconnect`
+- **Description**: Disconnects a user from the server.
+- **Request**:
+  ```json
+  {
+    "type": "disconnect",
+    "username": "user_name",
+    "password": "user_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Disconnected successfully"
+  }
+  ```
+
+#### 14. **Get Available Cuisines**
+- **Type**: `getAvailableCuisines`
+- **Description**: Retrieves the list of available cuisines.
+- **Request**:
+  ```json
+  {
+    "type": "getAvailableCuisines"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "American, Chinese, Italian, Japanese, Mexican, Thai, Israeli, Indian"
+  }
+  ```
 
 ---
 
-## Order Management
+### Image Handling
 
-### Place Order
+- Images are uploaded and retrieved using specific endpoints.
+- Image data is encoded in Base64 when being sent as part of JSON responses.
+- Image paths are relative to the server's image directories, such as `profile_pictures/` or `menu
 
-**Endpoint:** `/placeOrder`
-
-**Method:** `POST`
-
-**Description:** Places an order for a customer.
-
-**Parameters:**
-- `username` (string): The customer's username.
-- `password` (string): The customer's password.
-- `restaurantName` (string): The name of the restaurant.
-- `items` A semicolon-separated string of items, where each item is formatted as `"itemName:price"`, e.g., `"Pizza:12.99;Soda:2.50"`.
-- `customerNote` (string): Optional note from the customer.
-- `creditCardNumber` (string): Customer's credit card number.
-- `expirationDate` (string): Credit card expiration date.
-- `cvv` (string): Credit card CVV code.
-
-**Response:**
-- Success: `{"success": "true", "message": "Order placed successfully with ID: <order_id>"}`
-- Failure: `{"success": "false", "message": "Credit card authentication failed"}`
+_item_images/`.
 
 ---
 
-### Get Order History
+### Error Handling
 
-**Endpoint:** `/getOrdersHistory`
+- All requests must include valid parameters; otherwise, the server will return an error response.
+- Example error response:
+  ```json
+  {
+    "success": false,
+    "message": "Error description"
+  }
+  ```
 
-**Method:** `POST`
+### Notes
+- Ensure that binary data (like images) is correctly handled when sending and receiving requests.
+- Always validate user credentials before processing requests that require authentication.
 
-**Description:** Retrieves the order history for a customer or restaurant.
-
-**Parameters:**
-- `username` (string): The username of the user.
-- `password` (string): The user's password.
-
-**Response:**
-- Success: JSON array of orders.
-- Failure: `{"success": "false", "message": "Authentication failed or user not found"}`
-
----
-
-## Menu Management
-
-### Update Menu
-
-**Endpoint:** `/updateMenu`
-
-**Method:** `POST`
-
-**Description:** Updates the menu of a restaurant.
-
-**Parameters:**
-- `username` (string): The restaurant's username.
-- `password` (string): The restaurant's password.
-- `restaurantName` (string): The name of the restaurant.
-- `itemName` (string): The name of the menu item.
-- `price` (double): The price of the menu item.
-
-**Response:**
-- Success: `{"success": "true", "message": "Menu updated successfully"}`
-- Failure: `{"success": "false", "message": "Authentication failed or restaurant not found"}`
-
----
-
-### Enable/Disable Menu Items
-
-**Endpoint:** `/enableMenuItems` or `/disableMenuItems`
-
-**Method:** `POST`
-
-**Description:** Enables or disables all menu items of a restaurant.
-
-**Parameters:**
-- `username` (string): The restaurant's username.
-- `password` (string): The restaurant's password.
-
-**Response:**
-- Success: `{"success": "true", "message": "Menu items enabled/disabled"}`
-- Failure: `{"success": "false", "message": "Authentication failed or restaurant not found"}`
-
----
-
-## Account Management
-
-### Update Credit Card
-
-**Endpoint:** `/updateCreditCard`
-
-**Method:** `POST`
-
-**Description:** Updates the credit card information for a customer.
-
-**Parameters:**
-- `username` (string): The customer's username.
-- `password` (string): The customer's password.
-- `creditCardNumber` (string): New credit card number.
-- `expirationDate` (string): New credit card expiration date.
-- `cvv` (string): New credit card CVV code.
-
-**Response:**
-- Success: `{"success": "true", "message": "Credit card updated successfully"}`
-- Failure: `{"success": "false", "message": "Credit card authentication failed"}`
-
----
-
-### Mark Order as Complete
-
-**Endpoint:** `/markOrderComplete`
-
-**Method:** `POST`
-
-**Description:** Marks an order as complete.
-
-**Parameters:**
-- `username` (string): The restaurant's username.
-- `password` (string): The restaurant's password.
-- `orderId` (int): The ID of the order to mark as complete.
-
-**Response:**
-- Success: `{"success": "true", "message": "Order marked as complete"}`
-- Failure: `{"success": "false", "message": "Authentication failed or restaurant not found"}`
-
----
-
-#### Get Available Cuisines
-
-**Endpoint:** `/getAvailableCuisines`
-
-**Method:** `POST`
-
-**Description:** Retrieves a list of available cuisines.
-
-**Parameters:**
-- None
-
-**Response:**
-- Success: `{"success": "true", "cuisines": ["Cuisine1", "Cuisine2", ...]}`
-- Failure: `{"success": "false", "message": "Failed to retrieve cuisines"}`
-
-
----
-
-### Disconnect
-
-**Endpoint:** `/disconnect`
-
-**Method:** `POST`
-
-**Description:** Disconnects a user from the server.
-
-**Parameters:**
-- `username` (string): The username of the user.
-- `password` (string): The user's password.
-
-**Response:**
-- Success: `{"success": "true", "message": "Disconnected successfully"}`
-
-If the user is a restaurant, they will also be removed from the list of logged-in restaurants.
-
----
-
-## Notes
-
-- **All requests** must be made using the `POST` method.
-- **JSON format** should be used for both request parameters and responses.
-- The server will return appropriate error messages for invalid or failed requests.
-
----
-
-This document outlines the basic usage of the UsainWolt server API. For any further questions or clarifications, please consult the development team or refer to additional documentation.
+This documentation provides an overview of the API methods and their expected inputs/outputs. Use this as a guide to integrate the UsainWolt server into client applications effectively.

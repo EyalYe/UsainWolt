@@ -1,0 +1,12 @@
+Customer,eyalye,5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5,jerusalem,12345,eyal@gmail.com
+Restaurant,restaurant1,0b14d501a594442a01c6859541bcb3e8164d183d32937b851835442f69d5c94e,Ben Yehuda St Jerusalem,03-1234560,restaurant1@example.com,03-6543210,Italian,0.0,true
+Restaurant,restaurant2,6cf615d5bcaac778352a8f1f3360d23f02f34ec182e259897fd6ce485d7870d4,Jaffa St Tel Aviv,03-1234561,restaurant2@example.com,03-6543211,Chinese,0.0,true
+Restaurant,restaurant3,5906ac361a137e2d286465cd6588ebb5ac3f5ae955001100bc41577c3d751764,King George St Jerusalem,03-1234562,restaurant3@example.com,03-6543212,American,0.0,true
+Restaurant,restaurant4,b97873a40f73abedd8d685a7cd5e5f85e4a9cfb83eac26886640a0813850122b,Dizengoff St Tel Aviv,03-1234563,restaurant4@example.com,03-6543213,Japanese,0.0,true
+Restaurant,restaurant5,8b2c86ea9cf2ea4eb517fd1e06b74f399e7fec0fef92e3b482a6cf2e2b092023,Rothschild Blvd Jerusalem,03-1234564,restaurant5@example.com,03-6543214,Mexican,0.0,true
+Restaurant,restaurant6,598a1a400c1dfdf36974e69d7e1bc98593f2e15015eed8e9b7e47a83b31693d5,Allenby St Tel Aviv,03-1234565,restaurant6@example.com,03-6543215,Italian,0.0,true
+Restaurant,restaurant7,5860836e8f13fc9837539a597d4086bfc0299e54ad92148d54538b5c3feefb7c,Herzl St Jerusalem,03-1234566,restaurant7@example.com,03-6543216,Chinese,0.0,true
+Restaurant,restaurant8,57f3ebab63f156fd8f776ba645a55d96360a15eeffc8b0e4afe4c05fa88219aa,HaYarkon St Tel Aviv,03-1234567,restaurant8@example.com,03-6543217,American,0.0,true
+Restaurant,restaurant9,9323dd6786ebcbf3ac87357cc78ba1abfda6cf5e55cd01097b90d4a286cac90e,Bialik St Jerusalem,03-1234568,restaurant9@example.com,03-6543218,Japanese,0.0,true
+Restaurant,restaurant10,aa4a9ea03fcac15b5fc63c949ac34e7b0fd17906716ac3b8e58c599cdc5a52f0,Shenkin St Tel Aviv,03-1234569,restaurant10@example.com,03-6543219,Mexican,0.0,true
+Customer,e,3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea,jerusalem,231,weq,,,

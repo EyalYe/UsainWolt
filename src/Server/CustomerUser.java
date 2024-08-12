@@ -11,23 +11,11 @@ public class CustomerUser extends User {
     private Map<String, String> preferences;
     private CreditCard creditCard;
 
-    public String getCreditCardNumber() {
-        return creditCard.getCreditCardNumber();
-    }
-
-    public String getExpirationDate() {
-        return creditCard.getExpirationDate();
-    }
-
-    public String getCvv() {
-        return creditCard.getCvv();
-    }
-
+    // Inner class for handling credit card information
     class CreditCard {
         private String creditCardNumber;
         private String expirationDate;
         private String cvv;
-
 
         public CreditCard(String creditCardNumber, String expirationDate, String cvv) {
             this.creditCardNumber = creditCardNumber;
@@ -47,7 +35,6 @@ public class CustomerUser extends User {
             return cvv;
         }
 
-
         public void setCreditCardNumber(String creditCardNumber) {
             this.creditCardNumber = creditCardNumber;
         }
@@ -60,9 +47,8 @@ public class CustomerUser extends User {
             this.cvv = cvv;
         }
 
-
+        // Simulated payment methods
         public void makePayment(double amount) {
-            // Implementation for making a payment
             System.out.println("Making payment of $" + amount + "...");
         }
 
@@ -89,6 +75,7 @@ public class CustomerUser extends User {
         }
     }
 
+    // Constructor for creating a new customer
     public CustomerUser(String userName, String hashedPassword, String address, String phoneNumber, String email) {
         super(userName, hashedPassword, address, phoneNumber, email);
         this.orderHistory = new ArrayList<>();
@@ -96,8 +83,20 @@ public class CustomerUser extends User {
         this.creditCard = new CreditCard("", "", "");
     }
 
-    // Getters and Setters
+    // Constructor for creating a customer from a CSV line
+    public CustomerUser(String csvLine) {
+        super(csvLine);
+        String[] fields = csvLine.split(",");
+        this.orderHistory = new ArrayList<>();
+        this.preferences = new HashMap<>();
+        try {
+            this.creditCard = new CreditCard(fields[6], fields[7], fields[8]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            this.creditCard = new CreditCard("", "", "");
+        }
+    }
 
+    // Getters and Setters for order history and preferences
     public List<Order> getOrderHistory() {
         return new ArrayList<>(orderHistory);
     }
@@ -116,18 +115,46 @@ public class CustomerUser extends User {
 
     @Override
     public void performUserSpecificAction() {
-        // Implementation for customer-specific action
         System.out.println("Performing customer-specific action...");
     }
 
-    // Additional methods specific to CustomerUser
-
+    // Additional methods for managing orders and preferences
     public void addOrder(Order order) {
         orderHistory.add(order);
     }
 
     public void updatePreference(String key, String value) {
         preferences.put(key, value);
+    }
+
+    // Getters and Setters for credit card information
+    public String getCreditCardNumber() {
+        return creditCard.getCreditCardNumber();
+    }
+
+    public void setCreditCardNumber(String creditCardNumber) {
+        creditCard.setCreditCardNumber(creditCardNumber);
+    }
+
+    public String getExpirationDate() {
+        return creditCard.getExpirationDate();
+    }
+
+    public void setExpirationDate(String expirationDate) {
+        creditCard.setExpirationDate(expirationDate);
+    }
+
+    public String getCvv() {
+        return creditCard.getCvv();
+    }
+
+    public void setCvv(String cvv) {
+        creditCard.setCvv(cvv);
+    }
+
+    @Override
+    public String toString() {
+        return "Customer," + super.toString() + "," + creditCard.getCreditCardNumber() + "," + creditCard.getExpirationDate() + "," + creditCard.getCvv();
     }
 
     // Main method for testing purposes
@@ -146,17 +173,4 @@ public class CustomerUser extends User {
         System.out.println("Order History: " + customer.getOrderHistory());
         System.out.println("Preferences: " + customer.getPreferences());
     }
-
-    public void setCreditCardNumber(String creditCardNumber) {
-        creditCard.setCreditCardNumber(creditCardNumber);
-    }
-
-    public void setExpirationDate(String expirationDate) {
-        creditCard.setExpirationDate(expirationDate);
-    }
-
-    public void setCvv(String cvv) {
-        creditCard.setCvv(cvv);
-    }
-
 }

@@ -15,6 +15,15 @@ public abstract class User {
         this.email = email;
     }
 
+    public User(String csvLine) {
+        String[] fields = csvLine.split(",");
+        this.userName = fields[1];
+        this.hashedPassword = fields[2];
+        this.address = fields[3];
+        this.phoneNumber = fields[4];
+        this.email = fields[5];
+    }
+
     // Getters and Setters
 
     public String getUserName() {
@@ -59,6 +68,10 @@ public abstract class User {
 
     public boolean checkPassword(String password) {
         return hashedPassword.equals(password);
+    }
+
+    public String toString() {
+        return userName + "," + hashedPassword + "," + address + "," + phoneNumber + "," + email;
     }
 
     // Abstract method to be implemented by subclasses
