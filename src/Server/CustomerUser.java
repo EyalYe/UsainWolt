@@ -157,20 +157,5 @@ public class CustomerUser extends User {
         return "Customer," + super.toString() + "," + creditCard.getCreditCardNumber() + "," + creditCard.getExpirationDate() + "," + creditCard.getCvv();
     }
 
-    // Main method for testing purposes
-    public static void main(String[] args) {
-        CustomerUser customer = new CustomerUser("john_doe", "hashed_password", "123 Main St", "555-1234", "john@example.com");
 
-        // Update preferences
-        customer.updatePreference("cuisine", "Italian");
-        customer.updatePreference("distance", "5km");
-
-        // Create an order and add it to the customer's order history
-        Order order = new Order(1, new Date(), List.of(new Order.Item("Pizza", 12.99)), "John Doe", "Fast Food Inc.", "Pending", "Extra cheese");
-        customer.addOrder(order);
-
-        customer.performUserSpecificAction();
-        System.out.println("Order History: " + customer.getOrderHistory());
-        System.out.println("Preferences: " + customer.getPreferences());
-    }
 }

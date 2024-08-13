@@ -12,6 +12,9 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 
 public class ClientApp implements Runnable {
     private Socket clientSocket;
@@ -21,41 +24,122 @@ public class ClientApp implements Runnable {
     private String serverAddress;
     private int port;
     private boolean running;
+    // Queues for requests and responses
+    private BlockingQueue<Map<String, Object>> requestQueue;
+    private BlockingQueue<Map<String, Object>> responseQueue;
+
 
     public ClientApp(String serverAddress, int port) {
         this.serverAddress = serverAddress;
         this.port = port;
         this.gson = new Gson();
+        this.requestQueue = new LinkedBlockingQueue<>();
+        this.responseQueue = new LinkedBlockingQueue<>(); // Initialize responseQueue
+
     }
 
     @Override
     public void run() {
-        try {
-            // Attempt to establish a connection to the server
-            System.out.println("Attempting to connect to the server at " + serverAddress + ":" + port);
-            clientSocket = new Socket(serverAddress, port);
-            out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            running = true;
+        while (!running) {
+            try {
+                System.out.println("Attempting to connect to the server at " + serverAddress + ":" + port);
+                clientSocket = new Socket(serverAddress, port);
+                out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                running = true;
+                System.out.println("Connected to the server at " + serverAddress + ":" + port);
 
-            System.out.println("Connected to the server at " + serverAddress + ":" + port);
-
-            // Main loop to handle incoming messages from the server
-            while (running) {
-                String serverMessage = in.readLine();
-                if (serverMessage != null) {
-                    handleServerMessage(serverMessage);
+                // Start processing requests
+                while (running) {
+                    Map<String, Object> request = requestQueue.take(); // Blocking call
+                    Map<String, Object> response = sendRequest(request);
+                    responseQueue.put(response); // Enqueue response
                 }
+            } catch (java.net.ConnectException e) {
+                System.err.println("Connection refused. Retrying in 5 seconds...");
+                try {
+                    Thread.sleep(5000); // Wait for 5 seconds before retrying
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Retry attempt interrupted");
+                    break;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                closeConnection();
+                break;
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            closeConnection();
         }
     }
 
+    public void addRequest(Map<String, Object> request) {
+        try {
+            requestQueue.put(request); // Add request to the queue
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public Map<String, Object> getResponse() {
+        return responseQueue.poll(); // Retrieve and remove the head of the response queue
+    }
+
+    private Map<String, Object> sendRequest(Map<String, Object> request) throws Exception {
+        if (out == null) {
+            System.out.println("Output stream is not initialized. Attempting to establish a connection...");
+            if (clientSocket == null || clientSocket.isClosed()) {
+                clientSocket = new Socket(serverAddress, port);
+                out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            }
+        }
+
+        if (out != null) {
+            String jsonRequest = gson.toJson(request);
+            System.out.println("Sending request: " + jsonRequest);
+            out.println(jsonRequest);
+
+            StringBuilder jsonResponseBuilder = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                jsonResponseBuilder.append(line);
+                if (line.endsWith("}")) { // Simple check for end of JSON object
+                    break;
+                }
+            }
+            String jsonResponse = jsonResponseBuilder.toString();
+            System.out.println("Received response: " + jsonResponse);
+
+            if (jsonResponse != null && jsonResponse.startsWith("{")) {
+                Type type = new TypeToken<Map<String, Object>>() {}.getType();
+                return gson.fromJson(jsonResponse, type);
+            } else {
+                System.out.println("Unexpected server response: " + jsonResponse);
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "Unexpected server response: " + jsonResponse);
+                return errorResponse;
+            }
+        } else {
+            System.out.println("Failed to initialize the output stream.");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Failed to establish connection.");
+            return errorResponse;
+        }
+    }
+
+    public void closeConnection() {
+        try {
+            running = false; // Stop the client loop
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                clientSocket.close();
+                System.out.println("Connection closed.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     // Handle messages received from the server
     private void handleServerMessage(String serverMessage) {
@@ -84,51 +168,6 @@ public class ClientApp implements Runnable {
         }
     }
 
-    private Map<String, Object> sendRequest(Map<String, Object> request) throws Exception {
-        if (out == null) {
-            System.out.println("Output stream is not initialized. Attempting to establish a connection...");
-            // Try to re-establish the connection if out is not initialized
-            if (clientSocket == null || clientSocket.isClosed()) {
-                clientSocket = new Socket(serverAddress, port);
-                out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            }
-        }
-
-        if (out != null) {
-            String jsonRequest = gson.toJson(request);
-            System.out.println("Sending request: " + jsonRequest);
-            out.println(jsonRequest);
-            StringBuilder jsonResponseBuilder = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                jsonResponseBuilder.append(line);
-                if (line.endsWith("}")) { // Simple check for end of JSON object
-                    break;
-                }
-            }
-            String jsonResponse = jsonResponseBuilder.toString();
-            System.out.println("Received response: " + jsonResponse);
-
-            if (jsonResponse != null && jsonResponse.startsWith("{")) {
-                Type type = new TypeToken<Map<String, Object>>() {
-                }.getType();
-                return gson.fromJson(jsonResponse, type);
-            } else {
-                System.out.println("Unexpected server response: " + jsonResponse);
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("success", false);
-                errorResponse.put("message", "Unexpected server response: " + jsonResponse);
-                return errorResponse;
-            }
-        } else {
-            System.out.println("Failed to initialize the output stream.");
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Failed to establish connection.");
-            return errorResponse;
-        }
-    }
 
     // Method to login a user
     public Map<String, Object> login(String username, String password) throws Exception {
@@ -166,7 +205,7 @@ public class ClientApp implements Runnable {
     }
 
     // Method to place an order
-    public Map<String, Object> placeOrder(String username, String password, String restaurantName, String items, String customerNote, String creditCardNumber, String expirationDate, String cvv) throws Exception {
+    public Map<String, Object> placeOrder(String username, String password, String restaurantName, List<Order.Item> items, String customerNote, boolean useSavedCard, String creditCardNumber, String expirationDate, String cvv, boolean sendHome, String address) throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "placeOrder");
         request.put("username", username);
@@ -174,12 +213,30 @@ public class ClientApp implements Runnable {
         request.put("restaurantName", restaurantName);
         request.put("items", items);
         request.put("customerNote", customerNote);
+        request.put("useSavedCard", String.valueOf(useSavedCard));
         request.put("creditCardNumber", creditCardNumber);
         request.put("expirationDate", expirationDate);
         request.put("cvv", cvv);
+        request.put("sendHome", String.valueOf(sendHome));
+        request.put("address", address);
         return sendRequest(request);
     }
-
+    public void placeOrderAsync(String username, String password, String restaurantName, List<Map<String, Object>> items, String customerNote, boolean useSavedCard, String creditCardNumber, String expirationDate, String cvv, boolean sendHome, String address) throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "placeOrder");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("restaurantName", restaurantName);
+        request.put("items", items);
+        request.put("customerNote", customerNote);
+        request.put("useSavedCard", String.valueOf(useSavedCard));
+        request.put("creditCardNumber", creditCardNumber);
+        request.put("expirationDate", expirationDate);
+        request.put("cvv", cvv);
+        request.put("sendHome", String.valueOf(sendHome));
+        request.put("address", address);
+        addRequest(request);
+    }
     // Method to update the restaurant menu with an image sent as Base64 encoded string
     public Map<String, Object> updateMenu(String username, String password, String restaurantName, String itemName, double price, String description, File imageFile, String action) throws Exception {
         Map<String, Object> request = new HashMap<>();
@@ -253,7 +310,19 @@ public class ClientApp implements Runnable {
             throw new Exception("Failed to search restaurants: " + response.get("message"));
         }
     }
+    // Method to search restaurants
+    public void searchRestaurantsAsync(String username, String password, String cuisine, String distance) throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getRestaurants");
+        request.put("username", username);
+        request.put("password", password);
+        String distanceValue = distance.replace("km", "");
+        request.put("distance", distanceValue);
+        request.put("cuisine", cuisine);
 
+        addRequest(request);
+
+    }
 
     // Method to get menu of a restaurant with item images
     public List<Map<String, Object>> getMenu(String restaurantName) throws Exception {
@@ -268,6 +337,14 @@ public class ClientApp implements Runnable {
         } else {
             throw new Exception("Failed to fetch menu: " + response.get("message"));
         }
+    }
+
+    public void getMenuAsync(String restaurantName) throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getMenu");
+        request.put("restaurantName", restaurantName);
+
+        addRequest(request);
     }
 
     // Method to mark an order as complete
@@ -294,19 +371,6 @@ public class ClientApp implements Runnable {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getAvailableCuisines");
         return sendRequest(request);
-    }
-
-    // Close the connection to the server
-    public void closeConnection() {
-        try {
-            running = false;  // Stop the client loop
-            if (clientSocket != null && !clientSocket.isClosed()) {
-                clientSocket.close();
-                System.out.println("Connection closed.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     // Change Password Method
@@ -369,6 +433,20 @@ public class ClientApp implements Runnable {
         }
     }
 
+
+    public Map<String, Object> signupDelivery(String username, String password, String address, String phoneNumber, String email, String token) throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "signupDelivery");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("address", address);
+        request.put("phoneNumber", phoneNumber);
+        request.put("email", email);
+        request.put("token", token);
+
+        return sendRequest(request);
+    }
+
     public static void main(String[] args) {
         try {
             // Create an instance of ClientApp
@@ -400,13 +478,20 @@ public class ClientApp implements Runnable {
             }
 
             System.out.println("All restaurants logged in successfully.");
-            List<Restaurant> restaurants = clientApp.searchRestaurants("e", "e", "All", "30km");
-            System.out.println("Restaurants: " + restaurants);
+            System.out.println(clientApp.sendRequest(jsonStringToMap(" {\"password\":\"e\",\"useSavedCard\":\"false\",\"cvv\":\"\",\"sendHome\":\"true\",\"address\":\"\",\"restaurantName\":\"restaurant1\",\"creditCardNumber\":\"000\",\"customerNote\":\"rrr\",\"type\":\"placeOrder\",\"items\":[{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item0.jpg\",\"price\":10.0,\"name\":\"Item0\",\"available\":true,\"description\":\"Description0\",\"quantity\":2},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item1.jpg\",\"price\":11.0,\"name\":\"Item1\",\"available\":true,\"description\":\"Description1\",\"quantity\":0},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item2.jpg\",\"price\":12.0,\"name\":\"Item2\",\"available\":true,\"description\":\"Description2\",\"quantity\":4},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item3.jpg\",\"price\":13.0,\"name\":\"Item3\",\"available\":true,\"description\":\"Description3\",\"quantity\":0},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item4.jpg\",\"price\":14.0,\"name\":\"Item4\",\"available\":true,\"description\":\"Description4\",\"quantity\":0},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item5.jpg\",\"price\":15.0,\"name\":\"Item5\",\"available\":true,\"description\":\"Description5\",\"quantity\":0},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item6.jpg\",\"price\":16.0,\"name\":\"Item6\",\"available\":true,\"description\":\"Description6\",\"quantity\":0},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item7.jpg\",\"price\":17.0,\"name\":\"Item7\",\"available\":true,\"description\":\"Description7\",\"quantity\":0},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item8.jpg\",\"price\":18.0,\"name\":\"Item8\",\"available\":true,\"description\":\"Description8\",\"quantity\":0},{\"photoUrl\":\"http://localhost:8080/menu_item_images/restaurant1_Item9.jpg\",\"price\":19.0,\"name\":\"Item9\",\"available\":true,\"description\":\"Description9\",\"quantity\":0}],\"username\":\"e\",\"expirationDate\":\"\"}")));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
+
+    public static Map<String,Object> jsonStringToMap(String jsonString) {
+        Type type = new TypeToken<Map<String, Object>>() {}.getType();
+        Gson gson = new Gson();
+        return gson.fromJson(jsonString, type);
+    }
+
+
 }
 

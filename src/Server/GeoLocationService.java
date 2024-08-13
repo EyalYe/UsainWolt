@@ -93,6 +93,25 @@ public class GeoLocationService {
         }
     }
 
+    public static boolean checkSmallDistance(String address1, String address2, double distance) {
+        GeoLocationService geoLocationService = new GeoLocationService();
+        try {
+            double[] coordinates1 = geoLocationService.getCoordinates(address1);
+            double[] coordinates2 = geoLocationService.getCoordinates(address2);
+            if (coordinates1 != null && coordinates2 != null) {
+                double lat1 = coordinates1[0];
+                double lon1 = coordinates1[1];
+                double lat2 = coordinates2[0];
+                double lon2 = coordinates2[1];
+                double calculatedDistance = geoLocationService.calculateDistance(lat1, lon1, lat2, lon2);
+                return calculatedDistance <= distance;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public static void main(String[] args) {
         GeoLocationService geoLocationService = new GeoLocationService();
 
@@ -129,4 +148,6 @@ public class GeoLocationService {
             e.printStackTrace();
         }
     }
+
+
 }

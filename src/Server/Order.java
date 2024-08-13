@@ -14,9 +14,10 @@ public class Order {
     private String restaurantName;
     private String status; // e.g., "Pending", "In Progress", "Delivered"
     private String customerNote;
+    private String address;
 
     // Constructor
-    public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote) {
+    public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote, String address) {
         this.orderId = orderId;
         this.orderDate = orderDate;
         this.items = new ArrayList<>(items);
@@ -25,6 +26,7 @@ public class Order {
         this.restaurantName = restaurantName;
         this.status = status;
         this.customerNote = customerNote;
+        this.address = address;
     }
 
     // Constructor from string
@@ -36,9 +38,10 @@ public class Order {
         this.restaurantName = parts[3];
         this.status = parts[4];
         this.customerNote = parts[5];
+        this.address = parts[6];
         this.items = new ArrayList<>();
 
-        for (int i = 6; i < parts.length; i++) {
+        for (int i = 7; i < parts.length; i++) {
             this.items.add(new Item(parts[i]));
         }
 
@@ -114,6 +117,7 @@ public class Order {
         private boolean available;
         private String photoUrl;
         private String description;
+        private int quantity;
 
         // Constructor
         public Item(String name, double price) {
@@ -123,12 +127,12 @@ public class Order {
         }
 
         // Constructor with all fields
-        public Item(String name, double price, String photoUrl, String description) {
+        public Item(String name, double price, String photoUrl, String description, boolean available) {
             this.name = name;
             this.price = price;
             this.photoUrl = photoUrl;
             this.description = description;
-            this.available = true;
+            this.available = available;
         }
 
         // Constructor from string
@@ -139,6 +143,7 @@ public class Order {
             this.available = Boolean.parseBoolean(parts[2]);
             this.photoUrl = parts[3];
             this.description = parts[4];
+            this.quantity = parts.length > 5 ? Integer.parseInt(parts[5]) : 0;
         }
 
         // Getters and Setters
@@ -176,7 +181,7 @@ public class Order {
 
         @Override
         public String toString() {
-            return name + ";" + price + ";" + available + ";" + photoUrl + ";" + description;
+            return name + ";" + price + ";" + available + ";" + photoUrl + ";" + description + ";" + quantity;
         }
 
         public void setPrice(double price) {
@@ -241,7 +246,8 @@ public class Order {
                 .append(customerName).append(",")
                 .append(restaurantName).append(",")
                 .append(status).append(",")
-                .append(customerNote);
+                .append(customerNote).append(",")
+                .append(address);
 
         for (Item item : items) {
             sb.append(",").append(item.toString());
@@ -250,38 +256,5 @@ public class Order {
         return sb.toString();
     }
 
-    // Main method for testing purposes
-    public static void main(String[] args) {
-        List<Item> initialItems = List.of(
-                new Item("Pizza", 12.99, "pizza.jpg", "Delicious cheese pizza"),
-                new Item("Burger", 8.99, "burger.jpg", "Juicy beef burger"),
-                new Item("Salad", 5.99, "salad.jpg", "Fresh garden salad")
-        );
-        Order order = new Order(1, new Date(), initialItems, "John Doe", "Fast Food Inc.", "Pending", "Extra ketchup");
 
-        // Print initial order
-        order.printOrder();
-
-        // Add item
-        order.addItem("Soda", 2.50);
-        order.printOrder();
-
-        // Remove item
-        order.removeItem("Burger");
-        order.printOrder();
-
-        // Search items
-        System.out.println("Search results: " + order.searchItems("Sa"));
-
-        // Sort items
-        order.sortItems();
-        order.printOrder();
-
-        // Convert to string and back to object
-        String orderString = order.toString();
-        System.out.println("Order as String: " + orderString);
-
-        Order reconstructedOrder = new Order(orderString);
-        reconstructedOrder.printOrder();
-    }
 }

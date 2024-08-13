@@ -10,3 +10,4 @@ Restaurant,restaurant8,57f3ebab63f156fd8f776ba645a55d96360a15eeffc8b0e4afe4c05fa
 Restaurant,restaurant9,9323dd6786ebcbf3ac87357cc78ba1abfda6cf5e55cd01097b90d4a286cac90e,Bialik St Jerusalem,03-1234568,restaurant9@example.com,03-6543218,Japanese,0.0,true
 Restaurant,restaurant10,aa4a9ea03fcac15b5fc63c949ac34e7b0fd17906716ac3b8e58c599cdc5a52f0,Shenkin St Tel Aviv,03-1234569,restaurant10@example.com,03-6543219,Mexican,0.0,true
 Customer,e,3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea,jerusalem,231,weq,,,
+Customer,b,3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d,jerusalem,12387,ee,,,

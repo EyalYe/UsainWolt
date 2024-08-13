@@ -1,6 +1,7 @@
 package Server;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
@@ -45,6 +46,9 @@ public class ClientHandler implements Runnable {
                         case "signupRestaurant":
                             response = handleSignupRestaurant(request);
                             break;
+                        case "signupDelivery":
+                            response = handleSignupDelivery(request);
+                            break;
                         case "getRestaurants":
                             response = handleGetRestaurants(request);
                             break;
@@ -88,7 +92,6 @@ public class ClientHandler implements Runnable {
                             response = handleDisconnect(request);
                             break;
                         case "uploadProfilePicture":
-                            // Assuming profile picture data is sent after the request type in a binary format
                             response = handleProfilePictureUpload(request);
                             break;
                         case "getImage":
@@ -121,7 +124,7 @@ public class ClientHandler implements Runnable {
     }
 
     private Map<String, String> parseRequest(String inputLine) {
-        Type type = new TypeToken<HashMap<String, String>>() {}.getType();
+        Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
         return gson.fromJson(inputLine, type);
     }
 
@@ -129,6 +132,10 @@ public class ClientHandler implements Runnable {
         Map<String, String> response = new HashMap<>();
         response.put("success", String.valueOf(success));
         response.put("message", message);
+        StackTraceElement[] stacktrace = Thread.currentThread().getStackTrace();
+        StackTraceElement e = stacktrace[2];//maybe this number needs to be corrected
+        String methodName = e.getMethodName();
+        response.put("type" , methodName);
         return gson.toJson(response);
     }
 
@@ -224,7 +231,18 @@ public class ClientHandler implements Runnable {
                     }
                     ServerApp.loggedInRestaurants.add((RestaurantUser) user);
                 }
-                return createResponse(true, "Login successful");
+                if (user instanceof CustomerUser) {
+                    return createResponse(true, "Logged in as customer");
+                }
+                if (user instanceof DeliveryUser) {
+                    return createResponse(true, "Logged in as delivery");
+                }
+                if (user instanceof RestaurantUser) {
+                    return createResponse(true, "Logged in as restaurant");
+                }
+                if (user instanceof AdminUser) {
+                    return createResponse(true, "Logged in as admin");
+                }
             }
         }
 
@@ -254,6 +272,72 @@ public class ClientHandler implements Runnable {
         ServerApp.addUser(newUser);
 
         return createResponse(true, "Customer signup successful");
+    }
+
+    private String handleSignupDelivery(Map<String, String> params) throws IOException {
+        String username = params.get("username");
+        String password = params.get("password");
+        String address = params.get("address").replace(",", ""); // Remove commas from the address
+        String phoneNumber = params.get("phoneNumber");
+        String email = params.get("email");
+        String Token = params.get("Token");
+
+        if (!geoLocationService.validateAddress(address)) {
+            return createResponse(false, "Invalid address");
+        }
+
+        if (usernameExists(username)) {
+            return createResponse(false, "Username already exists");
+        }
+
+        if (emailExists(email)) {
+            return createResponse(false, "Email already exists");
+        }
+
+        if (!checkToken(Token)) {
+            return createResponse(false, "Token already exists");
+        }
+
+        CustomerUser newUser = new CustomerUser(username, hashPassword(password), address, phoneNumber, email);
+        ServerApp.addUser(newUser);
+
+        return createResponse(true, "Customer signup successful");
+    }
+
+    private boolean checkToken(String token)
+    {
+        File file = new File("Token.txt");
+        List<String> lines = new ArrayList<>();
+        boolean tokenFound = false;
+
+        try {
+            Scanner scanner = new Scanner(file);
+
+            // Read all lines and store them, skipping the line with the token
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.equals(token)) {
+                    tokenFound = true;
+                    continue; // Skip adding this line to the list
+                }
+                lines.add(line);
+            }
+            scanner.close();
+
+            // Write all lines back to the file (excluding the deleted token)
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                for (String l : lines) {
+                    writer.println(l);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return tokenFound;
     }
 
     private String handleSignupRestaurant(Map<String, String> params) throws IOException {
@@ -291,18 +375,25 @@ public class ClientHandler implements Runnable {
         String username = params.get("username");
         String password = params.get("password");
 
-        // Authenticate the user
-        if (!authenticateUser(params)) {
-            return createResponse(false, "Authentication failed");
+        User user = null;
+
+        for (User user_ : ServerApp.allUsers) {
+            if (user_.getUserName().equals(username) && user_.checkPassword(hashPassword(password))) {
+                user = user_;
+            }
+        }
+
+        if(user == null) {
+            return createResponse(false, "Authentication failed or user not found");
         }
 
         // Get user's address for calculating distance
-        String customerAddress = getUserNameAddress(username);
         String maxDistanceStr = params.get("distance");
         String cuisine = params.get("cuisine");
 
         // Get customer coordinates
-        double[] customerCoordinates = geoLocationService.getCoordinates(customerAddress);
+
+        double[] customerCoordinates = user.getCoordinates();
         if (customerCoordinates == null) {
             return createResponse(false, "Unable to determine customer location");
         }
@@ -315,7 +406,7 @@ public class ClientHandler implements Runnable {
 
         for (RestaurantUser restaurant : ServerApp.loggedInRestaurants) {
             // Get the restaurant's coordinates
-            double[] restaurantCoordinates = geoLocationService.getCoordinates(restaurant.getAddress());
+            double[] restaurantCoordinates = restaurant.getCoordinates();
             if (restaurantCoordinates != null) {
                 // Calculate the distance between customer and restaurant
                 double distance = geoLocationService.calculateDistance(
@@ -411,9 +502,13 @@ public class ClientHandler implements Runnable {
         String username = params.get("username");
         String password = params.get("password");
         String restaurantName = params.get("restaurantName");
-        String items = params.get("items");
+        System.out.println("okay here");
+        Object items = params.get("items");
+        System.out.println("still here");
         String customerNote = params.get("customerNote");
-        String status = params.get("status");
+        String status = "Pending"; // Default status
+        boolean isSendHome = params.get("sendHome").equalsIgnoreCase("true");
+        String address = params.get("address");
 
         CustomerUser customer = null;
         if (authenticateUser(params)) {
@@ -423,6 +518,12 @@ public class ClientHandler implements Runnable {
                     break;
                 }
             }
+        }
+
+        if (isSendHome)
+        {
+            assert customer != null;
+            address = customer.getAddress();
         }
 
         if (customer == null) {
@@ -458,14 +559,28 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Credit card authentication failed");
         }
 
+        if(!geoLocationService.validateAddress(address)){
+            return createResponse(false, "Invalid address");
+        }
+
+        System.out.println("Address: " + address);
+        System.out.println("Restaurant Address: " + restaurant.getAddress());
+
+        if(!GeoLocationService.checkSmallDistance(address, restaurant.getAddress(), 30.1)){
+            return createResponse(false, "Restaurant is too far away");
+        }
+
         int orderId = ++orderCounter;
-        List<Order.Item> itemList = ServerApp.parseItems(items);
-        Order order = new Order(orderId, new Date(), itemList, username, restaurantName, status, customerNote);
+        // Properly handling the JSON parsing
+        List<Order.Item> itemsList = (ArrayList<Order.Item>) gson.fromJson(gson.toJson(items), new TypeToken<List<Order.Item>>(){}.getType());
+
+        Order order = new Order(orderId, new Date(), itemsList, customer.getUserName(), restaurantName, status, customerNote, address);
 
         customer.addOrder(order);
         restaurant.addOrder(order);
 
         ServerApp.saveOrder(order);
+
 
         return createResponse(true, "Order placed successfully with ID: " + orderId);
     }
@@ -475,6 +590,12 @@ public class ClientHandler implements Runnable {
         String password = params.get("password");
         String restaurantName = params.get("restaurantName");
         String itemName = params.get("itemName");
+        boolean isAvailable = true;
+        try{
+            isAvailable = params.get("isAvailable").equalsIgnoreCase("true");
+        }catch (Exception e){
+            isAvailable = true;
+        }
         boolean isRemove = params.get("action").equalsIgnoreCase("remove");
         double price = 0.0;
         String description = null;
@@ -552,9 +673,10 @@ public class ClientHandler implements Runnable {
                 existingItem.setPrice(price);
                 existingItem.setDescription(description);
                 existingItem.setPhotoUrl(photoUrl);
+                existingItem.setAvailable(isAvailable);
             } else {
                 // Add the new item if it doesn't exist
-                Order.Item newItem = new Order.Item(itemName, price, photoUrl, description);
+                Order.Item newItem = new Order.Item(itemName, price, photoUrl, description, isAvailable);
                 restaurant.addMenuItem(newItem);
             }
 
@@ -562,9 +684,6 @@ public class ClientHandler implements Runnable {
             return createResponse(true, "Menu item added/updated successfully");
         }
     }
-
-
-
 
     private String handleUpdateCreditCard(Map<String, String> params) {
         String username = params.get("username");

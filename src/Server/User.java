@@ -6,6 +6,7 @@ public abstract class User {
     private String address;
     private String phoneNumber;
     private String email;
+    private double[] location = new double[2]; // [latitude, longitude
 
     public User(String userName, String hashedPassword, String address, String phoneNumber, String email) {
         this.userName = userName;
@@ -13,6 +14,12 @@ public abstract class User {
         this.address = address;
         this.phoneNumber = phoneNumber;
         this.email = email;
+        GeoLocationService geoLocationService = new GeoLocationService();
+        try {
+            this.location = geoLocationService.getCoordinates(address);
+        } catch (Exception e) {
+            System.out.println("Error getting coordinates for address: " + address);
+        }
     }
 
     public User(String csvLine) {
@@ -80,5 +87,9 @@ public abstract class User {
     // Main method for testing purposes
     public static void main(String[] args) {
         // Testing is not possible on abstract class. Create instances of subclasses to test.
+    }
+
+    public double[] getCoordinates() {
+        return location;
     }
 }

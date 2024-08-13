@@ -11,13 +11,14 @@ public class ServerApp {
     private static final String USERS_FILE = "users.csv";
     private static final String MENUS_FILE = "menus.csv";
     private static final String ORDERS_FILE = "orders.csv";
-    private static final String[] RESTAURANT_CUISINES = {"American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian","All"};
+    private static final String[] RESTAURANT_CUISINES = {"All","American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
     public static final String SERVER_IP = "localhost";
     private static final int SERVER_PORT = 12345;
     public static final int IMAGE_SERVER_PORT = 8080;
 
     public static List<User> allUsers = new ArrayList<>();
     public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
+    private static List<Order> allOrders = new ArrayList<>();
 
     public static void main(String[] args) {
         try {
@@ -32,7 +33,6 @@ public class ServerApp {
 
             // Create the files if they don't exist
             createFileIfNotExists(USERS_FILE);
-            createFileIfNotExists(MENUS_FILE);
             createFileIfNotExists(ORDERS_FILE);
 
             // Load data from CSV files
