@@ -6,7 +6,7 @@ public abstract class User {
     private String address;
     private String phoneNumber;
     private String email;
-    private double[] location = new double[2]; // [latitude, longitude
+    private double[] location = new double[2]; // [latitude, longitude]
 
     public User(String userName, String hashedPassword, String address, String phoneNumber, String email) {
         this.userName = userName;
@@ -29,6 +29,12 @@ public abstract class User {
         this.address = fields[3];
         this.phoneNumber = fields[4];
         this.email = fields[5];
+        GeoLocationService geoLocationService = new GeoLocationService();
+        try {
+            this.location = geoLocationService.getCoordinates(address);
+        } catch (Exception e) {
+            System.out.println("Error getting coordinates for address: " + address);
+        }
     }
 
     // Getters and Setters
@@ -55,6 +61,12 @@ public abstract class User {
 
     public void setAddress(String address) {
         this.address = address;
+        GeoLocationService geoLocationService = new GeoLocationService();
+        try {
+            this.location = geoLocationService.getCoordinates(address);
+        } catch (Exception e) {
+            System.out.println("Error getting coordinates for address: " + address);
+        }
     }
 
     public String getPhoneNumber() {
@@ -76,6 +88,7 @@ public abstract class User {
     public boolean checkPassword(String password) {
         return hashedPassword.equals(password);
     }
+
 
     public String toString() {
         return userName + "," + hashedPassword + "," + address + "," + phoneNumber + "," + email;

@@ -202,6 +202,65 @@ public class ClientHandler implements Runnable {
         return false;
     }
 
+    private int incrementOrderId() {
+        String idFilePath = "order_id.txt";
+        File idFile = new File(idFilePath);
+        if (!idFile.exists()) {
+            try (PrintWriter writer = new PrintWriter(idFilePath)) {
+                writer.println("0");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        int orderID = 0;
+        try (BufferedReader reader = new BufferedReader(new FileReader(idFilePath)) ) {
+            orderID = Integer.parseInt(reader.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (PrintWriter writer = new PrintWriter(idFilePath)) {
+            writer.println(orderID + 1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return orderID;
+    }
+
+    private boolean checkToken(String token) {
+        File file = new File("Token.txt");
+        List<String> lines = new ArrayList<>();
+        boolean tokenFound = false;
+
+        try {
+            Scanner scanner = new Scanner(file);
+
+            // Read all lines and store them, skipping the line with the token
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (line.equals(token)) {
+                    tokenFound = true;
+                    continue; // Skip adding this line to the list
+                }
+                lines.add(line);
+            }
+            scanner.close();
+
+            // Write all lines back to the file (excluding the deleted token)
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                for (String l : lines) {
+                    writer.println(l);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return tokenFound;
+    }
+
     public void saveProfilePicture(InputStream pictureInputStream, String username) throws IOException {
         String directoryPath = "profile_pictures/";
         File directory = new File(directoryPath);
@@ -302,42 +361,6 @@ public class ClientHandler implements Runnable {
         ServerApp.addUser(newUser);
 
         return createResponse(true, "Customer signup successful");
-    }
-
-    private boolean checkToken(String token)
-    {
-        File file = new File("Token.txt");
-        List<String> lines = new ArrayList<>();
-        boolean tokenFound = false;
-
-        try {
-            Scanner scanner = new Scanner(file);
-
-            // Read all lines and store them, skipping the line with the token
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                if (line.equals(token)) {
-                    tokenFound = true;
-                    continue; // Skip adding this line to the list
-                }
-                lines.add(line);
-            }
-            scanner.close();
-
-            // Write all lines back to the file (excluding the deleted token)
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                for (String l : lines) {
-                    writer.println(l);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return tokenFound;
     }
 
     private String handleSignupRestaurant(Map<String, String> params) throws IOException {
@@ -444,7 +467,6 @@ public class ClientHandler implements Runnable {
         return createResponse(true, gson.toJson(restaurantInfoList));
     }
 
-
     private String getUserNameAddress(String username) {
         for (User user : ServerApp.allUsers) {
             if (user.getUserName().equals(username)) {
@@ -494,8 +516,6 @@ public class ClientHandler implements Runnable {
         return createResponse(false, "Restaurant not found");
     }
 
-
-    private static int orderCounter = 0; // Counter for the number of orders
     private CreditCardAuthenticator creditCardAuthenticator = new CreditCardAuthenticator(); // Initialize the mock authenticator
 
     private String handlePlaceOrder(Map<String, String> params) throws IOException {
@@ -570,7 +590,7 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Restaurant is too far away");
         }
 
-        int orderId = ++orderCounter;
+        int orderId = incrementOrderId();
         // Properly handling the JSON parsing
         List<Order.Item> itemsList = (ArrayList<Order.Item>) gson.fromJson(gson.toJson(items), new TypeToken<List<Order.Item>>(){}.getType());
 
@@ -579,7 +599,9 @@ public class ClientHandler implements Runnable {
         customer.addOrder(order);
         restaurant.addOrder(order);
 
-        ServerApp.saveOrder(order);
+        if (!ServerApp.saveOrder(order)) {
+            return createResponse(false, "Failed to save order");
+        }
 
 
         return createResponse(true, "Order placed successfully with ID: " + orderId);
@@ -728,13 +750,15 @@ public class ClientHandler implements Runnable {
         if (authenticatedUser == null) {
             return createResponse(false, "Authentication failed or user not found");
         }
-
         if (authenticatedUser instanceof CustomerUser) {
-            return createResponse(true, gson.toJson(((CustomerUser) authenticatedUser).getOrderHistory()));
+            return createResponse( true, gson.toJson(ServerApp.getOrdersFromCSV("customer_orders.csv", authenticatedUser.getUserName())));
         } else if (authenticatedUser instanceof RestaurantUser) {
-            return createResponse(true, gson.toJson(((RestaurantUser) authenticatedUser).getOrders()));
+            return createResponse(true, gson.toJson(ServerApp.getOrdersFromCSV("restaurant_orders.csv", authenticatedUser.getUserName())));
+        }  else if (authenticatedUser instanceof DeliveryUser) {
+            return createResponse(true, gson.toJson(ServerApp.getOrdersFromCSV("delivery_orders.csv", authenticatedUser.getUserName())));
+        } else {
+            return createResponse(false, "User type not recognized");
         }
-        return createResponse(false, "User type not recognized");
     }
 
     private String handleMarkOrderComplete(Map<String, String> params) {
@@ -926,7 +950,6 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Failed to save profile picture: " + e.getMessage());
         }
     }
-
 
     private String handleGetImage(Map<String, String> params) {
         String imagePath = params.get("imagePath"); // The path sent by the client, e.g., "profile_pictures/restaurant_name.jpg"

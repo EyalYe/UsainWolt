@@ -100,7 +100,11 @@ public class CustomerUser extends User {
         } catch (ArrayIndexOutOfBoundsException e) {
             this.creditCard = new CreditCard("", "", "");
         }
+        try{
         this.inAppBalance = fields[9].equals("") ? 0.0 : Double.parseDouble(fields[9]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            this.inAppBalance = 0.0;
+        }
     }
 
     // Getters and Setters for order history and preferences

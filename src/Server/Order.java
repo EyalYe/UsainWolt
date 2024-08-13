@@ -15,6 +15,7 @@ public class Order {
     private String status; // e.g., "Pending", "In Progress", "Delivered"
     private String customerNote;
     private String address;
+    private String deliveryPerson;
 
     // Constructor
     public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote, String address) {
@@ -27,6 +28,7 @@ public class Order {
         this.status = status;
         this.customerNote = customerNote;
         this.address = address;
+        this.deliveryPerson = null;
     }
 
     // Constructor from string
@@ -46,6 +48,7 @@ public class Order {
         }
 
         this.totalPrice = calculateTotalPrice();
+        this.deliveryPerson = null;
     }
 
     // Getters and Setters
@@ -108,6 +111,14 @@ public class Order {
 
     public void setCustomerNote(String customerNote) {
         this.customerNote = customerNote;
+    }
+
+    public String getDeliveryPerson() {
+        return deliveryPerson;
+    }
+
+    public void setDeliveryPerson(String deliveryPerson) {
+        this.deliveryPerson = deliveryPerson;
     }
 
     public boolean isDelivered() {

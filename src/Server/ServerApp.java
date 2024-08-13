@@ -3,23 +3,18 @@ package Server;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServerApp {
     private static final String USERS_FILE = "users.csv";
-    private static final String MENUS_FILE = "menus.csv";
-    private static final String ORDERS_FILE = "orders.csv";
-    private static final String[] RESTAURANT_CUISINES = {"All","American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
+    private static final String[] RESTAURANT_CUISINES = {"All", "American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
     public static final String SERVER_IP = "localhost";
     private static final int SERVER_PORT = 12345;
     public static final int IMAGE_SERVER_PORT = 8080;
 
     public static List<User> allUsers = new ArrayList<>();
     public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
-    private static List<Order> deliveredOrders = new ArrayList<>();
-    private static List<Order> pendingOrders = new ArrayList<>();
 
     public static void main(String[] args) {
         try {
@@ -34,12 +29,17 @@ public class ServerApp {
 
             // Create the files if they don't exist
             createFileIfNotExists(USERS_FILE);
-            createFileIfNotExists(ORDERS_FILE);
+            String[] directories = {"restaurant_orders", "customer_orders", "delivered_orders", "menu_data", "menu_item_images", "profile_pictures"};
+            for (String directory : directories) {
+                File dir = new File(directory);
+                if (!dir.exists()) {
+                    dir.mkdir();
+                }
+            }
 
             // Load data from CSV files
             loadUsersFromCSV();
             loadMenusFromCSV();
-            loadOrdersFromCSV();
 
             // Set up server socket
             ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
@@ -123,70 +123,6 @@ public class ServerApp {
         }
     }
 
-    private static void loadOrdersFromCSV() throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(ORDERS_FILE));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            Order order = new Order(line);
-            if (order.isDelivered()) {
-                if (!deliveredOrders.contains(order)) {
-                    deliveredOrders.add(order);
-                }
-                pendingOrders.remove(order);
-                continue;
-            }
-            for (User user : allUsers) {
-                if (user.getUserName().equals(order.getCustomerName()) && user instanceof CustomerUser) {
-                        ((CustomerUser) user).addOrder(order);
-                } else if (user instanceof RestaurantUser && order.getRestaurantName().equals(user.getUserName())) {
-                    if(loggedInRestaurants.contains(user)){
-                        ((RestaurantUser) user).addOrder(order);
-                        pendingOrders.add(order);
-                    } else {
-                        order.setStatus("Cancelled");
-                        deliveredOrders.add(order);
-
-                    }
-                }
-            }
-        }
-        reader.close();
-        handleDeliveredOrders();
-    }
-
-    private static void handleDeliveredOrders() {
-        File orders = new File("orders.csv");
-
-        for (Order order : deliveredOrders) {
-            String path = "orders_data/" + order.getCustomerName() + ".csv";
-            File file = new File(path);
-
-            if (order.getStatus().equals("Cancelled")) {
-                CustomerUser customer = getCustomer(order.getCustomerName());
-                customer.addBalance(order.getTotalPrice());
-            } else {
-                RestaurantUser restaurant = getRestaurant(order.getRestaurantName());
-                restaurant.addRevenue(order.getTotalPrice());
-            }
-
-            if (!file.exists()) {
-                try {
-                    file.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                writer.write(order.toString());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            deliveredOrders.remove(order);
-        }
-    }
-
     public static void addUser(User user) throws IOException {
         allUsers.add(user);
         BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, true));
@@ -213,31 +149,6 @@ public class ServerApp {
             }
         }
     }
-
-    public static User getUser(String username) {
-        for (User user : allUsers) {
-            if (user.getUserName().equals(username)) {
-                return user;
-            }
-        }
-        return null;
-    }
-
-    public static CustomerUser getCustomer(String username) {
-        return (CustomerUser) getUser(username);
-    }
-
-    public static RestaurantUser getRestaurant(String username) {
-        return (RestaurantUser) getUser(username);
-    }
-
-    public static void saveOrder(Order order) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(ORDERS_FILE, true));
-        writer.write(order.toString() + "\n");
-        writer.close();
-        pendingOrders.add(order);
-    }
-
 
     public static void addLoggedInRestaurant(RestaurantUser restaurant) {
         loggedInRestaurants.add(restaurant);
@@ -282,5 +193,118 @@ public class ServerApp {
             itemList.add(new Order.Item(itemString));
         }
         return itemList;
+    }
+
+    // Order handling
+    public static boolean saveOrder(Order order) throws IOException {
+        return updateOrderInCSV(order);
+    }
+
+    private static boolean updateOrderInCSV(Order order) {
+        String status = order.getStatus();
+        String restaurantPath = "restaurant_orders/" + order.getRestaurantName() + ".csv";
+        String customerPath = "customer_orders/" + order.getCustomerName() + ".csv";
+        String deliveredPath = "delivered_orders/" + order.getDeliveryPerson() + ".csv";
+        File restaurantFile = new File(restaurantPath);
+        File deliveredFile = new File(deliveredPath);
+        File customerFile = new File(customerPath);
+        switch (status) {
+            case "Pending":
+                addLineNotExists(restaurantFile, order);
+                return addLineNotExists(customerFile, order);
+            case "Ready":
+                removeLineIfExists(restaurantFile, order);
+                removeLineIfExists(customerFile, order);
+                addLineNotExists(customerFile, order);
+                return addLineNotExists(deliveredFile, order);
+            case "Delivered":
+                removeLineIfExists(restaurantFile, order);
+                removeLineIfExists(customerFile, order);
+                removeLineIfExists(deliveredFile, order);
+                return addLineNotExists(customerFile, order);
+            case "Cancelled":
+                removeLineIfExists(restaurantFile, order);
+                removeLineIfExists(customerFile, order);
+                removeLineIfExists(deliveredFile, order);
+                return addLineNotExists(customerFile, order);
+            default:
+                return false;
+        }
+    }
+
+    private static boolean addLineNotExists(File file, Order order) {
+        boolean exists = false;
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String currentLine;
+            while ((currentLine = reader.readLine()) != null) {
+                Order currentOrder = new Order(currentLine);
+                if (currentOrder.getOrderId() == order.getOrderId()) {
+                    exists = true;
+                    break;
+                }
+            }
+            reader.close();
+            if (!exists) {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+                writer.write(order.toString() + "\n");
+                writer.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return !exists;
+    }
+
+    private static boolean removeLineIfExists(File file, Order order) {
+        boolean exists = false;
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String currentLine;
+            List<String> lines = new ArrayList<>();
+            while ((currentLine = reader.readLine()) != null) {
+                Order currentOrder = new Order(currentLine);
+                if (!(currentOrder.getOrderId() == order.getOrderId())) {
+                    lines.add(currentLine);
+                } else {
+                    exists = true;
+                }
+            }
+            reader.close();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            for (String line : lines) {
+                writer.write(line + "\n");
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return !exists;
+    }
+
+    public static Object getOrdersFromCSV(String directory, String username) {
+        List<Order> orders = new ArrayList<>();
+        File file = new File(directory + "/" + username + ".csv");
+        if (!file.exists()) {
+            return orders;
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                orders.add(new Order(line));
+            }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return orders;
     }
 }
