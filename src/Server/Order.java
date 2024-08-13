@@ -110,6 +110,10 @@ public class Order {
         this.customerNote = customerNote;
     }
 
+    public boolean isDelivered() {
+        return status.equals("Delivered");
+    }
+
     // Inner class to represent an item with its properties
     public static class Item {
         private String name;

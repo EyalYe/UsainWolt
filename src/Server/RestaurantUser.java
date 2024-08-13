@@ -182,4 +182,7 @@ public class RestaurantUser extends User {
         return "Restaurant," + super.toString() + "," + businessPhoneNumber + "," + cuisine + "," + revenue + "," + hasProfilePicture;
     }
 
+    public void addRevenue(double totalPrice) {
+        revenue += totalPrice;
+    }
 }

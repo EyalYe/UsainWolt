@@ -10,6 +10,11 @@ public class CustomerUser extends User {
     private List<Order> orderHistory;
     private Map<String, String> preferences;
     private CreditCard creditCard;
+    private double inAppBalance;
+
+    public void addBalance(double totalPrice) {
+        inAppBalance += totalPrice;
+    }
 
     // Inner class for handling credit card information
     class CreditCard {
@@ -81,6 +86,7 @@ public class CustomerUser extends User {
         this.orderHistory = new ArrayList<>();
         this.preferences = new HashMap<>();
         this.creditCard = new CreditCard("", "", "");
+        this.inAppBalance = 0.0;
     }
 
     // Constructor for creating a customer from a CSV line
@@ -94,6 +100,7 @@ public class CustomerUser extends User {
         } catch (ArrayIndexOutOfBoundsException e) {
             this.creditCard = new CreditCard("", "", "");
         }
+        this.inAppBalance = fields[9].equals("") ? 0.0 : Double.parseDouble(fields[9]);
     }
 
     // Getters and Setters for order history and preferences
@@ -154,7 +161,7 @@ public class CustomerUser extends User {
 
     @Override
     public String toString() {
-        return "Customer," + super.toString() + "," + creditCard.getCreditCardNumber() + "," + creditCard.getExpirationDate() + "," + creditCard.getCvv();
+        return "Customer," + super.toString() + "," + creditCard.getCreditCardNumber() + "," + creditCard.getExpirationDate() + "," + creditCard.getCvv() + "," + inAppBalance;
     }
 
 
