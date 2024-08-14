@@ -80,7 +80,8 @@ public class ServerApp {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     // Each line is expected to represent an item in the menu
-                    restaurantUser.addMenuItem(new Order.Item(line));
+                    String[] parts = line.split(";");
+                    restaurantUser.addMenuItem(new Order.Item(parts[0], Double.parseDouble(parts[1]), SERVER_IP+":"+IMAGE_SERVER_PORT+"/menu_item_images/" + restaurantUsername + "_" + parts[0] + ".jpg", parts[4],  true));
                 }
             }
         }
