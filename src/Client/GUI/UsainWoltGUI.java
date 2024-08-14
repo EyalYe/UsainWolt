@@ -141,6 +141,8 @@ public class UsainWoltGUI implements LogoutCallback {
                 Type menuListType = new TypeToken<List<Map<String, Object>>>(){}.getType();
                 if (customerGUI != null)
                     customerGUI.showMenu(gson.fromJson((String) response.get("message"), menuListType));
+                if (restaurantGUI != null)
+                    restaurantGUI.showMenu(gson.fromJson((String) response.get("message"), menuListType));
                 break;
             case "handlePlaceOrder":
                 if ("true".equals(response.get("success"))) {
@@ -156,14 +158,53 @@ public class UsainWoltGUI implements LogoutCallback {
                 List<Order> orders = gson.fromJson((String) response.get("message"), orderListType);
                 if (customerGUI != null)
                     customerGUI.showOrderHistoryFrame(orders);
+                if (restaurantGUI != null)
+                    restaurantGUI.showOrdersFrame(orders);
                 break;
                 case "handleUpdateParameter":
                 if ("true".equals(response.get("success"))) {
                     JOptionPane.showMessageDialog(frame, "Parameter updated successfully!");
+                    if (restaurantGUI != null)
+                        restaurantGUI.showRestaurantSettings();
                 } else {
                     JOptionPane.showMessageDialog(frame, "Error updating parameter: " + response.get("message"));
                 }
-
+                break;
+            case "handleMarkOrderReadyForPickup":
+                if (!"true".equals(response.get("success"))) {
+                    JOptionPane.showMessageDialog(frame, "Error marking order as ready for pickup: " + response.get("message"));
+                }
+                if (restaurantGUI != null)
+                    restaurantGUI.showViewOrders();
+                break;
+            case "handleDisableMenuItems":
+                if (!"true".equals(response.get("success"))) {
+                    JOptionPane.showMessageDialog(frame, "Error disabling menu items: " + response.get("message"));
+                }
+                if (restaurantGUI != null)
+                    restaurantGUI.showManageMenu();
+                break;
+            case "handleEnableMenuItems":
+                if (!"true".equals(response.get("success"))) {
+                    JOptionPane.showMessageDialog(frame, "Error enabling menu items: " + response.get("message"));
+                }
+                if (restaurantGUI != null)
+                    restaurantGUI.showManageMenu();
+                break;
+            case "handleUpdateMenuItem":
+                if (!"true".equals(response.get("success"))) {
+                    JOptionPane.showMessageDialog(frame, "Error updating menu item: " + response.get("message"));
+                }
+                if (restaurantGUI != null)
+                    restaurantGUI.showManageMenu();
+                break;
+            case "handleProfilePictureUpload":
+                if (!"true".equals(response.get("success"))) {
+                    JOptionPane.showMessageDialog(frame, "Error uploading profile picture: " + response.get("message"));
+                }
+                if (restaurantGUI != null)
+                    restaurantGUI.showRestaurantSettings();
+                break;
         }
     }
 
@@ -280,7 +321,6 @@ public class UsainWoltGUI implements LogoutCallback {
             JLabel loadingLabel = new JLabel("Loading, please wait...", SwingConstants.CENTER);
             loadingDialog.add(loadingLabel, BorderLayout.CENTER);
 
-            // Optionally, you can add a loading icon or animation
             // loadingLabel.setIcon(new ImageIcon("path/to/loading.gif"));
 
             // Center the dialog on the parent frame
@@ -298,7 +338,7 @@ public class UsainWoltGUI implements LogoutCallback {
             SwingUtilities.invokeLater(() -> {
                 loadingDialog.setVisible(false);
                 loadingDialog.dispose();
-                loadingDialog = null; // Reset the reference for future use
+                // loadingDialog = null; // Reset the reference for future use
             });
         }
     }

@@ -189,4 +189,12 @@ public class RestaurantUser extends User {
     public void setRestaurantName(String value) {
         this.restaurantName = value;
     }
+
+    public Object getRestaurantName() {
+        return restaurantName;
+    }
+
+    public void setRestaurantActualName(String value) {
+        this.restaurantName = value;
+    }
 }

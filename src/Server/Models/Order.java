@@ -202,6 +202,10 @@ public class Order {
         public void setPrice(double price) {
             this.price = price;
         }
+
+        public int getQuantity() {
+            return quantity;
+        }
     }
 
     // Additional methods

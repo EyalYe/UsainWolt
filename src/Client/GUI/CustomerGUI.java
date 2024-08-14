@@ -220,7 +220,7 @@ public class CustomerGUI {
         infoPanel.add(nameIconLabel, gbc);
 
         gbc.gridx = 1;
-        JLabel nameLabel = new JLabel(restaurant.getName());
+        JLabel nameLabel = new JLabel(restaurant.getRestaurantActualName());
         nameLabel.setFont(new Font("Arial", Font.BOLD, 18));
         infoPanel.add(nameLabel, gbc);
 
@@ -331,6 +331,9 @@ public class CustomerGUI {
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));  // Ensure vertical alignment
 
         for (Map<String, Object> menuItem : menu) {
+            if (menuItem.get("available").equals(false)) {
+                continue;  // Skip unavailable items
+            }
             JPanel menuItemPanel = createMenuItemPanel(menuItem);
             menuPanel.add(menuItemPanel);
             menuPanel.add(Box.createRigidArea(new Dimension(0, 10))); // Add spacing between items

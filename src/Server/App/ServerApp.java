@@ -1,9 +1,6 @@
 package Server.App;
 
-import Server.Models.CustomerUser;
-import Server.Models.Order;
-import Server.Models.RestaurantUser;
-import Server.Models.User;
+import Server.Models.*;
 import Server.Utilities.ImageServer;
 
 import java.io.*;
@@ -38,6 +35,10 @@ public class ServerApp {
                 allUsers.add(new CustomerUser(line));
             } else if (line.startsWith("Restaurant")) {
                 allUsers.add(new RestaurantUser(line));
+            } else if (line.startsWith("Delivery")) {
+                allUsers.add(new DeliveryUser(line));
+            } else if (line.startsWith("Admin")) {
+                allUsers.add(new AdminUser(line));
             }
         }
         reader.close();
@@ -178,37 +179,34 @@ public class ServerApp {
         return updateOrderInCSV(order);
     }
 
-    private static boolean updateOrderInCSV(Order order) {
+    static boolean updateOrderInCSV(Order order) {
         String status = order.getStatus();
         String restaurantPath = "restaurant_orders/" + order.getRestaurantName() + ".csv";
         String customerPath = "customer_orders/" + order.getCustomerName() + ".csv";
         String deliveredPath = "delivery_orders/" + order.getDeliveryPerson() + ".csv";
+        String readyForPickupPath = "delivery_orders/Ready For Pickup.csv";
         File restaurantFile = new File(restaurantPath);
         File deliveredFile = new File(deliveredPath);
         File customerFile = new File(customerPath);
+        File readyForPickupFile = new File(readyForPickupPath);
         switch (status) {
             case "Pending":
                 addLineNotExists(restaurantFile, order);
                 return addLineNotExists(customerFile, order);
-            case "Ready":
+            case "Ready For Pickup":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
-                addLineNotExists(restaurantFile, order);
                 addLineNotExists(customerFile, order);
-                return addLineNotExists(deliveredFile, order);
+                return addLineNotExists(readyForPickupFile, order);
             case "Delivered":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
                 removeLineIfExists(deliveredFile, order);
-                addLineNotExists(customerFile, order);
-                addLineNotExists(deliveredFile, order);
                 return addLineNotExists(customerFile, order);
             case "Cancelled":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
                 removeLineIfExists(deliveredFile, order);
-                addLineNotExists(customerFile, order);
-                addLineNotExists(deliveredFile, order);
                 return addLineNotExists(customerFile, order);
             default:
                 return false;

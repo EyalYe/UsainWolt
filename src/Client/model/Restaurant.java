@@ -7,6 +7,7 @@ public class Restaurant {
     private String address;
     private String phoneNumber;
     private String cuisine;
+    private String restaurantActualName;
 
     // Getters and Setters
     public String getName() { return restaurantName; }
@@ -26,6 +27,9 @@ public class Restaurant {
 
     public String getCuisine() { return cuisine; }
     public void setCuisine(String cuisine) { this.cuisine = cuisine; }
+
+    public String getRestaurantActualName() { return restaurantActualName; }
+    public void setRestaurantActualName(String restaurantActualName) { this.restaurantActualName = restaurantActualName; }
 
 
     @Override

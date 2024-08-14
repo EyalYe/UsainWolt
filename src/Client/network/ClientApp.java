@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
 
 
 public class ClientApp implements Runnable {
@@ -364,7 +365,7 @@ public class ClientApp implements Runnable {
         }
     }
 
-    public void getMenuAsync(String restaurantName) throws Exception {
+    public void getMenuAsync(String restaurantName) {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getMenu");
         request.put("restaurantName", restaurantName);
@@ -538,6 +539,123 @@ public class ClientApp implements Runnable {
 
     public void close() {
         closeConnection();
+    }
+
+    public void disableItemAsync(String username, String password, String itemName) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "disableMenuItem");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("menuItemName", itemName);
+        addRequest(request);
+    }
+
+    public void enableItemAsync(String username, String password, String itemName) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "enableMenuItem");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("menuItemName", itemName);
+        addRequest(request);
+    }
+
+
+    public void removeItemAsync(String username, String password, String itemName) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "removeItem");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("menuItemName", itemName);
+        addRequest(request);
+    }
+
+
+    public void changeItemImageAsync(String username, String password, String itemName, File imageFile) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "changeItemImage");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("menuItemName", itemName);
+
+        // Encode image to Base64
+        if (imageFile != null && imageFile.exists()) {
+            try {
+                byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+                String encodedImage = Base64.getEncoder().encodeToString(imageBytes);
+                request.put("image", encodedImage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            request.put("image", null);
+        }
+
+        addRequest(request);
+    }
+
+    public void addNewItemAsync(String username, String password, String itemName, double price, String description, File imageFile) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "addNewItem");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("menuItemName", itemName);
+        request.put("price", price);
+        request.put("description", description);
+
+        // Encode image to Base64
+        if (imageFile != null && imageFile.exists()) {
+            try {
+                byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+                String encodedImage = Base64.getEncoder().encodeToString(imageBytes);
+                request.put("image", encodedImage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            request.put("image", null);
+        }
+
+        addRequest(request);
+    }
+
+    public void requestIncomeDataAsync(String username, String password, Consumer<Double> callback) {
+        // Create a request map to send to the server
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getIncomeData");
+        request.put("username", username);
+        request.put("password", password);
+
+        // Send the request asynchronously
+        new Thread(() -> {
+            try {
+                Map<String, Object> response = sendRequest(request);
+
+                if ("true".equals(response.get("success"))) {
+                    // Parse the income data from the response
+                    double income = Double.parseDouble(response.get("income").toString());
+                    // Pass the income data to the callback
+                    callback.accept(income);
+                } else {
+                    // Handle the error scenario
+                    String errorMessage = response.get("message").toString();
+                    System.err.println("Failed to get income data: " + errorMessage);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+
+    public void searchDeliveriesAsync(String username, String password, String address, String distance) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getDeliveries");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("distance", distance);
+        request.put("address", address);
+
+        addRequest(request);
     }
 }
 

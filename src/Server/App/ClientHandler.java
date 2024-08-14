@@ -69,13 +69,13 @@ public class ClientHandler implements Runnable {
                         case "getOrdersHistory":
                             response = handleGetOrdersHistory(request);
                             break;
-                        case "markOrderComplete":
-                            response = handleMarkOrderComplete(request);
+                        case "markOrderReadyForPickup":
+                            response = handleMarkOrderReadyForPickup(request);
                             break;
-                        case "disableMenuItems":
+                        case "disableMenuItem":
                             response = handleDisableMenuItems(request);
                             break;
-                        case "enableMenuItems":
+                        case "enableMenuItem":
                             response = handleEnableMenuItems(request);
                             break;
                         case "getCurrentOrders":
@@ -130,80 +130,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private String handleDeleteAccount(Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-
-        User user = null;
-        for (User u : ServerApp.allUsers) {
-            if (u.getUserName().equals(username) && u.checkPassword(hashPassword(password))) {
-                user = u;
-                break;
-            }
-        }
-
-        if (user == null) {
-            return createResponse(false, "Authentication failed or user not found");
-        }
-
-        ServerApp.allUsers.remove(user);
-        ServerApp.updateUsersCSV();
-
-        return createResponse(true, "Account deleted successfully");
-    }
-
-    private String handleUpdateParameter(Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-        String parameter = request.get("parameter");
-        String value = request.get("newValue");
-
-        User user = null;
-        for (User u : ServerApp.allUsers) {
-            if (u.getUserName().equals(username) && u.checkPassword(hashPassword(password))) {
-                user = u;
-                break;
-            }
-        }
-
-        if (user == null) {
-            return createResponse(false, "Authentication failed or user not found");
-        }
-
-        if (parameter.equals("address")) {
-            user.setAddress(value);
-        } else if (parameter.equals("phoneNumber")) {
-            user.setPhoneNumber(value);
-        } else if (parameter.equals("email")) {
-            user.setEmail(value);
-        } else if (parameter.equals("businessPhoneNumber")) {
-            if (user instanceof RestaurantUser) {
-                ((RestaurantUser) user).setBusinessPhoneNumber(value);
-            } else {
-                return createResponse(false, "User is not a restaurant");
-            }
-        } else if (parameter.equals("cuisine")) {
-            if (user instanceof RestaurantUser) {
-                ((RestaurantUser) user).setCuisine(value);
-            } else {
-                return createResponse(false, "User is not a restaurant");
-            }
-        } else if (parameter.equals("RestaurantName")) {
-            if (user instanceof RestaurantUser) {
-                ((RestaurantUser) user).setRestaurantName(value);
-            } else {
-                return createResponse(false, "User is not a restaurant");
-            }
-        } else if (parameter.equals("password")) {
-            user.setHashedPassword(hashPassword(value));
-        } else {
-            return createResponse(false, "Invalid parameter");
-        }
-
-        ServerApp.updateUserInCSV(user);
-
-        return createResponse(true, "Parameter updated successfully");
-    }
 
     private Map<String, String> parseRequest(String inputLine) {
         Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
@@ -526,7 +452,8 @@ public class ClientHandler implements Runnable {
 
                     // Prepare the restaurant info to be sent back to the client
                     Map<String, Object> restaurantInfo = new HashMap<>();
-                    restaurantInfo.put("restaurantName", restaurant.getUserName());
+                    restaurantInfo.put("restaurantName", restaurant.getUserName());      // I know this looks weird, but it's saves a lot of time.
+                    restaurantInfo.put("restaurantActualName", restaurant.getRestaurantName());
                     restaurantInfo.put("address", restaurant.getAddress());
                     restaurantInfo.put("distance", String.format("%.2f", distance));
                     restaurantInfo.put("cuisine", restaurant.getCuisine());
@@ -605,10 +532,8 @@ public class ClientHandler implements Runnable {
         String username = params.get("username");
         String password = params.get("password");
         String restaurantName = params.get("restaurantName");
-        System.out.println("okay here");
         Object items = params.get("items");
-        System.out.println("still here");
-        String customerNote = params.get("customerNote");
+        String customerNote = params.get("customerNote").replace(",", "..."); // Replace commas with ellipses
         String status = "Pending"; // Default status
         boolean isSendHome = params.get("sendHome").equalsIgnoreCase("true");
         String address = params.get("address");
@@ -735,7 +660,7 @@ public class ClientHandler implements Runnable {
         if (isRemove) {
             // Handle remove action
             if (existingItem != null) {
-                restaurant.getMenu().remove(existingItem);
+                restaurant.removeMenuItem(existingItem.getName());
                 ServerApp.saveMenu(restaurant);
                 return createResponse(true, "Menu item removed successfully");
             } else {
@@ -844,10 +769,11 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private String handleMarkOrderComplete(Map<String, String> params) {
+    private String handleMarkOrderReadyForPickup(Map<String, String> params) {
         String username = params.get("username");
         String password = params.get("password");
-        int orderId = Integer.parseInt(params.get("orderId"));
+        Type type = new TypeToken<Order>(){}.getType();
+        Order order = gson.fromJson(params.get("order"), type);
 
         RestaurantUser restaurant = null;
         for (User user : ServerApp.allUsers) {
@@ -856,18 +782,17 @@ public class ClientHandler implements Runnable {
                 break;
             }
         }
-        if (restaurant == null) {
+        if(restaurant == null) {
             return createResponse(false, "Authentication failed or restaurant not found");
         }
 
-        for (Order order : restaurant.getOrders()) {
-            if (order.getOrderId() == orderId) {
-                order.setStatus("Complete");
-                return createResponse(true, "Order marked as complete");
-            }
+        order.setStatus("Ready For Pickup");
+        if (ServerApp.updateOrderInCSV(order)) {
+            return createResponse(true, "Order status updated successfully");
+        } else {
+            return createResponse(false, "Failed to update order status");
         }
 
-        return createResponse(false, "Order not found");
     }
 
     private String handleDisableMenuItems(Map<String, String> params) {
@@ -886,6 +811,11 @@ public class ClientHandler implements Runnable {
         }
         String menuItemName = params.get("menuItemName");
         restaurant.disableMenuItem(menuItemName);
+        try {
+            ServerApp.saveMenu(restaurant);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return createResponse(true, "Menu items disabled");
     }
 
@@ -1067,6 +997,81 @@ public class ClientHandler implements Runnable {
 
             return gson.toJson(errorResponse);
         }
+    }
+
+    private String handleDeleteAccount(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        User user = null;
+        for (User u : ServerApp.allUsers) {
+            if (u.getUserName().equals(username) && u.checkPassword(hashPassword(password))) {
+                user = u;
+                break;
+            }
+        }
+
+        if (user == null) {
+            return createResponse(false, "Authentication failed or user not found");
+        }
+
+        ServerApp.allUsers.remove(user);
+        ServerApp.updateUsersCSV();
+
+        return createResponse(true, "Account deleted successfully");
+    }
+
+    private String handleUpdateParameter(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+        String parameter = request.get("parameter");
+        String value = request.get("newValue");
+
+        User user = null;
+        for (User u : ServerApp.allUsers) {
+            if (u.getUserName().equals(username) && u.checkPassword(hashPassword(password))) {
+                user = u;
+                break;
+            }
+        }
+
+        if (user == null) {
+            return createResponse(false, "Authentication failed or user not found");
+        }
+
+        if (parameter.equals("address")) {
+            user.setAddress(value);
+        } else if (parameter.equals("phoneNumber")) {
+            user.setPhoneNumber(value);
+        } else if (parameter.equals("email")) {
+            user.setEmail(value);
+        } else if (parameter.equals("businessPhoneNumber")) {
+            if (user instanceof RestaurantUser) {
+                ((RestaurantUser) user).setBusinessPhoneNumber(value);
+            } else {
+                return createResponse(false, "User is not a restaurant");
+            }
+        } else if (parameter.equals("cuisine")) {
+            if (user instanceof RestaurantUser) {
+                ((RestaurantUser) user).setCuisine(value);
+            } else {
+                return createResponse(false, "User is not a restaurant");
+            }
+        } else if (parameter.equals("RestaurantName")) {
+            if (user instanceof RestaurantUser) {
+                ((RestaurantUser) user).setRestaurantName(value);
+            } else {
+                return createResponse(false, "User is not a restaurant");
+            }
+        } else if (parameter.equals("password")) {
+            user.setHashedPassword(hashPassword(value));
+        } else {
+            return createResponse(false, "Invalid parameter");
+        }
+
+        ServerApp.updateUserInCSV(user);
+
+        return createResponse(true, "Parameter updated successfully");
     }
 
     private String handleDefault() {
