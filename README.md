@@ -10,6 +10,14 @@
 4. Run the `UsainWoltMain` class to start the client
 5. And you are good to go!
 
+## Troubleshooting
+** We use the following dependencies in the project:**
+- Gson
+
+** We use the following ports in the project:**
+- 8080 for the image server
+- 12345 for the server
+
 ## ToDos
 ### Server
 - [] Check edge cases of every method that requires input from the user
