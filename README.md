@@ -131,14 +131,15 @@ Stores information about each order, including order ID, customer name, restaura
 ## Tasks
 
 ### Server Side
-- [x ] **Add a change password method to ClientHandler**: Implemented to allow users to change their passwords securely.
-- [x ] **Add a change email method to ClientHandler**: Allows users to update their email address.
-- [ x] **Add photo to restaurant and item capabilities**: Enhance the system to allow restaurants to upload photos for both their profile and individual menu items.
-- [ x] **Add the distance to the message sent to the client when calling getRestaurants**: Ensure that the distance from the customer to each restaurant is included in the response when retrieving nearby restaurants.
+- [] **fix the server**: Fix the server to handle evetything to do with Delivery user 
+- [] **fix the server**: revamp everything to do with the delivery user
+- 
+### Delivery GUI
+- [ ] **Redo the Delivery GUI**: Redo the delivery GUI to work properly
 
-### Customer GUI
-- [ ] **Add functionality to the buttons in the User tab**: Implement the "Change Password", "Change Email", and "Get Order History" features in the user interface.
-- [ ] **Add functionality to the entire Place Order tab**: Complete the Place Order tab, including selecting cuisine, distance, and searching for restaurants.
+### ClientApp
+- [ ] **Fix the ClientApp**: make the client more consistent with the server
 
-### Restaurant GUI
-- [ ] **Start it**: Begin the development of the Restaurant GUI, which will allow restaurants to manage their profiles, menus, and orders.
+### Testing
+- [ ] **Test the system**: Test the system to ensure everything is working properly
+- [ ] **Fix any bugs**: Fix any bugs that may arise during testing
