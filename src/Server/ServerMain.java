@@ -23,14 +23,14 @@ public class ServerMain {
             }).start();
 
             // Create the files if they don't exist
-            createFileIfNotExists(USERS_FILE);
-            String[] directories = {"restaurant_orders", "customer_orders", "delivery_orders", "menu_data", "menu_item_images", "profile_pictures"};
+            String[] directories = {"restaurant_orders", "customer_orders", "delivery_orders", "menu_data", "menu_item_images", "profile_pictures", "server_logs"};
             for (String directory : directories) {
                 File dir = new File(directory);
                 if (!dir.exists()) {
                     dir.mkdir();
                 }
             }
+            createFileIfNotExists(USERS_FILE);
 
             // Load data from CSV files
             loadUsersFromCSV();

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ServerApp {
-    public static final String USERS_FILE = "users.csv";
+    public static final String USERS_FILE = "server_logs/users.csv";
     private static final String[] RESTAURANT_CUISINES = {"All", "American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
     public static final String SERVER_IP = "localhost";
     public static final int SERVER_PORT = 12345;

@@ -285,7 +285,7 @@ public class ClientHandler implements Runnable {
     }
 
     private int incrementOrderId() {
-        String idFilePath = "order_id.txt";
+        String idFilePath = "server_logs/order_id.txt";
         File idFile = new File(idFilePath);
         if (!idFile.exists()) {
             try (PrintWriter writer = new PrintWriter(idFilePath)) {
