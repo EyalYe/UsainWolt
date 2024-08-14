@@ -1,6 +1,7 @@
 package Server.App;
 
 import Server.Models.*;
+import Server.Utilities.GeoLocationService;
 import Server.Utilities.ImageServer;
 
 import java.io.*;
@@ -199,6 +200,13 @@ public class ServerApp {
                 removeLineIfExists(customerFile, order);
                 addLineNotExists(customerFile, order);
                 return addLineNotExists(readyForPickupFile, order);
+            case "Picked Up":
+                removeLineIfExists(readyForPickupFile, order);
+                removeLineIfExists(restaurantFile, order);
+                removeLineIfExists(customerFile, order);
+                removeLineIfExists(deliveredFile, order);
+                addLineNotExists(customerFile, order);
+                return addLineNotExists(deliveredFile, order);
             case "Delivered":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
@@ -302,4 +310,25 @@ public class ServerApp {
         }
     }
 
+    public static Object getDelieryOrdersFromCSV(String distance, String address) {
+        List<Order> orders = new ArrayList<>();
+        File file = new File("delivery_orders/Ready For Pickup.csv");
+        if (!file.exists()) {
+            return orders;
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Order order = new Order(line);
+                if (GeoLocationService.checkSmallDistance(address, order.getAddress(), Double.parseDouble(distance))) {
+                    orders.add(order);
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return orders;
+    }
 }

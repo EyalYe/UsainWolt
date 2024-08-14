@@ -26,8 +26,8 @@ public class Order {
         this.customerName = customerName;
         this.restaurantName = restaurantName;
         this.status = status;
-        this.customerNote = customerNote;
-        this.address = address;
+        this.customerNote = safeString(customerNote);
+        this.address = stripAddress(address);
         this.deliveryPerson = null;
     }
 
@@ -49,6 +49,10 @@ public class Order {
 
         this.totalPrice = calculateTotalPrice();
         this.deliveryPerson = null;
+    }
+
+    public Order(int orderId){
+        this.orderId = orderId;
     }
 
     // Getters and Setters
@@ -109,8 +113,12 @@ public class Order {
         return customerNote;
     }
 
+    public void setAddress(String address){
+        this.address = stripAddress(address);
+    }
+
     public void setCustomerNote(String customerNote) {
-        this.customerNote = customerNote;
+        this.customerNote = customerNote.replace(",", "..").replace(";", " ").replace("\n", "    ");
     }
 
     public String getDeliveryPerson() {
@@ -123,6 +131,10 @@ public class Order {
 
     public boolean isDelivered() {
         return status.equals("Delivered");
+    }
+
+    public String getAddress() {
+        return address;
     }
 
     // Inner class to represent an item with its properties
@@ -146,7 +158,7 @@ public class Order {
             this.name = name;
             this.price = price;
             this.photoUrl = photoUrl;
-            this.description = description;
+            this.description = safeString(description);
             this.available = available;
         }
 
@@ -178,6 +190,7 @@ public class Order {
             this.available = available;
         }
 
+
         public String getPhotoUrl() {
             return photoUrl;
         }
@@ -191,7 +204,7 @@ public class Order {
         }
 
         public void setDescription(String description) {
-            this.description = description;
+            this.description = description.replace(",", "#").replace(";", " ").replace("\n", "@");
         }
 
         @Override
@@ -275,5 +288,12 @@ public class Order {
         return sb.toString();
     }
 
+    public static String safeString(String str) {
+        return str.replace(",", "@").replace(";", " ").replace("\n", "#");
+    }
+
+    public String stripAddress(String address) {
+        return address.replace(",", " ").replace(";", " ").replace("\n", " ");
+    }
 
 }

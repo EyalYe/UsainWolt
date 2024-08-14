@@ -205,6 +205,19 @@ public class UsainWoltGUI implements LogoutCallback {
                 if (restaurantGUI != null)
                     restaurantGUI.showRestaurantSettings();
                 break;
+            case "handleGetDeliveryOrders":
+                Type deliveryOrderListType = new TypeToken<List<Order>>(){}.getType();
+                List<Order> deliveryOrders = gson.fromJson((String) response.get("message"), deliveryOrderListType);
+                if (deliveyGUI != null)
+                    deliveyGUI.showAvailableDeliveriesFrame(deliveryOrders);
+                break;
+            case "handleUpdateDeliveryOrderStatus":
+                if (!"true".equals(response.get("success"))) {
+                    JOptionPane.showMessageDialog(frame, "Error updating delivery order status: " + response.get("message"));
+                }
+                if (deliveyGUI != null)
+                    deliveyGUI.showAvailableDeliveries();
+                break;
         }
     }
 

@@ -104,6 +104,19 @@ public class ClientHandler implements Runnable {
                             break;
                         case "deleteAccount":
                             response = handleDeleteAccount(request);
+                            break;
+                        case "getDeliveryOrders":
+                            response = handleGetDeliveryOrders(request);
+                            break;
+                        case "markDeliveryComplete":
+                            response = handleMarkOrderDelivered(request);
+                            break;
+                        case "getIncomeData":
+                            response = handleGetIncome(request);
+                            break;
+                        case "pickupOrder":
+                            response = handlePickupOrder(request);
+                            break;
                         default:
                             response = handleDefault();
                             break;
@@ -130,6 +143,31 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private String handlePickupOrder(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+        int orderId = Integer.parseInt(request.get("orderId"));
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+        if (deliveryUser == null) {
+            return createResponse(false, "Authentication failed or delivery user not found");
+        }
+
+        Order order = new Order(orderId);
+
+        order.setStatus("Picked Up");
+        if (ServerApp.updateOrderInCSV(order)) {
+            return createResponse(true, "Order marked as delivered");
+        } else {
+            return createResponse(false, "Failed to update order status");
+        }
+    }
 
     private Map<String, String> parseRequest(String inputLine) {
         Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
@@ -320,7 +358,7 @@ public class ClientHandler implements Runnable {
     private String handleSignupCustomer(Map<String, String> params) throws IOException {
         String username = params.get("username");
         String password = params.get("password");
-        String address = params.get("address").replace(",", ""); // Remove commas from the address
+        String address = params.get("address");
         String phoneNumber = params.get("phoneNumber");
         String email = params.get("email");
 
@@ -345,7 +383,7 @@ public class ClientHandler implements Runnable {
     private String handleSignupDelivery(Map<String, String> params) throws IOException {
         String username = params.get("username");
         String password = params.get("password");
-        String address = params.get("address").replace(",", ""); // Remove commas from the address
+        String address = params.get("address");
         String phoneNumber = params.get("phoneNumber");
         String email = params.get("email");
         String Token = params.get("Token");
@@ -375,7 +413,7 @@ public class ClientHandler implements Runnable {
     private String handleSignupRestaurant(Map<String, String> params) throws IOException {
         String username = params.get("username");
         String password = params.get("password");
-        String address = params.get("address").replace(",", ""); // Remove commas from the address
+        String address = params.get("address");
         String phoneNumber = params.get("phoneNumber");
         String email = params.get("email");
         String businessPhoneNumber = params.get("businessPhoneNumber");
@@ -533,7 +571,7 @@ public class ClientHandler implements Runnable {
         String password = params.get("password");
         String restaurantName = params.get("restaurantName");
         Object items = params.get("items");
-        String customerNote = params.get("customerNote").replace(",", "..."); // Replace commas with ellipses
+        String customerNote = params.get("customerNote");
         String status = "Pending"; // Default status
         boolean isSendHome = params.get("sendHome").equalsIgnoreCase("true");
         String address = params.get("address");
@@ -1074,6 +1112,69 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Parameter updated successfully");
     }
 
+    private String handleGetIncome(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+        if (deliveryUser == null) {
+            return createResponse(false, "Authentication failed or restaurant not found");
+        }
+
+
+        return createResponse(true, String.valueOf(deliveryUser.getIncome()));
+    }
+
+    private String handleMarkOrderDelivered(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+        Type type = new TypeToken<Order>(){}.getType();
+        Order order = gson.fromJson(request.get("order"), type);
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+        if(deliveryUser == null) {
+            return createResponse(false, "Authentication failed or delivery user not found");
+        }
+
+        order.setStatus("Delivered");
+        if (ServerApp.updateOrderInCSV(order)) {
+            deliveryUser.addIncome(order.getTotalPrice());
+            ServerApp.updateOrderInCSV(order);
+            return createResponse(true, "Order status updated successfully");
+        } else {
+            return createResponse(false, "Failed to update order status");
+        }
+    }
+
+    private String handleGetDeliveryOrders(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+        if (deliveryUser == null) {
+            return createResponse(false, "Authentication failed or delivery user not found");
+        }
+
+        return createResponse(true, gson.toJson(ServerApp.getDelieryOrdersFromCSV(request.get("distance"), request.get("address"))));
+    }
     private String handleDefault() {
         return createResponse(false, "Invalid request type");
     }

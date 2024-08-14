@@ -647,7 +647,7 @@ public class ClientApp implements Runnable {
 
     public void searchDeliveriesAsync(String username, String password, String address, String distance) {
         Map<String, Object> request = new HashMap<>();
-        request.put("type", "getDeliveries");
+        request.put("type", "getDeliveryOrders");
         request.put("username", username);
         request.put("password", password);
         request.put("distance", distance);

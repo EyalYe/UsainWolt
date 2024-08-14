@@ -321,7 +321,7 @@ public class DeliveryGUI {
         logoutCallback.showLoadingScreen();
     }
 
-    private void showAvailableDeliveries() {
+    void showAvailableDeliveries() {
         // Clear the main content panel first
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -441,7 +441,7 @@ public class DeliveryGUI {
         showLoading();
     }
 
-    private void showAvailableDeliveriesFrame(List<Order> orders) {
+    void showAvailableDeliveriesFrame(List<Order> orders) {
         // Get the main content panel to clear and update
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
