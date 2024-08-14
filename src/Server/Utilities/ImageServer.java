@@ -1,4 +1,4 @@
-package Server;
+package Server.Utilities;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;

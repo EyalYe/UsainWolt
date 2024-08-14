@@ -1,4 +1,4 @@
-package Server;
+package Server.Models;
 
 import java.util.ArrayList;
 import java.util.Date;

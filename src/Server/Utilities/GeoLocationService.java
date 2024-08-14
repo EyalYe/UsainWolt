@@ -1,4 +1,4 @@
-package Server;
+package Server.Utilities;
 
 import com.google.gson.Gson;
 

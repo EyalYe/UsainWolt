@@ -1,4 +1,10 @@
-package Server;
+package Server.App;
+
+import Server.Models.CustomerUser;
+import Server.Models.Order;
+import Server.Models.RestaurantUser;
+import Server.Models.User;
+import Server.Utilities.ImageServer;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -7,60 +13,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ServerApp {
-    private static final String USERS_FILE = "users.csv";
+    public static final String USERS_FILE = "users.csv";
     private static final String[] RESTAURANT_CUISINES = {"All", "American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
     public static final String SERVER_IP = "localhost";
-    private static final int SERVER_PORT = 12345;
+    public static final int SERVER_PORT = 12345;
     public static final int IMAGE_SERVER_PORT = 8080;
 
     public static List<User> allUsers = new ArrayList<>();
     public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
 
-    public static void main(String[] args) {
-        try {
-            // Start the image server in a new thread
-            new Thread(() -> {
-                try {
-                    ImageServer.startServer(IMAGE_SERVER_PORT); // Start the image server
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-
-            // Create the files if they don't exist
-            createFileIfNotExists(USERS_FILE);
-            String[] directories = {"restaurant_orders", "customer_orders", "delivered_orders", "menu_data", "menu_item_images", "profile_pictures"};
-            for (String directory : directories) {
-                File dir = new File(directory);
-                if (!dir.exists()) {
-                    dir.mkdir();
-                }
-            }
-
-            // Load data from CSV files
-            loadUsersFromCSV();
-            loadMenusFromCSV();
-
-            // Set up server socket
-            ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
-            System.out.println("Server is listening on port 12345");
-
-            // Server loop to handle clients
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("New client connected");
-
-                // Create a new thread to handle the client using ClientHandler
-                Thread clientThread = new Thread(new ClientHandler(clientSocket));
-                clientThread.start();
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void createFileIfNotExists(String fileName) throws IOException {
+    public static void createFileIfNotExists(String fileName) throws IOException {
         File file = new File(fileName);
         if (!file.exists()) {
             file.createNewFile();
@@ -68,7 +30,7 @@ public class ServerApp {
         }
     }
 
-    private static void loadUsersFromCSV() throws IOException {
+    public static void loadUsersFromCSV() throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE));
         String line;
         while ((line = reader.readLine()) != null) {
@@ -81,7 +43,7 @@ public class ServerApp {
         reader.close();
     }
 
-    private static void loadMenusFromCSV() throws IOException {
+    public static void loadMenusFromCSV() throws IOException {
         File menuDirectory = new File("menu_data");
         if (!menuDirectory.exists() || !menuDirectory.isDirectory()) {
             System.out.println("No menu directory found. Skipping menu loading.");
@@ -124,13 +86,29 @@ public class ServerApp {
     }
 
     public static void addUser(User user) throws IOException {
-        allUsers.add(user);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, true));
-        writer.write(user.toString() + "\n");
-        writer.close();
+       if (checkIfUserExists(user.getUserName())) {
+              throw new IllegalArgumentException("User already exists");
+         }
+          allUsers.add(user);
+          updateUser(user, true);
+    }
 
-        if (user instanceof RestaurantUser) {
-            saveMenu((RestaurantUser) user);
+    public static boolean checkIfUserExists(String userName) {
+        for (User user : allUsers) {
+            if (user.getUserName().equals(userName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void updateUser(User user, boolean isNew) throws IOException {
+        if (isNew) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, true))) {
+                writer.write(user.toString() + "\n");
+            }
+        } else {
+            updateUserInCSV(user);
         }
     }
 
@@ -204,7 +182,7 @@ public class ServerApp {
         String status = order.getStatus();
         String restaurantPath = "restaurant_orders/" + order.getRestaurantName() + ".csv";
         String customerPath = "customer_orders/" + order.getCustomerName() + ".csv";
-        String deliveredPath = "delivered_orders/" + order.getDeliveryPerson() + ".csv";
+        String deliveredPath = "delivery_orders/" + order.getDeliveryPerson() + ".csv";
         File restaurantFile = new File(restaurantPath);
         File deliveredFile = new File(deliveredPath);
         File customerFile = new File(customerPath);
@@ -215,17 +193,22 @@ public class ServerApp {
             case "Ready":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
+                addLineNotExists(restaurantFile, order);
                 addLineNotExists(customerFile, order);
                 return addLineNotExists(deliveredFile, order);
             case "Delivered":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
                 removeLineIfExists(deliveredFile, order);
+                addLineNotExists(customerFile, order);
+                addLineNotExists(deliveredFile, order);
                 return addLineNotExists(customerFile, order);
             case "Cancelled":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
                 removeLineIfExists(deliveredFile, order);
+                addLineNotExists(customerFile, order);
+                addLineNotExists(deliveredFile, order);
                 return addLineNotExists(customerFile, order);
             default:
                 return false;
@@ -307,4 +290,17 @@ public class ServerApp {
         }
         return orders;
     }
+
+    public static void updateUsersCSV() {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE));
+            for (User user : allUsers) {
+                writer.write(user.toString() + "\n");
+            }
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

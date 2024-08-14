@@ -1,7 +1,9 @@
-package Server;
+package Server.App;
 
+import Server.Models.*;
+import Server.Utilities.CreditCardAuthenticator;
+import Server.Utilities.GeoLocationService;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
@@ -97,6 +99,11 @@ public class ClientHandler implements Runnable {
                         case "getImage":
                             response = handleGetImage(request);
                             break;
+                        case "changeParameter":
+                            response = handleUpdateParameter(request);
+                            break;
+                        case "deleteAccount":
+                            response = handleDeleteAccount(request);
                         default:
                             response = handleDefault();
                             break;
@@ -121,6 +128,81 @@ public class ClientHandler implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    private String handleDeleteAccount(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        User user = null;
+        for (User u : ServerApp.allUsers) {
+            if (u.getUserName().equals(username) && u.checkPassword(hashPassword(password))) {
+                user = u;
+                break;
+            }
+        }
+
+        if (user == null) {
+            return createResponse(false, "Authentication failed or user not found");
+        }
+
+        ServerApp.allUsers.remove(user);
+        ServerApp.updateUsersCSV();
+
+        return createResponse(true, "Account deleted successfully");
+    }
+
+    private String handleUpdateParameter(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+        String parameter = request.get("parameter");
+        String value = request.get("newValue");
+
+        User user = null;
+        for (User u : ServerApp.allUsers) {
+            if (u.getUserName().equals(username) && u.checkPassword(hashPassword(password))) {
+                user = u;
+                break;
+            }
+        }
+
+        if (user == null) {
+            return createResponse(false, "Authentication failed or user not found");
+        }
+
+        if (parameter.equals("address")) {
+            user.setAddress(value);
+        } else if (parameter.equals("phoneNumber")) {
+            user.setPhoneNumber(value);
+        } else if (parameter.equals("email")) {
+            user.setEmail(value);
+        } else if (parameter.equals("businessPhoneNumber")) {
+            if (user instanceof RestaurantUser) {
+                ((RestaurantUser) user).setBusinessPhoneNumber(value);
+            } else {
+                return createResponse(false, "User is not a restaurant");
+            }
+        } else if (parameter.equals("cuisine")) {
+            if (user instanceof RestaurantUser) {
+                ((RestaurantUser) user).setCuisine(value);
+            } else {
+                return createResponse(false, "User is not a restaurant");
+            }
+        } else if (parameter.equals("RestaurantName")) {
+            if (user instanceof RestaurantUser) {
+                ((RestaurantUser) user).setRestaurantName(value);
+            } else {
+                return createResponse(false, "User is not a restaurant");
+            }
+        } else if (parameter.equals("password")) {
+            user.setHashedPassword(hashPassword(value));
+        } else {
+            return createResponse(false, "Invalid parameter");
+        }
+
+        ServerApp.updateUserInCSV(user);
+
+        return createResponse(true, "Parameter updated successfully");
     }
 
     private Map<String, String> parseRequest(String inputLine) {
@@ -284,23 +366,24 @@ public class ClientHandler implements Runnable {
 
         for (User user : ServerApp.allUsers) {
             if (user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
-                if (user instanceof RestaurantUser) {
-                    if (ServerApp.loggedInRestaurants.contains(user)) {
-                        return createResponse(false, "Restaurant already logged in");
+                switch (user) {
+                    case CustomerUser customerUser -> {
+                        return createResponse(true, "Logged in as customer");
                     }
-                    ServerApp.loggedInRestaurants.add((RestaurantUser) user);
-                }
-                if (user instanceof CustomerUser) {
-                    return createResponse(true, "Logged in as customer");
-                }
-                if (user instanceof DeliveryUser) {
-                    return createResponse(true, "Logged in as delivery");
-                }
-                if (user instanceof RestaurantUser) {
-                    return createResponse(true, "Logged in as restaurant");
-                }
-                if (user instanceof AdminUser) {
-                    return createResponse(true, "Logged in as admin");
+                    case DeliveryUser deliveryUser -> {
+                        return createResponse(true, "Logged in as delivery");
+                    }
+                    case RestaurantUser restaurantUser -> {
+                        if (!ServerApp.loggedInRestaurants.contains(restaurantUser)) {
+                            ServerApp.loggedInRestaurants.add(restaurantUser);
+                        }
+                        return createResponse(true, "Logged in as restaurant");
+                    }
+                    case AdminUser adminUser -> {
+                        return createResponse(true, "Logged in as admin");
+                    }
+                    default -> {
+                    }
                 }
             }
         }
@@ -751,11 +834,11 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Authentication failed or user not found");
         }
         if (authenticatedUser instanceof CustomerUser) {
-            return createResponse( true, gson.toJson(ServerApp.getOrdersFromCSV("customer_orders.csv", authenticatedUser.getUserName())));
+            return createResponse( true, gson.toJson(ServerApp.getOrdersFromCSV("customer_orders", authenticatedUser.getUserName())));
         } else if (authenticatedUser instanceof RestaurantUser) {
-            return createResponse(true, gson.toJson(ServerApp.getOrdersFromCSV("restaurant_orders.csv", authenticatedUser.getUserName())));
+            return createResponse(true, gson.toJson(ServerApp.getOrdersFromCSV("restaurant_orders", authenticatedUser.getUserName())));
         }  else if (authenticatedUser instanceof DeliveryUser) {
-            return createResponse(true, gson.toJson(ServerApp.getOrdersFromCSV("delivery_orders.csv", authenticatedUser.getUserName())));
+            return createResponse(true, gson.toJson(ServerApp.getOrdersFromCSV("delivery_orders", authenticatedUser.getUserName())));
         } else {
             return createResponse(false, "User type not recognized");
         }

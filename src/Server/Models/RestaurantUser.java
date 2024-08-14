@@ -1,13 +1,8 @@
-package Server;
+package Server.Models;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Date;
 
 public class RestaurantUser extends User {
     private List<Order> orders;
@@ -17,6 +12,7 @@ public class RestaurantUser extends User {
     private double revenue;
     private boolean hasProfilePicture;
     private String profilePictureUrl;
+    private String restaurantName;
 
 
     // Constructor for RestaurantUser
@@ -29,36 +25,40 @@ public class RestaurantUser extends User {
         this.revenue = revenue;
         this.hasProfilePicture = false;
         this.profilePictureUrl = "";
+        this.restaurantName = this.getUserName().replaceAll("([A-Z])", " $1").trim();
+
     }
 
     // Constructor to create RestaurantUser from CSV line
     public RestaurantUser(String csvLine) {
         super(csvLine);
+        int index = 8;
         String[] fields = csvLine.split(",");
-        this.businessPhoneNumber = fields[6];
-        this.cuisine = fields[7];
+        this.businessPhoneNumber = fields[index++];
+        this.cuisine = fields[index++];
         try {
-            this.revenue = Double.parseDouble(fields[8]);
+            this.revenue = Double.parseDouble(fields[index++]);
         } catch (NumberFormatException e) {
             this.revenue = 0.0;
         }
-        this.hasProfilePicture = fields[9].equals("true");
+        this.hasProfilePicture = Boolean.parseBoolean(fields[index++]);
 
-        if (hasProfilePicture) {
-            try {
-                File profilePicture = new File("profile_pictures/" + this.getUserName() + ".jpg");
-                if (!profilePicture.exists()) {
-                    this.hasProfilePicture = false;
-                } else {
-                    this.profilePictureUrl = "profile_pictures/" + this.getUserName() + ".jpg";
-                }
-            } catch (Exception e) {
+        try {
+            File profilePicture = new File("profile_pictures/" + this.getUserName() + ".jpg");
+            if (!profilePicture.exists()) {
                 this.hasProfilePicture = false;
+            } else {
+                this.profilePictureUrl = "profile_pictures/" + this.getUserName() + ".jpg";
+                this.hasProfilePicture = true;
             }
+        } catch (Exception e) {
+            this.hasProfilePicture = false;
         }
+        this.restaurantName = fields[index];
 
         this.orders = new ArrayList<>();
         this.menu = new ArrayList<>();
+
     }
 
 
@@ -179,10 +179,14 @@ public class RestaurantUser extends User {
 
     @Override
     public String toString() {
-        return "Restaurant," + super.toString() + "," + businessPhoneNumber + "," + cuisine + "," + revenue + "," + hasProfilePicture;
+        return "Restaurant," + super.toString() + "," + businessPhoneNumber + "," + cuisine + "," + revenue + "," + hasProfilePicture + "," + restaurantName;
     }
 
     public void addRevenue(double totalPrice) {
         revenue += totalPrice;
+    }
+
+    public void setRestaurantName(String value) {
+        this.restaurantName = value;
     }
 }

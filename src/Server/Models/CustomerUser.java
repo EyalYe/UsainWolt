@@ -1,10 +1,9 @@
-package Server;
+package Server.Models;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Date;
 
 public class CustomerUser extends User {
     private List<Order> orderHistory;
@@ -92,16 +91,17 @@ public class CustomerUser extends User {
     // Constructor for creating a customer from a CSV line
     public CustomerUser(String csvLine) {
         super(csvLine);
+        int index = 8;
         String[] fields = csvLine.split(",");
         this.orderHistory = new ArrayList<>();
         this.preferences = new HashMap<>();
         try {
-            this.creditCard = new CreditCard(fields[6], fields[7], fields[8]);
+            this.creditCard = new CreditCard(fields[index++], fields[index++], fields[index++]);
         } catch (ArrayIndexOutOfBoundsException e) {
             this.creditCard = new CreditCard("", "", "");
         }
         try{
-        this.inAppBalance = fields[9].equals("") ? 0.0 : Double.parseDouble(fields[9]);
+        this.inAppBalance = fields[index].equals("") ? 0.0 : Double.parseDouble(fields[index]);
         } catch (ArrayIndexOutOfBoundsException e) {
             this.inAppBalance = 0.0;
         }

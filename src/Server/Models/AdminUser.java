@@ -1,4 +1,4 @@
-package Server;
+package Server.Models;
 
 public class AdminUser extends User {
     public AdminUser(String userName, String hashedPassword, String address, String phoneNumber, String email) {

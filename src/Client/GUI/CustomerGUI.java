@@ -1,452 +1,35 @@
-package Client;
+package Client.GUI;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import Client.model.Restaurant;
+import Client.network.ClientApp;
+import Server.Models.Order;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
-public class UsainWoltGUI {
-    private JFrame frame;
-    private ClientApp clientApp;
-    private JTextField usernameField;
-    private JPasswordField passwordField;
-    private Timer responsePoller;
-    private String[] availableCuisines;
-    private Gson gson = new Gson();
 
-    public UsainWoltGUI(ClientApp clientApp) {
+public class CustomerGUI {
+    private final JFrame frame;
+    private final JTextField usernameField;
+    private final JPasswordField passwordField;
+    private final ClientApp clientApp;
+    private final String[] availableCuisines;
+    private final LogoutCallback logoutCallback;
+
+    CustomerGUI(JFrame frame, JTextField usernameField, JPasswordField passwordField, ClientApp clientApp, String[] availableCuisines , LogoutCallback logoutCallback) {
+        this.frame = frame;
+        this.usernameField = usernameField;
+        this.passwordField = passwordField;
         this.clientApp = clientApp;
-        this.availableCuisines = new String[0];
-        initialize();
-        startResponsePolling();
-        Map<String, Object> request = new HashMap<>();
-        request.put("type", "getAvailableCuisines");
-        clientApp.addRequest(request);
+        this.availableCuisines = availableCuisines;
+        this.logoutCallback = logoutCallback;
     }
 
-    private JLabel connectionStatusLabel;
-
-    private void initialize() {
-        // Setup the main frame
-        frame = new JFrame("Usain Wolt");
-        frame.setSize(1050, 600);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-
-        // Add connection status label
-        connectionStatusLabel = new JLabel("Not connected");
-        frame.add(connectionStatusLabel, BorderLayout.NORTH);
-
-        // Call the method to generate the login screen
-        generateLogin();
-
-        // Set the frame visible at the end
-        frame.setVisible(true);
-    }
-
-    private void updateConnectionStatus(String status) {
-        SwingUtilities.invokeLater(() -> connectionStatusLabel.setText(status));
-    }
-
-
-    private void startResponsePolling() {
-        responsePoller = new Timer(100, e -> {
-            Map<String, Object> response = clientApp.getResponse();
-            if (response != null) {
-                processResponse(response);  // Process the response
-            }
-        });
-        responsePoller.start();  // Start the timer to poll responses
-    }
-
-    private void processResponse(Map<String, Object> response) {
-        String requestType = (String) response.get("type");
-        closeLoading();
-        if("false".equals(response.get("success"))) {
-            JOptionPane.showMessageDialog(frame, "Error: " + response.get("message"));
-            return;
-        }
-
-        switch (requestType) {
-            case "handleLogin":
-                handleLoginResponse(response);
-                break;
-            case "handleSignupCustomer":
-                handleSignupResponse(response);
-                break;
-            case "handleSignupRestaurant":
-                handleSignupResponse(response);
-                break;
-            case "handleSignupDelivery":
-                handleSignupResponse(response);
-                break;
-            case "handleGetAvailableCuisines":
-                availableCuisines = ((String) response.get("message")).split(",");
-                break;
-            case "handleGetRestaurants":
-                Type restaurantListType = new TypeToken<java.util.List<Restaurant>>(){}.getType();
-                List<Restaurant> restaurants = gson.fromJson((String) response.get("message"), restaurantListType);
-                showRestaurants(restaurants);
-                break;
-            case "handleGetMenu":
-                Type menuListType = new TypeToken<List<Map<String, Object>>>(){}.getType();
-                showMenu(gson.fromJson((String) response.get("message"), menuListType));
-                break;
-            case "handlePlaceOrder":
-                if ("true".equals(response.get("success"))) {
-                    JOptionPane.showMessageDialog(frame, "Order placed successfully!");
-                    showOrderHistory();
-                } else {
-                    JOptionPane.showMessageDialog(frame, "Error placing order: " + response.get("message"));
-                }
-        }
-
-
-    }
-
-    private void handleLoginResponse(Map<String, Object> response) {
-        if ("true".equals(response.get("success"))) {
-            JOptionPane.showMessageDialog(frame, "Login successful!");
-            switch ((String) response.get("message")) {
-                case "Logged in as customer":
-                    generateCustomerUI();
-                    break;
-                case "Logged in as restaurant":
-                    generateRestaurantUI();
-                    break;
-                case "Logged in as delivery":
-                    generateDeliveryUI();
-                    break;
-                case "Logged in as admin":
-                    generateAdminUI();
-                    break;
-            }
-        } else {
-            JOptionPane.showMessageDialog(frame, "Login failed: " + response.get("message"));
-        }
-    }
-
-    private void handleSignupResponse(Map<String, Object> response) {
-        if ("true".equals(response.get("success"))) {
-            JOptionPane.showMessageDialog(frame, "Signup successful!");
-            generateLogin();  // Redirect back to login after successful signup
-        } else {
-            JOptionPane.showMessageDialog(frame, "Signup failed: " + response.get("message"));
-        }
-    }
-
-    private void handleLogout() {
-        Map<String,Object> request = new HashMap<>();
-        request.put("type", "disconnect");
-        request.put("username", usernameField.getText());
-        request.put("password", new String(passwordField.getPassword()));
-        clientApp.addRequest(request);
-        generateLogin();
-    }
-
-    private void generateLogin() {
-        // Clear the existing components from the frame
-        frame.getContentPane().removeAll();
-        frame.setLayout(new BorderLayout());
-
-        // Add image to the left side
-        String imagePath = "src/Client/LOGO.jpg";  // Update this to the correct path
-        ImageIcon icon = new ImageIcon(imagePath);
-
-        // Resize the image to fit the JLabel if necessary
-        Image img = icon.getImage();
-        Image resizedImg = img.getScaledInstance(600, 600, Image.SCALE_SMOOTH);
-        icon = new ImageIcon(resizedImg);
-
-        JLabel imageLabel = new JLabel(icon);
-        frame.add(imageLabel, BorderLayout.WEST);
-
-        // Create login panel
-        JPanel loginPanel = new JPanel();
-        loginPanel.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // Create labels and fields for username and password
-        JLabel usernameLabel = new JLabel("Username:");
-        usernameField = new JTextField(20);  // Use instance variable here
-
-        JLabel passwordLabel = new JLabel("Password:");
-        passwordField = new JPasswordField(20);  // Use instance variable here
-
-        // Add Username label and text field
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        loginPanel.add(usernameLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        loginPanel.add(usernameField, gbc);
-
-        // Add Password label and password field
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        loginPanel.add(passwordLabel, gbc);
-
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        loginPanel.add(passwordField, gbc);
-
-        // Create and add Login and Signup buttons
-        JButton loginButton = new JButton("Login");
-        JButton signupButton = new JButton("Sign Up");
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        loginPanel.add(loginButton, gbc);
-
-        gbc.gridy = 3;
-        loginPanel.add(signupButton, gbc);
-
-        // Add action listener for login button
-        loginButton.addActionListener(e -> {
-            String username = usernameField.getText();
-            String password = new String(passwordField.getPassword());
-
-            try {
-                Map<String, Object> request = new HashMap<>();
-                request.put("type", "login");
-                request.put("username", username);
-                request.put("password", password);
-
-                clientApp.addRequest(request);  // Enqueue the request
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
-            }
-        });
-
-        // Add action listener for signup button
-        signupButton.addActionListener(e -> generateSignup());
-
-        frame.add(loginPanel, BorderLayout.EAST); // Place the login panel on the right side
-        frame.revalidate();
-        frame.repaint();
-    }
-
-    private void generateSignup() {
-        // Clear the existing components from the frame
-        frame.getContentPane().removeAll();
-        frame.setLayout(new BorderLayout());
-
-        // Add image to the left side (keeping the image)
-        String imagePath = "src/Client/LOGO.jpg";  // Update this to the correct path
-        ImageIcon icon = new ImageIcon(imagePath);
-
-        // Resize the image to fit the JLabel if necessary
-        Image img = icon.getImage();
-        Image resizedImg = img.getScaledInstance(600, 600, Image.SCALE_SMOOTH);
-        icon = new ImageIcon(resizedImg);
-
-        JLabel imageLabel = new JLabel(icon);
-        frame.add(imageLabel, BorderLayout.WEST);
-
-        // Create a panel for the right side with GridBagLayout
-        JPanel signupPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // Ensure the form is centered
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.anchor = GridBagConstraints.CENTER;
-
-        // Add Back to Login button in the top left
-        JButton backButton = new JButton("Back to Login");
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0.0;
-        gbc.weighty = 0.0;
-        gbc.anchor = GridBagConstraints.NORTHWEST;
-        signupPanel.add(backButton, gbc);
-
-        // Add UserType dropdown in the top middle
-        JComboBox<String> userTypeDropdown = new JComboBox<>(new String[]{"Customer", "Restaurant", "Delivery"});
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.NORTH;
-        signupPanel.add(userTypeDropdown, gbc);
-
-        // Create a panel for the signup form fields
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.NORTH;
-        signupPanel.add(formPanel, gbc);
-
-        // Method to add a field to the formPanel
-        JTextField signupUsernameField = addFormField(formPanel, "Username", 0);
-        JPasswordField signupPasswordField = (JPasswordField) addFormField(formPanel, "Password", 1, true);
-        JPasswordField confirmPasswordField = (JPasswordField) addFormField(formPanel, "Confirm Password", 2, true);
-        JTextField emailField = addFormField(formPanel, "Email", 3);
-        JTextField addressField = addFormField(formPanel, "Address", 4);
-        JTextField phoneNumberField = addFormField(formPanel, "Phone Number", 5);
-
-        // Placeholder fields for additional fields
-        JTextField businessPhoneField = new JTextField(20);
-        String cuisine_options = "";
-        try {
-            cuisine_options = ((String) clientApp.getAvailableCuisines().get("message")).replace(",All", "");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        JComboBox<String> cuisineDropdown = new JComboBox<>(cuisine_options.split(","));
-        JTextField tokenField = new JTextField(20);
-
-        // Submit button
-        JButton submitButton = new JButton("Submit");
-        gbc.gridx = 0;
-        gbc.gridy = 8;
-        gbc.gridwidth = 2;
-        formPanel.add(submitButton, gbc);
-
-        // Action to update the form based on the selected user type
-        userTypeDropdown.addActionListener(e -> {
-            formPanel.removeAll(); // Clear the formPanel
-
-            // Add common fields
-            addFormField(formPanel, "Username", 0, signupUsernameField);
-            addFormField(formPanel, "Password", 1, signupPasswordField, true);
-            addFormField(formPanel, "Confirm Password", 2, confirmPasswordField, true);
-            addFormField(formPanel, "Email", 3, emailField);
-            addFormField(formPanel, "Address", 4, addressField);
-            addFormField(formPanel, "Phone Number", 5, phoneNumberField);
-
-            String userType = (String) userTypeDropdown.getSelectedItem();
-            if ("Restaurant".equals(userType)) {
-                addFormField(formPanel, "Business Phone", 6, businessPhoneField);
-                addComboBoxField(formPanel, "Cuisine", 7, cuisineDropdown);
-                gbc.gridy = 8;
-            } else if ("Delivery".equals(userType)) {
-                addFormField(formPanel, "Acceptance Token", 6, tokenField);
-                gbc.gridy = 7;
-            } else {
-                gbc.gridy = 6;
-            }
-
-            // Add submit button at the bottom
-            formPanel.add(submitButton, gbc);
-
-            formPanel.revalidate();
-            formPanel.repaint();
-        });
-
-        backButton.addActionListener(e -> generateLogin()); // Go back to the login screen
-
-        submitButton.addActionListener(e -> {
-            String userType = (String) userTypeDropdown.getSelectedItem();
-            String username = signupUsernameField.getText();
-            String password = new String(signupPasswordField.getPassword());
-            String confirmPassword = new String(confirmPasswordField.getPassword());
-            String email = emailField.getText();
-            String address = addressField.getText();
-            String phoneNumber = phoneNumberField.getText();
-
-            if (!password.equals(confirmPassword)) {
-                JOptionPane.showMessageDialog(frame, "Passwords do not match. Please try again.");
-                return;
-            }
-
-            try {
-                Map<String, Object> request = new HashMap<>();
-                request.put("username", username);
-                request.put("password", password);
-                request.put("address", address);
-                request.put("phoneNumber", phoneNumber);
-                request.put("email", email);
-
-                if ("Customer".equals(userType)) {
-                    request.put("type", "signupCustomer");
-                } else if ("Restaurant".equals(userType)) {
-                    String businessPhoneNumber = businessPhoneField.getText();
-                    String cuisine = (String) cuisineDropdown.getSelectedItem();
-                    request.put("type", "signupRestaurant");
-                    request.put("businessPhoneNumber", businessPhoneNumber);
-                    request.put("cuisine", cuisine);
-                } else if ("Delivery".equals(userType)) {
-                    String token = tokenField.getText();
-                    request.put("type", "signupDelivery");
-                    request.put("token", token);
-                }
-
-                clientApp.addRequest(request);  // Enqueue the request
-
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame, "Error during signup: " + ex.getMessage());
-            }
-        });
-
-        // Add signupPanel to the right side
-        frame.add(signupPanel, BorderLayout.EAST);
-        frame.revalidate();
-        frame.repaint();
-    }
-
-    // Method to add form fields for text fields and password fields
-    private JTextField addFormField(JPanel panel, String labelText, int yPos) {
-        return addFormField(panel, labelText, yPos, new JTextField(20), false);
-    }
-
-    private JPasswordField addFormField(JPanel panel, String labelText, int yPos, boolean isPasswordField) {
-        return (JPasswordField) addFormField(panel, labelText, yPos, new JPasswordField(20), true);
-    }
-
-    private JTextField addFormField(JPanel panel, String labelText, int yPos, JTextField textField) {
-        return addFormField(panel, labelText, yPos, textField, false);
-    }
-
-    private JTextField addFormField(JPanel panel, String labelText, int yPos, JTextField textField, boolean isPasswordField) {
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        JLabel label = new JLabel(labelText);
-        gbc.gridx = 0;
-        gbc.gridy = yPos;
-        panel.add(label, gbc);
-
-        gbc.gridx = 1;
-        gbc.gridy = yPos;
-        panel.add(textField, gbc);
-
-        return textField;
-    }
-
-    // Method to add form fields for JComboBox
-    private void addComboBoxField(JPanel panel, String labelText, int yPos, JComboBox<String> comboBox) {
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        JLabel label = new JLabel(labelText);
-        gbc.gridx = 0;
-        gbc.gridy = yPos;
-        panel.add(label, gbc);
-
-        gbc.gridx = 1;
-        gbc.gridy = yPos;
-        panel.add(comboBox, gbc);
-    }
-
-    // -------------------------------------- UI for Customer --------------------------------------
-
-    private void generateCustomerUI() {
+    void generateCustomerUI() {
         // Clear the existing components from the frame
         frame.getContentPane().removeAll();
         frame.setLayout(new BorderLayout());
@@ -492,6 +75,10 @@ public class UsainWoltGUI {
         // Refresh the frame to display the new UI
         frame.revalidate();
         frame.repaint();
+    }
+
+    private void handleLogout() {
+        logoutCallback.onLogout();
     }
 
     // Method to show place order screen
@@ -569,11 +156,15 @@ public class UsainWoltGUI {
     }
 
     private void performSearch(int distance, String selectedCuisine) throws Exception {
-       clientApp.searchRestaurantsAsync(usernameField.getText(), new String(passwordField.getPassword()), selectedCuisine, String.valueOf(distance));
-       showLoading();
+        clientApp.searchRestaurantsAsync(usernameField.getText(), new String(passwordField.getPassword()), selectedCuisine, String.valueOf(distance));
+        showLoading();
     }
 
-    private void showRestaurants(List<Restaurant> restaurants) {
+    private void showLoading() {
+        logoutCallback.showLoadingScreen();
+    }
+
+    void showRestaurants(java.util.List<Restaurant> restaurants) {
         // Get the main content panel to clear and update
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -699,8 +290,6 @@ public class UsainWoltGUI {
         return restaurantPanel;
     }
 
-
-
     // Helper method to load and resize images
     private ImageIcon loadImageIcon(String pathOrUrl, int width, int height) {
         try {
@@ -729,7 +318,7 @@ public class UsainWoltGUI {
         }
     }
 
-    private void showMenu(List<Map<String, Object>> menu) {
+    void showMenu(java.util.List<Map<String, Object>> menu) {
         // Clear the main content panel to show the menu
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -857,7 +446,7 @@ public class UsainWoltGUI {
         return menuItemPanel;
     }
 
-    private void proceedToCheckout(List<Map<String, Object>> menu) {
+    private void proceedToCheckout(java.util.List<Map<String, Object>> menu) {
         // Create a new JFrame for the checkout window
         JFrame checkoutFrame = new JFrame("Checkout");
         checkoutFrame.setSize(700, 500);
@@ -982,9 +571,8 @@ public class UsainWoltGUI {
         checkoutFrame.setVisible(true);
     }
 
-
     // Method to place the order
-    private void placeOrder(double totalAmount, String address, String cardNumber, String expirationDate, String cvv, boolean sendHome, boolean useSavedCard, String note, List<Map<String, Object>> menu) {
+    private void placeOrder(double totalAmount, String address, String cardNumber, String expirationDate, String cvv, boolean sendHome, boolean useSavedCard, String note, java.util.List<Map<String, Object>> menu) {
         try{
             Map<String, Object> request = new HashMap<>();
             request.put("type", "placeOrder");
@@ -1008,79 +596,328 @@ public class UsainWoltGUI {
     }
 
     // Method to show order history screen
-    private void showOrderHistory() {
-        JOptionPane.showMessageDialog(frame, "Feature to view order history coming soon!");
+    void showOrderHistory() {
+        clientApp.getOrdersHistoryAsync(usernameField.getText(), new String(passwordField.getPassword()));
+        showLoading();
+    }
+
+    void showOrderHistoryFrame(List<Order> orders){
+        JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
+        mainContentPanel.removeAll();
+        mainContentPanel.setLayout(new BorderLayout());
+
+        JPanel orderPanel = new JPanel();
+        orderPanel.setLayout(new BoxLayout(orderPanel, BoxLayout.Y_AXIS));
+
+        for (Order order : orders) {
+            JPanel orderItemPanel = createOrderPanel(order);
+            orderPanel.add(orderItemPanel);
+            orderPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        }
+
+        JScrollPane scrollPane = new JScrollPane(orderPanel);
+
+        mainContentPanel.add(scrollPane, BorderLayout.CENTER);
+
+        mainContentPanel.revalidate();
+        mainContentPanel.repaint();
+    }
+
+    private JPanel createOrderPanel(Order order) {
+        JPanel orderPanel = new JPanel(new BorderLayout(10, 10));
+        orderPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Order ID on the Left
+        JLabel orderIdLabel = new JLabel("Order ID: " + order.getOrderId());
+        orderPanel.add(orderIdLabel, BorderLayout.WEST);
+
+        // Order Details in the Center
+        JPanel infoPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 10, 5, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Row 0: Restaurant Name with Icon
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        JLabel restaurantIconLabel = new JLabel(loadImageIcon("icons/restaurant.png", 24, 24));
+        infoPanel.add(restaurantIconLabel, gbc);
+
+        gbc.gridx = 1;
+        JLabel restaurantLabel = new JLabel(order.getRestaurantName());
+        restaurantLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        infoPanel.add(restaurantLabel, gbc);
+
+        // Row 1: Total Amount with Icon
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        JLabel totalIconLabel = new JLabel(loadImageIcon("icons/total.png", 24, 24));
+        infoPanel.add(totalIconLabel, gbc);
+
+        gbc.gridx = 1;
+        JLabel totalLabel = new JLabel(String.format("$%.2f", order.getTotalPrice()));
+        totalLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        infoPanel.add(totalLabel, gbc);
+
+        // Row 2: Order Date with Icon
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        JLabel dateIconLabel = new JLabel(loadImageIcon("icons/date.png", 24, 24));
+        infoPanel.add(dateIconLabel, gbc);
+
+        gbc.gridx = 1;
+        JLabel dateLabel = new JLabel(String.valueOf(order.getOrderDate()));
+        dateLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+        infoPanel.add(dateLabel, gbc);
+
+        // Add the infoPanel to the orderPanel center
+        orderPanel.add(infoPanel, BorderLayout.CENTER);
+
+        // Order Status on the Right
+        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JLabel statusLabel = new JLabel(order.getStatus());
+        statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        statusPanel.add(statusLabel);
+
+        orderPanel.add(statusPanel, BorderLayout.EAST);
+
+        return orderPanel;
     }
 
     // Method to show user settings screen
     private void showUserSettings() {
-        JOptionPane.showMessageDialog(frame, "Feature to manage user settings coming soon!");
+        JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
+        mainContentPanel.removeAll();
+        mainContentPanel.setLayout(new BorderLayout());
+
+        // Create a panel for the user settings
+        JPanel settingsPanel = new JPanel();
+        settingsPanel.setLayout(new GridBagLayout());
+        settingsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Add change password button
+        JButton changePasswordButton = new JButton("Change Password");
+        changePasswordButton.addActionListener(e -> showChangePasswordDialog());
+        gbc.gridy = 0;
+        settingsPanel.add(changePasswordButton, gbc);
+
+        // add change email button
+        JButton changeEmailButton = new JButton("Change Email");
+        changeEmailButton.addActionListener(e -> showChangeEmailDialog());
+        gbc.gridy++;
+        settingsPanel.add(changeEmailButton, gbc);
+
+        // Add change phone number button
+        JButton changePhoneNumberButton = new JButton("Change Phone Number");
+        changePhoneNumberButton.addActionListener(e -> showChangePhoneNumberDialog());
+        gbc.gridy++;
+        settingsPanel.add(changePhoneNumberButton, gbc);
+
+        // Add change address button
+        JButton changeAddressButton = new JButton("Change Address");
+        changeAddressButton.addActionListener(e -> showChangeAddressDialog());
+        gbc.gridy++;
+        settingsPanel.add(changeAddressButton, gbc);
+
+        // Add delete account button
+        JButton deleteAccountButton = new JButton("Delete Account");
+        deleteAccountButton.addActionListener(e -> showDeleteAccountDialog());
+        gbc.gridy++;
+        settingsPanel.add(deleteAccountButton, gbc);
+
+        mainContentPanel.add(settingsPanel, BorderLayout.CENTER);
+
+        mainContentPanel.revalidate();
+        mainContentPanel.repaint();
+
     }
 
+    private void showChangePasswordDialog() {
+        JDialog dialog = new JDialog(frame, "Change Password", true);
+        dialog.setLayout(new GridBagLayout());
+        dialog.setSize(400, 200);
 
-    // -------------------------------------- UI for Restaurant --------------------------------------
-    private void generateRestaurantUI() {
-        // Implement the UI for the restaurant here
-    }
-    // -------------------------------------- UI for Delivery --------------------------------------
-    private void generateDeliveryUI() {
-        // Implement the UI for the delivery here
-    }
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-    // -------------------------------------- UI for Admin --------------------------------------
-    private void generateAdminUI() {
-        // Implement the UI for the admin here
-    }
+        // Current password
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        dialog.add(new JLabel("Current Password:"), gbc);
 
-    // -------------------------------------Loading screen--------------------------------------
-    private JDialog loadingDialog;
+        gbc.gridx = 1;
+        JPasswordField currentPasswordField = new JPasswordField(15);
+        dialog.add(currentPasswordField, gbc);
 
-    // Method to show the loading dialog
-    private void showLoading() {
-        if (loadingDialog == null) {
-            // Create a new JDialog with a loading message
-            loadingDialog = new JDialog(frame, "Loading", true);
-            loadingDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-            loadingDialog.setSize(200, 100);
-            loadingDialog.setLayout(new BorderLayout());
+        // New password
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        dialog.add(new JLabel("New Password:"), gbc);
 
-            JLabel loadingLabel = new JLabel("Loading, please wait...", SwingConstants.CENTER);
-            loadingDialog.add(loadingLabel, BorderLayout.CENTER);
+        gbc.gridx = 1;
+        JPasswordField newPasswordField = new JPasswordField(15);
+        dialog.add(newPasswordField, gbc);
 
-            // Optionally, you can add a loading icon or animation
-            // loadingLabel.setIcon(new ImageIcon("path/to/loading.gif"));
+        // Confirm new password
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        dialog.add(new JLabel("Confirm Password:"), gbc);
 
-            // Center the dialog on the parent frame
-            loadingDialog.setLocationRelativeTo(frame);
-        }
+        gbc.gridx = 1;
+        JPasswordField confirmPasswordField = new JPasswordField(15);
+        dialog.add(confirmPasswordField, gbc);
 
-        // Show the loading dialog
-        SwingUtilities.invokeLater(() -> loadingDialog.setVisible(true));
-    }
+        // Submit button
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JButton submitButton = new JButton("Change Password");
+        submitButton.addActionListener(e -> {
+            String currentPassword = new String(currentPasswordField.getPassword());
+            String newPassword = new String(newPasswordField.getPassword());
+            String confirmPassword = new String(confirmPasswordField.getPassword());
 
-    // Method to close the loading dialog
-    private void closeLoading() {
-        if (loadingDialog != null) {
-            // Hide and dispose of the loading dialog
-            SwingUtilities.invokeLater(() -> {
-                loadingDialog.setVisible(false);
-                loadingDialog.dispose();
-                loadingDialog = null; // Reset the reference for future use
-            });
-        }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                ClientApp clientApp = new ClientApp("localhost", 12345);
-                Thread clientThread = new Thread(clientApp);
-                clientThread.start();
-
-                new UsainWoltGUI(clientApp);
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (newPassword.equals(confirmPassword)) {
+                clientApp.changeParameterAsync(usernameField.getText(), currentPassword, "password", newPassword);
+                showLoading();
+                dialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(dialog, "New passwords do not match!");
             }
         });
+        dialog.add(submitButton, gbc);
+
+        dialog.setLocationRelativeTo(frame);
+        dialog.setVisible(true);
     }
+
+    private void showChangeEmailDialog() {
+        JDialog dialog = new JDialog(frame, "Change Email", true);
+        dialog.setLayout(new GridBagLayout());
+        dialog.setSize(400, 150);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Current email
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        dialog.add(new JLabel("New Email:"), gbc);
+
+        gbc.gridx = 1;
+        JTextField newEmailField = new JTextField(15);
+        dialog.add(newEmailField, gbc);
+
+        // Submit button
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JButton submitButton = new JButton("Change Email");
+        submitButton.addActionListener(e -> {
+            String newEmail = newEmailField.getText();
+
+            clientApp.changeParameterAsync(usernameField.getText(), new String(passwordField.getPassword()), "email", newEmail);
+            showLoading();
+            dialog.dispose();
+        });
+        dialog.add(submitButton, gbc);
+
+        dialog.setLocationRelativeTo(frame);
+        dialog.setVisible(true);
+    }
+
+    private void showChangePhoneNumberDialog() {
+        JDialog dialog = new JDialog(frame, "Change Phone Number", true);
+        dialog.setLayout(new GridBagLayout());
+        dialog.setSize(400, 150);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // New phone number
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        dialog.add(new JLabel("New Phone Number:"), gbc);
+
+        gbc.gridx = 1;
+        JTextField newPhoneNumberField = new JTextField(15);
+        dialog.add(newPhoneNumberField, gbc);
+
+        // Submit button
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JButton submitButton = new JButton("Change Phone Number");
+        submitButton.addActionListener(e -> {
+            String newPhoneNumber = newPhoneNumberField.getText();
+
+            clientApp.changeParameterAsync(usernameField.getText(), new String(passwordField.getPassword()), "phoneNumber", newPhoneNumber);
+            showLoading();
+            dialog.dispose();
+        });
+        dialog.add(submitButton, gbc);
+
+        dialog.setLocationRelativeTo(frame);
+        dialog.setVisible(true);
+    }
+
+    private void showChangeAddressDialog() {
+        JDialog dialog = new JDialog(frame, "Change Address", true);
+        dialog.setLayout(new GridBagLayout());
+        dialog.setSize(400, 150);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // New address
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        dialog.add(new JLabel("New Address:"), gbc);
+
+        gbc.gridx = 1;
+        JTextField newAddressField = new JTextField(15);
+        dialog.add(newAddressField, gbc);
+
+        // Submit button
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JButton submitButton = new JButton("Change Address");
+        submitButton.addActionListener(e -> {
+            String newAddress = newAddressField.getText();
+            clientApp.changeParameterAsync(usernameField.getText(), new String(passwordField.getPassword()), "address", newAddress);
+            showLoading();
+            // Close the dialog after submitting
+            dialog.dispose();
+        });
+        dialog.add(submitButton, gbc);
+
+        dialog.setLocationRelativeTo(frame);
+        dialog.setVisible(true);
+    }
+
+    private void showDeleteAccountDialog() {
+        int confirm = JOptionPane.showConfirmDialog(frame,
+                "Are you sure you want to delete your account? This action cannot be undone.",
+                "Delete Account",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            clientApp.deleteAccountAsync(usernameField.getText(), new String(passwordField.getPassword()));
+            showLoading();
+        }
+    }
+
 }

@@ -1,4 +1,6 @@
-package Server;
+package Server.Models;
+
+import Server.Utilities.GeoLocationService;
 
 public abstract class User {
     private String userName;
@@ -29,12 +31,8 @@ public abstract class User {
         this.address = fields[3];
         this.phoneNumber = fields[4];
         this.email = fields[5];
-        GeoLocationService geoLocationService = new GeoLocationService();
-        try {
-            this.location = geoLocationService.getCoordinates(address);
-        } catch (Exception e) {
-            System.out.println("Error getting coordinates for address: " + address);
-        }
+        this.location[0] = Double.parseDouble(fields[6]);
+        this.location[1] = Double.parseDouble(fields[7]);
     }
 
     // Getters and Setters
@@ -91,7 +89,7 @@ public abstract class User {
 
 
     public String toString() {
-        return userName + "," + hashedPassword + "," + address + "," + phoneNumber + "," + email;
+        return userName + "," + hashedPassword + "," + address + "," + phoneNumber + "," + email + "," + location[0] + "," + location[1];
     }
 
     // Abstract method to be implemented by subclasses

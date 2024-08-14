@@ -1,4 +1,4 @@
-package Client;
+package Client.model;
 
 public class Restaurant {
     private String restaurantName;

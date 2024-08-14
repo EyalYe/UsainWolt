@@ -1,6 +1,7 @@
-package Client;
+package Client.network;
 
-import Server.Order;
+import Client.model.Restaurant;
+import Server.Models.Order;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -85,48 +86,63 @@ public class ClientApp implements Runnable {
     }
 
     private Map<String, Object> sendRequest(Map<String, Object> request) throws Exception {
-        if (out == null) {
-            System.out.println("Output stream is not initialized. Attempting to establish a connection...");
-            if (clientSocket == null || clientSocket.isClosed()) {
-                clientSocket = new Socket(serverAddress, port);
-                out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        try {
+            // Attempt to establish a connection if necessary
+            if (out == null || clientSocket == null || clientSocket.isClosed() || !clientSocket.isConnected()) {
+                System.out.println("Output stream is not initialized or connection is closed. Attempting to establish a connection...");
+                establishConnection();
             }
-        }
 
-        if (out != null) {
-            String jsonRequest = gson.toJson(request);
-            System.out.println("Sending request: " + jsonRequest);
-            out.println(jsonRequest);
+            if (out != null) {
+                String jsonRequest = gson.toJson(request);
+                System.out.println("Sending request: " + jsonRequest);
+                out.println(jsonRequest);
 
-            StringBuilder jsonResponseBuilder = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                jsonResponseBuilder.append(line);
-                if (line.endsWith("}")) { // Simple check for end of JSON object
-                    break;
+                // Read the response from the server
+                StringBuilder jsonResponseBuilder = new StringBuilder();
+                String line;
+                while ((line = in.readLine()) != null) {
+                    jsonResponseBuilder.append(line);
+                    if (line.endsWith("}")) { // Simple check for end of JSON object
+                        break;
+                    }
                 }
-            }
-            String jsonResponse = jsonResponseBuilder.toString();
-            System.out.println("Received response: " + jsonResponse);
 
-            if (jsonResponse != null && jsonResponse.startsWith("{")) {
-                Type type = new TypeToken<Map<String, Object>>() {}.getType();
-                return gson.fromJson(jsonResponse, type);
+                String jsonResponse = jsonResponseBuilder.toString();
+                System.out.println("Received response: " + jsonResponse);
+
+                if (jsonResponse != null && jsonResponse.startsWith("{")) {
+                    Type type = new TypeToken<Map<String, Object>>() {}.getType();
+                    return gson.fromJson(jsonResponse, type);
+                } else {
+                    System.out.println("Unexpected server response: " + jsonResponse);
+                    return createErrorResponse("Unexpected server response: " + jsonResponse);
+                }
             } else {
-                System.out.println("Unexpected server response: " + jsonResponse);
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("success", false);
-                errorResponse.put("message", "Unexpected server response: " + jsonResponse);
-                return errorResponse;
+                System.out.println("Failed to initialize the output stream.");
+                return createErrorResponse("Failed to establish connection.");
             }
-        } else {
-            System.out.println("Failed to initialize the output stream.");
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Failed to establish connection.");
-            return errorResponse;
+        } catch (Exception e) {
+            System.out.println("Exception occurred: " + e.getMessage());
+            running = false;
+            return createErrorResponse("Connection failed or dropped: " + e.getMessage());
         }
+    }
+
+    private void establishConnection() throws Exception {
+        if (clientSocket != null && !clientSocket.isClosed()) {
+            clientSocket.close();
+        }
+        clientSocket = new Socket(serverAddress, port);
+        out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+    }
+
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("success", false);
+        errorResponse.put("message", message);
+        return errorResponse;
     }
 
     public void closeConnection() {
@@ -261,7 +277,6 @@ public class ClientApp implements Runnable {
         return sendRequest(request);
     }
 
-
     // Method to update a customer's credit card information
     public Map<String, Object> updateCreditCard(String username, String password, String creditCardNumber, String expirationDate, String cvv) throws Exception {
         Map<String, Object> request = new HashMap<>();
@@ -291,6 +306,16 @@ public class ClientApp implements Runnable {
             throw new Exception("Failed to retrieve order history: " + response.get("message"));
         }
     }
+
+    public void getOrdersHistoryAsync(String username, String password){
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getOrdersHistory");
+        request.put("username", username);
+        request.put("password", password);
+
+        addRequest(request);
+    }
+
 
     // Method to search restaurants
     public List<Restaurant> searchRestaurants(String username, String password, String cuisine, String distance) throws Exception {
@@ -493,5 +518,26 @@ public class ClientApp implements Runnable {
     }
 
 
+    public void changeParameterAsync(String username, String password, String parameter, String newValue) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "changeParameter");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("parameter", parameter);
+        request.put("newValue", newValue);
+        addRequest(request);
+    }
+
+    public void deleteAccountAsync(String username, String password) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "deleteAccount");
+        request.put("username", username);
+        request.put("password", password);
+        addRequest(request);
+    }
+
+    public void close() {
+        closeConnection();
+    }
 }
 

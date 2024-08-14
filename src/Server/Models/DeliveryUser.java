@@ -1,6 +1,6 @@
-package Server;
+package Server.Models;
 
-public class DeliveryUser extends User{
+public class DeliveryUser extends User {
     private double rating;
     private int numRatings;
     private double totalRating;
