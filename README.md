@@ -3,6 +3,13 @@
 ## Introduction
 **UsainWolt** is a Java-based clone of the Wolt food delivery application. The system allows customers to browse nearby restaurants, view menus, place orders, and track their order history. For restaurants, it provides functionality to update menus, manage orders, and track revenue. The project is built using object-oriented design principles and follows a client-server architecture, with separate packages for client and server functionalities.
 
+## How to run the project
+1. Clone the repository
+2. Open the project in an IDE (IntelliJ IDEA is recommended)
+3. Run the `ServerMain` class to start the server
+4. Run the `UsainWoltMain` class to start the client
+5. And you are good to go!
+
 ## ToDos
 ### Server
 - [] Check edge cases of every method that requires input from the user
