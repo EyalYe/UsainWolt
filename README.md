@@ -11,10 +11,10 @@
 5. And you are good to go!
 
 ## Troubleshooting
-** We use the following dependencies in the project:**
+**We use the following dependencies in the project:**
 - Gson
 
-** We use the following ports in the project:**
+**We use the following ports in the project:**
 - 8080 for the image server
 - 12345 for the server
 
