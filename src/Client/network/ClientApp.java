@@ -185,7 +185,6 @@ public class ClientApp implements Runnable {
         }
     }
 
-
     // Method to login a user
     public Map<String, Object> login(String username, String password) throws Exception {
         Map<String, Object> request = new HashMap<>();
@@ -316,7 +315,6 @@ public class ClientApp implements Runnable {
 
         addRequest(request);
     }
-
 
     // Method to search restaurants
     public List<Restaurant> searchRestaurants(String username, String password, String cuisine, String distance) throws Exception {
@@ -654,6 +652,16 @@ public class ClientApp implements Runnable {
         request.put("password", password);
         request.put("distance", distance);
         request.put("address", address);
+
+        addRequest(request);
+    }
+
+    public void markDeliveryCompleteAsync(String username, String password, int deliveryId) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "markDeliveryComplete");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("deliveryId", deliveryId);
 
         addRequest(request);
     }

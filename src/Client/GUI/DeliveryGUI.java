@@ -560,8 +560,6 @@ public class DeliveryGUI {
         mainContentPanel.repaint();
     }
 
-
-
     private void showDeliveryHistory() {
         clientApp.getOrdersHistoryAsync(usernameField.getText(), new String(passwordField.getPassword()));
         showLoading();
