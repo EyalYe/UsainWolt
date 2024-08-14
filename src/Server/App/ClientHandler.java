@@ -13,6 +13,9 @@ import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.List;
+
+import static Server.App.ServerApp.DELIVERY_FEE;
 
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
@@ -108,14 +111,17 @@ public class ClientHandler implements Runnable {
                         case "getDeliveryOrders":
                             response = handleGetDeliveryOrders(request);
                             break;
-                        case "markDeliveryComplete":
+                        case "pickupOrder":
+                            response = handlePickupOrder(request);
+                            break;
+                        case "checkIfOnDelivery":
+                            response = handleCheckIfOnDelivery(request);
+                            break;
+                        case "markOrderDelivered":
                             response = handleMarkOrderDelivered(request);
                             break;
                         case "getIncomeData":
-                            response = handleGetIncome(request);
-                            break;
-                        case "pickupOrder":
-                            response = handlePickupOrder(request);
+                            response = handleGetIncomeData(request);
                             break;
                         default:
                             response = handleDefault();
@@ -143,6 +149,74 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private String handleGetIncomeData(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+
+        return createResponse(true, gson.toJson(deliveryUser.getIncome()));
+    }
+
+    private String handleMarkOrderDelivered(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+        int orderId = Integer.parseInt(request.get("orderId"));
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+
+        if (deliveryUser == null) {
+            return createResponse(false, "Authentication failed or delivery user not found");
+        }
+
+        if (deliveryUser.getCurrentOrder() == null) {
+            return createResponse(false, "You are not on a delivery");
+        }
+
+        deliveryUser.getCurrentOrder().setStatus("Delivered");
+        deliveryUser.addIncome(DELIVERY_FEE);
+        ServerApp.updateOrderInCSV(deliveryUser.getCurrentOrder());
+        deliveryUser.setCurrentOrder(null);
+        ServerApp.updateUserInCSV(deliveryUser);
+
+        return createResponse(true, "Order marked as delivered");
+    }
+
+    private String handleCheckIfOnDelivery(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+
+        if (deliveryUser == null) {
+            return createResponse(false, "Authentication failed or delivery user not found");
+        }
+
+        if (deliveryUser.getCurrentOrder() == null) {
+            return createResponse(true, "You are not on a delivery");
+        }
+
+        return createResponse(true, "You are on a delivery");
+    }
+
     private String handlePickupOrder(Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
@@ -155,19 +229,91 @@ public class ClientHandler implements Runnable {
                 break;
             }
         }
+
         if (deliveryUser == null) {
             return createResponse(false, "Authentication failed or delivery user not found");
         }
 
-        Order order = new Order(orderId);
-
-        order.setStatus("Picked Up");
-        if (ServerApp.updateOrderInCSV(order)) {
-            return createResponse(true, "Order marked as delivered");
-        } else {
-            return createResponse(false, "Failed to update order status");
+        if (deliveryUser.getCurrentOrder() != null) {
+            return createResponse(false, "You already have an order to deliver");
         }
+
+        List<Order> deliveryOrders = ServerApp.getPendingOrders();
+        for (Order order : deliveryOrders) {
+            if (order.getOrderId() == orderId) {
+                order.setStatus("Picked Up");
+                order.setDeliveryPerson(deliveryUser.getUserName());
+                ServerApp.updateOrderInCSV(order);
+                deliveryUser.setCurrentOrder(order);
+            }
+        }
+
+        return createResponse(true, "Order picked up successfully");
     }
+
+    private String handleGetDeliveryOrders(Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+
+        DeliveryUser deliveryUser = null;
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
+                deliveryUser = (DeliveryUser) user;
+                break;
+            }
+        }
+
+        if (deliveryUser == null) {
+            return createResponse(false, "Authentication failed or delivery user not found");
+        }
+        double desiredDistance = 0;
+        List<Order> deliveryOrders = new ArrayList<>();
+        String currentLocation = request.get("address");
+        if (currentLocation == null || currentLocation.isEmpty()) {
+            return createResponse(false, "Current location not provided");
+        }
+        try {
+            desiredDistance = Double.parseDouble(request.get("distance"));
+        }
+        catch (NumberFormatException e) {
+            return createResponse(false, "Invalid distance format");
+        }
+
+        double distance = 999;
+        for (Order order : ServerApp.getPendingOrders()) {
+            if (!order.getStatus().equals("Ready For Pickup")) {
+                System.out.println("order status: " + order.getStatus());
+                continue;
+            }
+            try {
+                distance = geoLocationService.calculateDistance(order.getAddress(), currentLocation);
+            }catch (Exception e){
+                deliveryOrders.remove(order);
+                continue;
+            }
+            if (distance > desiredDistance) {
+                continue;
+            }
+            order.setDistance(distance);
+            deliveryOrders.add(order);
+        }
+        if (deliveryOrders == null || deliveryOrders.isEmpty()) {
+            return createResponse(false, "No orders available for delivery");
+        }
+        return createResponse(true, gson.toJson(deliveryOrders));
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     private Map<String, String> parseRequest(String inputLine) {
         Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
@@ -1112,69 +1258,6 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Parameter updated successfully");
     }
 
-    private String handleGetIncome(Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-
-        DeliveryUser deliveryUser = null;
-        for (User user : ServerApp.allUsers) {
-            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
-                deliveryUser = (DeliveryUser) user;
-                break;
-            }
-        }
-        if (deliveryUser == null) {
-            return createResponse(false, "Authentication failed or restaurant not found");
-        }
-
-
-        return createResponse(true, String.valueOf(deliveryUser.getIncome()));
-    }
-
-    private String handleMarkOrderDelivered(Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-        Type type = new TypeToken<Order>(){}.getType();
-        Order order = gson.fromJson(request.get("order"), type);
-
-        DeliveryUser deliveryUser = null;
-        for (User user : ServerApp.allUsers) {
-            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
-                deliveryUser = (DeliveryUser) user;
-                break;
-            }
-        }
-        if(deliveryUser == null) {
-            return createResponse(false, "Authentication failed or delivery user not found");
-        }
-
-        order.setStatus("Delivered");
-        if (ServerApp.updateOrderInCSV(order)) {
-            deliveryUser.addIncome(order.getTotalPrice());
-            ServerApp.updateOrderInCSV(order);
-            return createResponse(true, "Order status updated successfully");
-        } else {
-            return createResponse(false, "Failed to update order status");
-        }
-    }
-
-    private String handleGetDeliveryOrders(Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-
-        DeliveryUser deliveryUser = null;
-        for (User user : ServerApp.allUsers) {
-            if (user instanceof DeliveryUser && user.getUserName().equals(username) && user.checkPassword(hashPassword(password))) {
-                deliveryUser = (DeliveryUser) user;
-                break;
-            }
-        }
-        if (deliveryUser == null) {
-            return createResponse(false, "Authentication failed or delivery user not found");
-        }
-
-        return createResponse(true, gson.toJson(ServerApp.getDelieryOrdersFromCSV(request.get("distance"), request.get("address"))));
-    }
     private String handleDefault() {
         return createResponse(false, "Invalid request type");
     }

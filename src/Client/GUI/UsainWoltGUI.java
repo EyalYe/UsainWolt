@@ -25,7 +25,7 @@ public class UsainWoltGUI implements LogoutCallback {
     private LoginPanel loginPanel;
     private CustomerGUI customerGUI;
     private RestaurantGUI restaurantGUI;
-    private DeliveryGUI deliveyGUI;
+    private DeliveryGUI deliveryGUI;
     private AdminGUI adminGUI;
 
     @Override
@@ -110,6 +110,9 @@ public class UsainWoltGUI implements LogoutCallback {
         closeLoading();
         if("false".equals(response.get("success"))) {
             JOptionPane.showMessageDialog(frame, "Error: " + response.get("message"));
+            if ("You are not on the specified delivery".equals(response.get("message")) && deliveryGUI != null) {
+                deliveryGUI.disableDeliveryFinishedButton();
+            }
             return;
         }
         if(requestType == null) {
@@ -208,15 +211,37 @@ public class UsainWoltGUI implements LogoutCallback {
             case "handleGetDeliveryOrders":
                 Type deliveryOrderListType = new TypeToken<List<Order>>(){}.getType();
                 List<Order> deliveryOrders = gson.fromJson((String) response.get("message"), deliveryOrderListType);
-                if (deliveyGUI != null)
-                    deliveyGUI.showAvailableDeliveriesFrame(deliveryOrders);
+                if (deliveryGUI != null)
+                    deliveryGUI.showAvailableDeliveriesFrame(deliveryOrders);
                 break;
-            case "handleUpdateDeliveryOrderStatus":
+            case "handlePickupOrder":
                 if (!"true".equals(response.get("success"))) {
                     JOptionPane.showMessageDialog(frame, "Error updating delivery order status: " + response.get("message"));
                 }
-                if (deliveyGUI != null)
-                    deliveyGUI.showAvailableDeliveries();
+                if (deliveryGUI != null){
+                    deliveryGUI.enableDeliveryFinishedButton();
+                    deliveryGUI.showAvailableDeliveries();
+                }
+                break;
+            case "handleCheckIfOnDelivery":
+                if (deliveryGUI != null){
+                    if ("You are on a delivery".equals(response.get("message"))) {
+                        deliveryGUI.enableDeliveryFinishedButton();
+                    } else {
+                        deliveryGUI.disableDeliveryFinishedButton();
+                    }
+                }
+                break;
+            case "handleMarkOrderDelivered":
+                if (deliveryGUI != null) {
+                    deliveryGUI.disableDeliveryFinishedButton();
+                    deliveryGUI.showAvailableDeliveries();
+                }
+                break;
+            case "handleGetIncomeData":
+                if (deliveryGUI != null) {
+                    deliveryGUI.showUserSettingsFrame((String) response.get("message"));
+                }
                 break;
         }
     }
@@ -237,8 +262,8 @@ public class UsainWoltGUI implements LogoutCallback {
                     restaurantGUI.generateRestaurantUI();
                     break;
                 case "Logged in as delivery":
-                    deliveyGUI = new DeliveryGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);
-                    deliveyGUI.generateDeliveryUI();
+                    deliveryGUI = new DeliveryGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);
+                    deliveryGUI.generateDeliveryUI();
                     break;
                 case "Logged in as admin":
                     adminGUI = new AdminGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);
@@ -269,7 +294,7 @@ public class UsainWoltGUI implements LogoutCallback {
         loginPanel.generateLogin();
         customerGUI = null;
         restaurantGUI = null;
-        deliveyGUI = null;
+        deliveryGUI = null;
         adminGUI = null;
     }
 

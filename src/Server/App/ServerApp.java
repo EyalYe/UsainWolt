@@ -16,6 +16,7 @@ public class ServerApp {
     public static final String SERVER_IP = "localhost";
     public static final int SERVER_PORT = 12345;
     public static final int IMAGE_SERVER_PORT = 8080;
+    public static final double DELIVERY_FEE = 5.0;
 
     public static List<User> allUsers = new ArrayList<>();
     public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
@@ -185,10 +186,8 @@ public class ServerApp {
         String status = order.getStatus();
         String restaurantPath = "restaurant_orders/" + order.getRestaurantName() + ".csv";
         String customerPath = "customer_orders/" + order.getCustomerName() + ".csv";
-        String deliveredPath = "delivery_orders/" + order.getDeliveryPerson() + ".csv";
         String readyForPickupPath = "delivery_orders/Ready For Pickup.csv";
         File restaurantFile = new File(restaurantPath);
-        File deliveredFile = new File(deliveredPath);
         File customerFile = new File(customerPath);
         File readyForPickupFile = new File(readyForPickupPath);
         switch (status) {
@@ -204,21 +203,30 @@ public class ServerApp {
                 removeLineIfExists(readyForPickupFile, order);
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
-                removeLineIfExists(deliveredFile, order);
                 addLineNotExists(customerFile, order);
-                return addLineNotExists(deliveredFile, order);
+                return addLineNotExists(readyForPickupFile, order);
             case "Delivered":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
-                removeLineIfExists(deliveredFile, order);
+                removeLineIfExists(readyForPickupFile, order);
                 return addLineNotExists(customerFile, order);
             case "Cancelled":
                 removeLineIfExists(restaurantFile, order);
                 removeLineIfExists(customerFile, order);
-                removeLineIfExists(deliveredFile, order);
+                removeLineIfExists(readyForPickupFile, order);
                 return addLineNotExists(customerFile, order);
             default:
                 return false;
+        }
+    }
+
+    public static void cancelExpiredOrders() {
+        List<Order> orders = getPendingOrders();
+        for (Order order : orders) {
+            if (!order.getStatus().equals("Ready For Pickup")) {
+                order.setStatus("Cancelled");
+                updateOrderInCSV(order);
+            }
         }
     }
 
@@ -298,6 +306,25 @@ public class ServerApp {
         return orders;
     }
 
+    public static List<Order> getPendingOrders(){
+        List<Order> orders = new ArrayList<>();
+        File file = new File("delivery_orders/Ready For Pickup.csv");
+        if (!file.exists()) {
+            return orders;
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                orders.add(new Order(line));
+            }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+    }
+        return orders;
+    }
+
     public static void updateUsersCSV() {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE));
@@ -310,25 +337,4 @@ public class ServerApp {
         }
     }
 
-    public static Object getDelieryOrdersFromCSV(String distance, String address) {
-        List<Order> orders = new ArrayList<>();
-        File file = new File("delivery_orders/Ready For Pickup.csv");
-        if (!file.exists()) {
-            return orders;
-        }
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                Order order = new Order(line);
-                if (GeoLocationService.checkSmallDistance(address, order.getAddress(), Double.parseDouble(distance))) {
-                    orders.add(order);
-                }
-            }
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return orders;
-    }
 }

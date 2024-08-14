@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
 
 
 public class ClientApp implements Runnable {
@@ -616,32 +615,13 @@ public class ClientApp implements Runnable {
         addRequest(request);
     }
 
-    public void requestIncomeDataAsync(String username, String password, Consumer<Double> callback) {
+    public void requestIncomeDataAsync(String username, String password) {
         // Create a request map to send to the server
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getIncomeData");
         request.put("username", username);
         request.put("password", password);
-
-        // Send the request asynchronously
-        new Thread(() -> {
-            try {
-                Map<String, Object> response = sendRequest(request);
-
-                if ("true".equals(response.get("success"))) {
-                    // Parse the income data from the response
-                    double income = Double.parseDouble(response.get("income").toString());
-                    // Pass the income data to the callback
-                    callback.accept(income);
-                } else {
-                    // Handle the error scenario
-                    String errorMessage = response.get("message").toString();
-                    System.err.println("Failed to get income data: " + errorMessage);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+        addRequest(request);
     }
 
 
@@ -662,6 +642,15 @@ public class ClientApp implements Runnable {
         request.put("username", username);
         request.put("password", password);
         request.put("deliveryId", deliveryId);
+
+        addRequest(request);
+    }
+
+    public void checkIfOnDeliveryAsync(String username, String password) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "checkIfOnDelivery");
+        request.put("username", username);
+        request.put("password", password);
 
         addRequest(request);
     }

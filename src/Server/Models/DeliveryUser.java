@@ -2,6 +2,7 @@ package Server.Models;
 
 public class DeliveryUser extends User {
     private double income;
+    private Order currentOrder;
 
 
     public DeliveryUser(String userName, String hashedPassword, String address, String phoneNumber, String email) {
@@ -30,6 +31,19 @@ public class DeliveryUser extends User {
 
     public void addIncome(double income) {
         this.income += income;
+    }
+
+    public Order getCurrentOrder() {
+        return currentOrder;
+    }
+
+    public void setCurrentOrder(Order currentOrder) {
+        this.currentOrder = currentOrder;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "," + income;
     }
 
 }

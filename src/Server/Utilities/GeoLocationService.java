@@ -72,6 +72,23 @@ public class GeoLocationService {
         return EARTH_RADIUS * c;
     }
 
+    public double calculateDistance(String address1, String address2) {
+        try {
+            double[] coordinates1 = getCoordinates(address1);
+            double[] coordinates2 = getCoordinates(address2);
+            if (coordinates1 != null && coordinates2 != null) {
+                double lat1 = coordinates1[0];
+                double lon1 = coordinates1[1];
+                double lat2 = coordinates2[0];
+                double lon2 = coordinates2[1];
+                return calculateDistance(lat1, lon1, lat2, lon2);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
     // Send a GET request using HttpURLConnection
     private String sendGetRequest(String urlString) throws IOException {
         URL url = new URL(urlString);

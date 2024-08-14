@@ -1,12 +1,14 @@
 package Server;
 
 import Server.App.ClientHandler;
+import Server.Models.Order;
 import Server.Utilities.ImageServer;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 import static Server.App.ServerApp.*;
 
@@ -35,6 +37,7 @@ public class ServerMain {
             // Load data from CSV files
             loadUsersFromCSV();
             loadMenusFromCSV();
+            cancelExpiredOrders();
 
             // Set up server socket
             ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
@@ -54,4 +57,5 @@ public class ServerMain {
             e.printStackTrace();
         }
     }
+
 }

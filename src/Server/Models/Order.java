@@ -16,6 +16,7 @@ public class Order {
     private String customerNote;
     private String address;
     private String deliveryPerson;
+    private double distance;
 
     // Constructor
     public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote, String address) {
@@ -41,14 +42,14 @@ public class Order {
         this.status = parts[4];
         this.customerNote = parts[5];
         this.address = parts[6];
+        this.deliveryPerson = parts[7];
         this.items = new ArrayList<>();
 
-        for (int i = 7; i < parts.length; i++) {
+        for (int i = 8; i < parts.length; i++) {
             this.items.add(new Item(parts[i]));
         }
 
         this.totalPrice = calculateTotalPrice();
-        this.deliveryPerson = null;
     }
 
     public Order(int orderId){
@@ -56,6 +57,7 @@ public class Order {
     }
 
     // Getters and Setters
+
     public int getOrderId() {
         return orderId;
     }
@@ -79,6 +81,14 @@ public class Order {
     public void setItems(List<Item> items) {
         this.items = new ArrayList<>(items);
         this.totalPrice = calculateTotalPrice();
+    }
+
+    public void setDistance(double distance){
+        this.distance = distance;
+    }
+
+    public double getDistance(){
+        return distance;
     }
 
     public double getTotalPrice() {
@@ -279,7 +289,9 @@ public class Order {
                 .append(restaurantName).append(",")
                 .append(status).append(",")
                 .append(customerNote).append(",")
-                .append(address);
+                .append(address).append(",")
+                .append(deliveryPerson);
+
 
         for (Item item : items) {
             sb.append(",").append(item.toString());
