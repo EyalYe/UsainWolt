@@ -23,6 +23,9 @@
 - [ ] Check edge cases of every method that requires input from the user
 - [ ] Porhibit use of [";" , "," , "\n"] in the input fields (all of them are used as delimiters)
 - [ ] return parsed data from the server to the client ("#" -> "\n") and ("@" -> ",") in some cases
+- [ ] Architectual change to move to a beter data base. (if we do so then the two previos to dos are not needed)
+- [ ] Make the authentication stage a seperate method that returns a User Object
+- [ ] move all the none handle* or run function to a seperate class as static function
 
 ### Client
 - [ ] Make the admin GUI
