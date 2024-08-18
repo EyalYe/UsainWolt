@@ -23,10 +23,11 @@ List of users can be found in the users.csv file. The username is the first colu
 
 ## ToDos
 ### Server
-- [ ] Add the all the admin requests
+- [ ] Add the all the admin requests to the server - Eyal on it
 
 ### Client
 - [ ] Make the admin GUI - David on it
+- [ ] Add the change card details functionality to the customer GUI - Eyal on it
 
 ### General
 ***This can be done by anyone***
