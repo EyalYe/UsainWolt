@@ -6,9 +6,12 @@
 ## How to run the project
 1. Clone the repository
 2. Open the project in an IDE (IntelliJ IDEA is recommended)
-3. Run the `ServerMain` class to start the server
-4. Run the `UsainWoltMain` class to start the client
-5. And you are good to go!
+3. Rename the .envtemp file to .env and fill in the API keys as provided (I added the key in the notes section of the submission box along with the link to this repository)
+4. Run ServerMain.java to start the server
+5. Run UsainWoltMain.java to start the client
+6. Use the client GUI to interact with the system
+
+List of users can be found in the users.csv file. The username is the first column, the password is the second column, and the role is the third column.
 
 ## Troubleshooting
 **We use the following dependencies in the project:**
