@@ -20,14 +20,13 @@
 
 ## ToDos
 ### Server
-- [ ] Check edge cases of every method that requires input from the user
-- [ ] Porhibit use of [";" , "," , "\n"] in the input fields (all of them are used as delimiters)
-- [ ] return parsed data from the server to the client ("#" -> "\n") and ("@" -> ",") in some cases
+- [ ] Add the all the admin requests
 
 ### Client
-- [ ] Make the admin GUI
+- [ ] Make the admin GUI - David on it
 
 ### General
+***This can be done by anyone***
 - [ ] Add more restaurants and dishes to the system, with better descriptions, prices, and images
 - [ ] Add more test cases to the system
 - [ ] Add more comments to the code

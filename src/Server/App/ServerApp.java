@@ -3,20 +3,27 @@ package Server.App;
 import Server.Models.*;
 import Server.Utilities.GeoLocationService;
 import Server.Utilities.ImageServer;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ServerApp {
-    public static final String USERS_FILE = "server_logs/users.csv";
+    public static final String USERS_PATH = "server_logs/users";
     private static final String[] RESTAURANT_CUISINES = {"All", "American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
     public static final String SERVER_IP = "localhost";
     public static final int SERVER_PORT = 12345;
     public static final int IMAGE_SERVER_PORT = 8080;
     public static final double DELIVERY_FEE = 5.0;
+    public static List<Order> pending = new ArrayList<>();
+    public static List<Order> readyForPickupOrders = new ArrayList<>();
+    public static Gson gson = new Gson();
 
     public static List<User> allUsers = new ArrayList<>();
     public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
@@ -29,24 +36,78 @@ public class ServerApp {
         }
     }
 
-    public static void loadUsersFromCSV() throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            if (line.startsWith("Customer")) {
-                allUsers.add(new CustomerUser(line));
-            } else if (line.startsWith("Restaurant")) {
-                allUsers.add(new RestaurantUser(line));
-            } else if (line.startsWith("Delivery")) {
-                allUsers.add(new DeliveryUser(line));
-            } else if (line.startsWith("Admin")) {
-                allUsers.add(new AdminUser(line));
+    public static void loadUsersFromJSON() throws IOException {
+        File usersDirectory = new File("server_logs/users");
+       try {
+            if (!usersDirectory.exists()) {
+                usersDirectory.mkdirs();
+            }
+            File[] userFiles = usersDirectory.listFiles((dir, name) -> name.endsWith(".json"));
+            if (userFiles == null) {
+                return;
+            }
+            for (File userFile : userFiles) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(userFile))) {
+                    StringBuilder jsonUser = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        jsonUser.append(line);
+                    }
+                    String name = userFile.getName();
+                    if (name.contains("RestaurantUser")) {
+                        RestaurantUser restaurantUser = gson.fromJson(jsonUser.toString(), RestaurantUser.class);
+                        allUsers.add(restaurantUser);
+                        for (Order order : restaurantUser.getOrders()) {
+                            if (order.getStatus().equals("Pending")) {
+                                pending.add(order);
+                            } else if (order.getStatus().equals("Ready For Pickup")) {
+                                readyForPickupOrders.add(order);
+                            }
+                        }
+                    } else if (name.contains("CustomerUser")) {
+                        CustomerUser customerUser = gson.fromJson(jsonUser.toString(), CustomerUser.class);
+                        allUsers.add(customerUser);
+                        for (Order order : customerUser.getOrderHistory()) {
+                            if (order.getStatus().equals("Pending")) {
+                                pending.add(order);
+                            } else if (order.getStatus().equals("Ready For Pickup")) {
+                                readyForPickupOrders.add(order);
+                            }
+                        }
+                    } else if (name.contains("DeliveryUser")) {
+                        DeliveryUser deliveryUser = gson.fromJson(jsonUser.toString(), DeliveryUser.class);
+                        allUsers.add(deliveryUser);
+                        if(deliveryUser.getCurrentOrder() != null) {
+                            if (deliveryUser.getCurrentOrder().getStatus().equals("Pending")) {
+                                pending.add(deliveryUser.getCurrentOrder());
+                            } else if (deliveryUser.getCurrentOrder().getStatus().equals("Ready For Pickup")) {
+                                readyForPickupOrders.add(deliveryUser.getCurrentOrder());
+                            }
+                        }
+                    } else if (name.contains("AdminUser")) {
+                        AdminUser adminUser = gson.fromJson(jsonUser.toString(), AdminUser.class);
+                        allUsers.add(adminUser);
+                    }
+                    else {
+                        System.out.println("Unknown user type: " + name);
+                    }
+                }
+            }
+        } catch (IOException e) {
+           e.printStackTrace();
+       }
+       for (Order order : pending) {
+            String restaurantName = order.getRestaurantName();
+            for (User user : allUsers) {
+                if (user instanceof RestaurantUser && user.getUserName().equals(restaurantName)) {
+                    ((RestaurantUser) user).addOrder(order);
+                    break;
+                }
             }
         }
-        reader.close();
     }
 
-    public static void loadMenusFromCSV() throws IOException {
+    public static void loadMenusFromJSON() throws IOException {
         File menuDirectory = new File("menu_data");
         if (!menuDirectory.exists() || !menuDirectory.isDirectory()) {
             System.out.println("No menu directory found. Skipping menu loading.");
@@ -54,14 +115,14 @@ public class ServerApp {
         }
 
         // Loop through each file in the menu_data directory
-        File[] menuFiles = menuDirectory.listFiles((dir, name) -> name.endsWith(".csv"));
+        File[] menuFiles = menuDirectory.listFiles((dir, name) -> name.endsWith(".json"));
         if (menuFiles == null) {
             System.out.println("No menu files found.");
             return;
         }
 
         for (File menuFile : menuFiles) {
-            String restaurantUsername = menuFile.getName().replace(".csv", ""); // Extract restaurant username from the filename
+            String restaurantUsername = menuFile.getName().replace(".json", "");
 
             // Find the corresponding RestaurantUser
             RestaurantUser restaurantUser = null;
@@ -79,12 +140,13 @@ public class ServerApp {
 
             // Read and load the menu items from the file
             try (BufferedReader reader = new BufferedReader(new FileReader(menuFile))) {
+                StringBuilder jsonMenu = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    // Each line is expected to represent an item in the menu
-                    String[] parts = line.split(";");
-                    restaurantUser.addMenuItem(new Order.Item(parts[0], Double.parseDouble(parts[1]), SERVER_IP+":"+IMAGE_SERVER_PORT+"/menu_item_images/" + restaurantUsername + "_" + parts[0] + ".jpg", parts[4],  true));
+                    jsonMenu.append(line);
                 }
+                Type menuType = new TypeToken<List<Order.Item>>() {}.getType();
+                restaurantUser.setMenu(gson.fromJson(jsonMenu.toString(), menuType));
             }
         }
     }
@@ -94,7 +156,7 @@ public class ServerApp {
               throw new IllegalArgumentException("User already exists");
          }
           allUsers.add(user);
-          updateUser(user, true);
+          updateUser(user);
     }
 
     public static boolean checkIfUserExists(String userName) {
@@ -106,13 +168,19 @@ public class ServerApp {
         return false;
     }
 
-    public static void updateUser(User user, boolean isNew) throws IOException {
-        if (isNew) {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE, true))) {
-                writer.write(user.toString() + "\n");
-            }
-        } else {
-            updateUserInCSV(user);
+    public static void updateUser(User user) throws IOException {
+       File usersDirectory = new File("server_logs/users");
+        if (!usersDirectory.exists()) {
+            usersDirectory.mkdirs();
+        }
+        File userFile = new File(usersDirectory, user.getUserName() + "." + String.valueOf(user.getClass().getSimpleName()) + ".json");
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(userFile));
+            writer.write(gson.toJson(user));
+            writer.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -121,14 +189,13 @@ public class ServerApp {
         if (!directory.exists()) {
             directory.mkdirs(); // Create directory if it doesn't exist
         }
+        String jsonMenu = gson.toJson(restaurant.getMenu());
 
-        File menuFile = new File(directory, restaurant.getUserName() + ".csv");
+        File menuFile = new File(directory, restaurant.getUserName() + ".json");
 
         // Writing the restaurant's menu to its dedicated file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(menuFile))) {
-            for (Order.Item item : restaurant.getMenu()) {
-                writer.write(item.toString() + "\n");
-            }
+            writer.write(jsonMenu);
         }
     }
 
@@ -140,33 +207,7 @@ public class ServerApp {
         return String.join(",", RESTAURANT_CUISINES);
     }
 
-    public static void updateUserInCSV(User user) {
-        try {
-            // Read all existing users into memory
-            List<String> lines = new ArrayList<>();
-            BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts[1].equals(user.getUserName())) {
-                    lines.add(user.toString()); // Replace the line with the updated user
-                } else {
-                    lines.add(line); // Keep the line unchanged
-                }
-            }
-            reader.close();
 
-            // Write the updated list back to the CSV file
-            BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE));
-            for (String updatedLine : lines) {
-                writer.write(updatedLine + "\n");
-            }
-            writer.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     public static List<Order.Item> parseItems(String items) {
         List<Order.Item> itemList = new ArrayList<>();
@@ -179,54 +220,42 @@ public class ServerApp {
 
     // Order handling
     public static boolean saveOrder(Order order) throws IOException {
-        return updateOrderInCSV(order);
+        return updateOrder(order);
     }
 
-    static boolean updateOrderInCSV(Order order) {
+    static boolean updateOrder(Order order) throws IOException {
         String status = order.getStatus();
-        String restaurantPath = "restaurant_orders/" + order.getRestaurantName() + ".csv";
-        String customerPath = "customer_orders/" + order.getCustomerName() + ".csv";
-        String readyForPickupPath = "delivery_orders/Ready For Pickup.csv";
-        File restaurantFile = new File(restaurantPath);
-        File customerFile = new File(customerPath);
-        File readyForPickupFile = new File(readyForPickupPath);
         switch (status) {
             case "Pending":
-                addLineNotExists(restaurantFile, order);
-                return addLineNotExists(customerFile, order);
+                pending.add(order);
+                return pending.contains(order);
             case "Ready For Pickup":
-                removeLineIfExists(restaurantFile, order);
-                removeLineIfExists(customerFile, order);
-                addLineNotExists(customerFile, order);
-                return addLineNotExists(readyForPickupFile, order);
+                pending.remove(order);
+                String CustomerName = order.getCustomerName();
+                updateAllUsers();
+                readyForPickupOrders.add(order);
+                return readyForPickupOrders.contains(order);
             case "Picked Up":
-                removeLineIfExists(readyForPickupFile, order);
-                removeLineIfExists(restaurantFile, order);
-                removeLineIfExists(customerFile, order);
-                addLineNotExists(customerFile, order);
-                return addLineNotExists(readyForPickupFile, order);
+                readyForPickupOrders.remove(order);
+                updateAllUsers();
+                return !readyForPickupOrders.contains(order);
             case "Delivered":
-                removeLineIfExists(restaurantFile, order);
-                removeLineIfExists(customerFile, order);
-                removeLineIfExists(readyForPickupFile, order);
-                return addLineNotExists(customerFile, order);
+                readyForPickupOrders.remove(order);
+                updateAllUsers();
+                return !readyForPickupOrders.contains(order);
             case "Cancelled":
-                removeLineIfExists(restaurantFile, order);
-                removeLineIfExists(customerFile, order);
-                removeLineIfExists(readyForPickupFile, order);
-                return addLineNotExists(customerFile, order);
+                readyForPickupOrders.remove(order);
+                pending.remove(order);
+                updateAllUsers();
+                return !readyForPickupOrders.contains(order) && !pending.contains(order);
             default:
                 return false;
         }
     }
 
-    public static void cancelExpiredOrders() {
-        List<Order> orders = getPendingOrders();
-        for (Order order : orders) {
-            if (!order.getStatus().equals("Ready For Pickup")) {
-                order.setStatus("Cancelled");
-                updateOrderInCSV(order);
-            }
+    public static void updateAllUsers() throws IOException {
+        for (User user : allUsers) {
+            updateUser(user);
         }
     }
 
@@ -287,54 +316,15 @@ public class ServerApp {
         return !exists;
     }
 
-    public static Object getOrdersFromCSV(String directory, String username) {
-        List<Order> orders = new ArrayList<>();
-        File file = new File(directory + "/" + username + ".csv");
-        if (!file.exists()) {
-            return orders;
-        }
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                orders.add(new Order(line));
-            }
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return orders;
-    }
-
     public static List<Order> getPendingOrders(){
-        List<Order> orders = new ArrayList<>();
-        File file = new File("delivery_orders/Ready For Pickup.csv");
-        if (!file.exists()) {
-            return orders;
-        }
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                orders.add(new Order(line));
-            }
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-    }
-        return orders;
+       return readyForPickupOrders;
     }
 
-    public static void updateUsersCSV() {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(USERS_FILE));
-            for (User user : allUsers) {
-                writer.write(user.toString() + "\n");
-            }
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+    public static void removeUser(User user) {
+        allUsers.remove(user);
+        File userFile = new File("server_logs/users/" + user.getUserName() + "." + user.getClass().getSimpleName() + ".json");
+        if (userFile.exists()) {
+            userFile.delete();
         }
     }
-
 }

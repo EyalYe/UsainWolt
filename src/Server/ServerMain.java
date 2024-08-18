@@ -25,19 +25,17 @@ public class ServerMain {
             }).start();
 
             // Create the files if they don't exist
-            String[] directories = {"restaurant_orders", "customer_orders", "delivery_orders", "menu_data", "menu_item_images", "profile_pictures", "server_logs"};
+            String[] directories = {"menu_data", "menu_item_images", "profile_pictures", "server_logs", "server_logs/users"};
             for (String directory : directories) {
                 File dir = new File(directory);
                 if (!dir.exists()) {
                     dir.mkdir();
                 }
             }
-            createFileIfNotExists(USERS_FILE);
 
-            // Load data from CSV files
-            loadUsersFromCSV();
-            loadMenusFromCSV();
-            cancelExpiredOrders();
+            loadUsersFromJSON();
+            loadMenusFromJSON();
+
 
             // Set up server socket
             ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
@@ -52,6 +50,8 @@ public class ServerMain {
                 Thread clientThread = new Thread(new ClientHandler(clientSocket));
                 clientThread.start();
             }
+
+
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -15,6 +15,10 @@ public class CustomerUser extends User {
         inAppBalance += totalPrice;
     }
 
+    public void removeOrder(int orderId) {
+        orderHistory.removeIf(order -> order.getOrderId() == orderId);
+    }
+
     // Inner class for handling credit card information
     class CreditCard {
         private String creditCardNumber;

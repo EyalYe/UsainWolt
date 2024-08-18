@@ -128,7 +128,7 @@ public class Order {
     }
 
     public void setCustomerNote(String customerNote) {
-        this.customerNote = customerNote.replace(",", "..").replace(";", " ").replace("\n", "    ");
+        this.customerNote = customerNote;
     }
 
     public String getDeliveryPerson() {
@@ -161,6 +161,7 @@ public class Order {
             this.name = name;
             this.price = price;
             this.available = true;
+            this.photoUrl = null;
         }
 
         // Constructor with all fields
@@ -214,7 +215,7 @@ public class Order {
         }
 
         public void setDescription(String description) {
-            this.description = description.replace(",", "#").replace(";", " ").replace("\n", "@");
+            this.description = description;
         }
 
         @Override
@@ -301,11 +302,11 @@ public class Order {
     }
 
     public static String safeString(String str) {
-        return str.replace(",", "@").replace(";", " ").replace("\n", "#");
+        return str;
     }
 
     public String stripAddress(String address) {
-        return address.replace(",", " ").replace(";", " ").replace("\n", " ");
+        return address;
     }
 
 }
