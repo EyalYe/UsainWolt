@@ -706,7 +706,7 @@ This API allows clients to interact with the UsainWolt server to manage users, r
 
 ### Image Handling
 
-- Images are uploaded and retrieved using specific endpoints like `uploadProfilePicture` and `getImage`.
+- Images are uploaded using  `uploadProfilePicture`.
 - Image data is encoded in Base64 format in JSON responses.
 
 ### Error Handling
@@ -723,5 +723,3 @@ This API allows clients to interact with the UsainWolt server to manage users, r
 ### Notes
 - Ensure that images (binary data) are handled correctly when sending or receiving requests.
 - Validate user credentials before processing requests that require authentication.
-
-This documentation provides an overview of the UsainWolt API methods and their expected inputs/outputs.
