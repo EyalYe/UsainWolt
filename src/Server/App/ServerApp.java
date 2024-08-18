@@ -101,6 +101,7 @@ public class ServerApp {
             for (User user : allUsers) {
                 if (user instanceof RestaurantUser && user.getUserName().equals(restaurantName)) {
                     ((RestaurantUser) user).addOrder(order);
+                    updateUser(user);
                     break;
                 }
             }

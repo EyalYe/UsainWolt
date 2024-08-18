@@ -1,6 +1,6 @@
 ### UsainWolt API Documentation
 
-This API allows clients to interact with the UsainWolt server to manage users, orders, and restaurant-related functionalities. The API supports customer and restaurant signups, order placements, menu updates, and image handling. All communication is done through JSON over a socket connection.
+This API allows clients to interact with the UsainWolt server to manage users, restaurants, orders, and delivery functionalities. The API supports customer, restaurant, and delivery signups, order placements, menu updates, and image handling. All communication is done through JSON over a socket connection.
 
 ---
 
@@ -34,9 +34,11 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   ```json
   {
     "success": true,
-    "message": "Login successful"
+    "message": "Logged in as <role>"
   }
   ```
+
+---
 
 #### 2. **Signup Customer**
 - **Type**: `signupCustomer`
@@ -47,9 +49,9 @@ This API allows clients to interact with the UsainWolt server to manage users, o
     "type": "signupCustomer",
     "username": "user_name",
     "password": "user_password",
+    "email": "customer_email",
     "address": "customer_address",
-    "phoneNumber": "customer_phone_number",
-    "email": "customer_email"
+    "phoneNumber": "customer_phone_number"
   }
   ```
 - **Response**:
@@ -60,6 +62,8 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
+---
+
 #### 3. **Signup Restaurant**
 - **Type**: `signupRestaurant`
 - **Description**: Registers a new restaurant.
@@ -69,9 +73,9 @@ This API allows clients to interact with the UsainWolt server to manage users, o
     "type": "signupRestaurant",
     "username": "restaurant_name",
     "password": "restaurant_password",
+    "email": "restaurant_email",
     "address": "restaurant_address",
     "phoneNumber": "restaurant_phone_number",
-    "email": "restaurant_email",
     "businessPhoneNumber": "business_phone_number",
     "cuisine": "cuisine_type"
   }
@@ -84,7 +88,34 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
-#### 4. **Get Restaurants**
+---
+
+#### 4. **Signup Delivery**
+- **Type**: `signupDelivery`
+- **Description**: Registers a new delivery person.
+- **Request**:
+  ```json
+  {
+    "type": "signupDelivery",
+    "username": "delivery_username",
+    "password": "delivery_password",
+    "email": "delivery_email",
+    "address": "delivery_address",
+    "phoneNumber": "delivery_phone_number",
+    "token": "authorization_token"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Delivery signup successful"
+  }
+  ```
+
+---
+
+#### 5. **Get Restaurants**
 - **Type**: `getRestaurants`
 - **Description**: Retrieves a list of restaurants filtered by distance and cuisine.
 - **Request**:
@@ -107,13 +138,15 @@ This API allows clients to interact with the UsainWolt server to manage users, o
         "address": "restaurant_address",
         "distance": "distance_in_km",
         "cuisine": "cuisine_type",
-        "profilePicture": "Base64_encoded_image_string_or_null"
+        "profilePictureUrl": "URL_or_null"
       }
     ]
   }
   ```
 
-#### 5. **Get Menu**
+---
+
+#### 6. **Get Menu**
 - **Type**: `getMenu`
 - **Description**: Retrieves the menu for a specific restaurant.
 - **Request**:
@@ -129,16 +162,19 @@ This API allows clients to interact with the UsainWolt server to manage users, o
     "success": true,
     "message": [
       {
-        "itemName": "menu_item_name",
+        "name": "menu_item_name",
         "description": "menu_item_description",
         "price": "menu_item_price",
-        "image": "Base64_encoded_image_string_or_null"
+        "available": "true_or_false",
+        "photoUrl": "URL_or_null"
       }
     ]
   }
   ```
 
-#### 6. **Place Order**
+---
+
+#### 7. **Place Order**
 - **Type**: `placeOrder`
 - **Description**: Places a new order for a customer.
 - **Request**:
@@ -148,8 +184,15 @@ This API allows clients to interact with the UsainWolt server to manage users, o
     "username": "customer_username",
     "password": "customer_password",
     "restaurantName": "restaurant_name",
-    "items": "item1;item2;item3",  // Items separated by semicolons
+    "items": [
+      {
+        "name": "item_name",
+        "price": item_price,
+        "quantity": item_quantity
+      }
+    ],
     "customerNote": "optional_note",
+    "sendHome": "true_or_false",
     "useSavedCard": "true_or_false",  // Whether to use a saved credit card
     "creditCardNumber": "card_number_if_not_saved",
     "expirationDate": "MM/YY",
@@ -164,7 +207,9 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
-#### 7. **Update Menu**
+---
+
+#### 8. **Update Menu**
 - **Type**: `updateMenu`
 - **Description**: Updates or adds a menu item for a restaurant.
 - **Request**:
@@ -175,11 +220,12 @@ This API allows clients to interact with the UsainWolt server to manage users, o
     "password": "restaurant_password",
     "restaurantName": "restaurant_name",
     "itemName": "item_name",
-    "price": "item_price",
-    "description": "item_description"
+    "price": item_price,
+    "description": "item_description",
+    "isAvailable": "true_or_false"
   }
   ```
-  - **Image**: The image data should be sent as a binary stream immediately after the JSON request.
+  - **Image**: Optional; can be sent as a binary stream after the request.
 - **Response**:
   ```json
   {
@@ -188,9 +234,35 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
-#### 8. **Get Orders History**
+---
+
+#### 9. **Update Credit Card**
+- **Type**: `updateCreditCard`
+- **Description**: Updates the customer's credit card information.
+- **Request**:
+  ```json
+  {
+    "type": "updateCreditCard",
+    "username": "customer_username",
+    "password": "customer_password",
+    "creditCardNumber": "card_number",
+    "expirationDate": "MM/YY",
+    "cvv": "cvv_code"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Credit card updated successfully"
+  }
+  ```
+
+---
+
+#### 10. **Get Orders History**
 - **Type**: `getOrdersHistory`
-- **Description**: Retrieves the order history for a customer or restaurant.
+- **Description**: Retrieves the order history for a customer, restaurant, or delivery person.
 - **Request**:
   ```json
   {
@@ -207,7 +279,13 @@ This API allows clients to interact with the UsainWolt server to manage users, o
       {
         "orderId": order_id,
         "orderDate": "order_date",
-        "items": ["item1", "item2"],
+        "items": [
+          {
+            "name": "item_name",
+            "quantity": item_quantity,
+            "price": item_price
+          }
+        ],
         "status": "order_status",
         "customerNote": "optional_note"
       }
@@ -215,7 +293,130 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
-#### 9. **Change Password**
+---
+
+#### 11. **Mark Order Ready for Pickup**
+- **Type**: `markOrderReadyForPickup`
+- **Description**: Marks an order as ready for pickup by the delivery person.
+- **Request**:
+  ```json
+  {
+    "type": "markOrderReadyForPickup",
+    "username": "restaurant_username",
+    "password": "restaurant_password",
+    "order": {
+      "orderId": order_id
+    }
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Order marked as ready for pickup"
+  }
+  ```
+
+---
+
+#### 12. **Disable Menu Item**
+- **Type**: `disableMenuItem`
+- **Description**: Disables a menu item in the restaurant's menu.
+- **Request**:
+  ```json
+  {
+    "type": "disableMenuItem",
+    "username": "restaurant_username",
+    "password": "restaurant_password",
+    "menuItemName": "item_name"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Menu item disabled"
+  }
+  ```
+
+---
+
+#### 13. **Enable Menu Item**
+- **Type**: `enableMenuItem`
+- **Description**: Enables a previously disabled menu item.
+- **Request**:
+  ```json
+  {
+    "type": "enableMenuItem",
+    "username": "restaurant_username",
+    "password": "restaurant_password",
+    "menuItemName": "item_name"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Menu item enabled"
+  }
+
+
+  ```
+
+---
+
+#### 14. **Get Current Orders**
+- **Type**: `getCurrentOrders`
+- **Description**: Retrieves the current active orders for a restaurant.
+- **Request**:
+  ```json
+  {
+    "type": "getCurrentOrders",
+    "username": "restaurant_username",
+    "password": "restaurant_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": [
+      {
+        "orderId": order_id,
+        "items": [
+          {
+            "name": "item_name",
+            "quantity": item_quantity
+          }
+        ],
+        "status": "order_status"
+      }
+    ]
+  }
+  ```
+
+---
+
+#### 15. **Get Available Cuisines**
+- **Type**: `getAvailableCuisines`
+- **Description**: Retrieves the list of available cuisines.
+- **Request**:
+  ```json
+  {
+    "type": "getAvailableCuisines"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": ["American", "Chinese", "Italian", "Mexican"]
+  }
+  ```
+
+---
+
+#### 16. **Change Password**
 - **Type**: `changePassword`
 - **Description**: Changes the password for a user.
 - **Request**:
@@ -235,7 +436,9 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
-#### 10. **Change Email**
+---
+
+#### 17. **Change Email**
 - **Type**: `changeEmail`
 - **Description**: Changes the email address for a user.
 - **Request**:
@@ -255,45 +458,9 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
-#### 11. **Get Image**
-- **Type**: `getImage`
-- **Description**: Retrieves an image from the server given a path.
-- **Request**:
-  ```json
-  {
-    "type": "getImage",
-    "imagePath": "relative_image_path"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Image retrieved successfully",
-    "imageData": "Base64_encoded_image_string"
-  }
-  ```
+---
 
-#### 12. **Upload Profile Picture**
-- **Type**: `uploadProfilePicture`
-- **Description**: Uploads a profile picture for a restaurant.
-- **Request**:
-  ```json
-  {
-    "type": "uploadProfilePicture",
-    "username": "restaurant_username"
-  }
-  ```
-  - **Image**: The image data should be sent as a binary stream immediately after the JSON request.
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Profile picture uploaded successfully"
-  }
-  ```
-
-#### 13. **Disconnect**
+#### 18. **Disconnect**
 - **Type**: `disconnect`
 - **Description**: Disconnects a user from the server.
 - **Request**:
@@ -312,20 +479,226 @@ This API allows clients to interact with the UsainWolt server to manage users, o
   }
   ```
 
-#### 14. **Get Available Cuisines**
-- **Type**: `getAvailableCuisines`
-- **Description**: Retrieves the list of available cuisines.
+---
+
+#### 19. **Upload Profile Picture**
+- **Type**: `uploadProfilePicture`
+- **Description**: Uploads a profile picture for a user.
 - **Request**:
   ```json
   {
-    "type": "getAvailableCuisines"
+    "type": "uploadProfilePicture",
+    "username": "user_name",
+    "password": "user_password",
+    "profilePicture": "<base64_encoded_image>"
   }
   ```
 - **Response**:
   ```json
   {
     "success": true,
-    "message": "American, Chinese, Italian, Japanese, Mexican, Thai, Israeli, Indian"
+    "message": "Profile picture uploaded successfully"
+  }
+  ```
+
+---
+
+#### 20. **Get Image**
+- **Type**: `getImage`
+- **Description**: Retrieves an image from the server.
+- **Request**:
+  ```json
+  {
+    "type": "getImage",
+    "imagePath": "path_to_image"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Image retrieved successfully",
+    "imageData": "<base64_encoded_image>"
+  }
+  ```
+
+---
+
+#### 21. **Change Parameter**
+- **Type**: `changeParameter`
+- **Description**: Updates a specific parameter (e.g., address, phone number, etc.) for the user.
+- **Request**:
+  ```json
+  {
+    "type": "changeParameter",
+    "username": "user_name",
+    "password": "user_password",
+    "parameter": "parameter_name",
+    "newValue": "new_value"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Parameter updated successfully"
+  }
+  ```
+
+---
+
+#### 22. **Delete Account**
+- **Type**: `deleteAccount`
+- **Description**: Deletes a user's account.
+- **Request**:
+  ```json
+  {
+    "type": "deleteAccount",
+    "username": "user_name",
+    "password": "user_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Account deleted successfully"
+  }
+  ```
+
+---
+
+#### 23. **Get Delivery Orders**
+- **Type**: `getDeliveryOrders`
+- **Description**: Retrieves available delivery orders for a delivery person within a certain distance.
+- **Request**:
+  ```json
+  {
+    "type": "getDeliveryOrders",
+    "username": "delivery_username",
+    "password": "delivery_password",
+    "address": "current_location",
+    "distance": "max_distance_in_km"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": [
+      {
+        "orderId": order_id,
+        "customerName": "customer_name",
+        "items": [
+          {
+            "name": "item_name",
+            "quantity": item_quantity
+          }
+        ],
+        "status": "order_status"
+      }
+    ]
+  }
+  ```
+
+---
+
+#### 24. **Pickup Order**
+- **Type**: `pickupOrder`
+- **Description**: Marks an order as picked up by the delivery person.
+- **Request**:
+  ```json
+  {
+    "type": "pickupOrder",
+    "username": "delivery_username",
+    "password": "delivery_password",
+    "orderId": order_id
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Order picked up successfully"
+  }
+  ```
+
+---
+
+#### 25. **Check If On Delivery**
+- **Type**: `checkIfOnDelivery`
+- **Description**: Checks if the delivery person is currently on a delivery.
+- **Request**:
+  ```json
+  {
+    "type": "checkIfOnDelivery",
+    "username": "delivery_username",
+    "password": "delivery_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "You are on a delivery"
+  }
+  ```
+
+---
+
+#### 26. **Mark Order Delivered**
+- **Type**: `markOrderDelivered`
+- **Description**: Marks an order as delivered by the delivery person.
+- **Request**:
+  ```json
+  {
+    "type": "markOrderDelivered",
+    "username": "delivery_username",
+    "password": "delivery_password",
+    "orderId": order_id
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Order marked as delivered"
+  }
+  ```
+
+---
+
+#### 27. **Get Income Data**
+- **Type**: `getIncomeData`
+- **Description**: Retrieves the income data for a delivery person.
+- **Request**:
+  ```json
+  {
+    "type": "getIncomeData",
+    "username": "delivery_username",
+    "password": "delivery_password"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": {
+      "income": total_income
+    }
+  }
+  ```
+
+---
+
+#### 28. **Invalid Request (Default)**
+- **Type**: Any invalid `type`
+- **Description**: Handles invalid request types.
+- **Response**:
+  ```json
+  {
+    "success": false,
+    "message": "Invalid request type"
   }
   ```
 
@@ -333,17 +706,12 @@ This API allows clients to interact with the UsainWolt server to manage users, o
 
 ### Image Handling
 
-- Images are uploaded and retrieved using specific endpoints.
-- Image data is encoded in Base64 when being sent as part of JSON responses.
-- Image paths are relative to the server's image directories, such as `profile_pictures/` or `menu
-
-_item_images/`.
-
----
+- Images are uploaded and retrieved using specific endpoints like `uploadProfilePicture` and `getImage`.
+- Image data is encoded in Base64 format in JSON responses.
 
 ### Error Handling
 
-- All requests must include valid parameters; otherwise, the server will return an error response.
+- All requests must include valid parameters, or the server will return an error.
 - Example error response:
   ```json
   {
@@ -353,7 +721,7 @@ _item_images/`.
   ```
 
 ### Notes
-- Ensure that binary data (like images) is correctly handled when sending and receiving requests.
-- Always validate user credentials before processing requests that require authentication.
+- Ensure that images (binary data) are handled correctly when sending or receiving requests.
+- Validate user credentials before processing requests that require authentication.
 
-This documentation provides an overview of the API methods and their expected inputs/outputs. Use this as a guide to integrate the UsainWolt server into client applications effectively.
+This documentation provides an overview of the UsainWolt API methods and their expected inputs/outputs.
