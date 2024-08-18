@@ -6,7 +6,7 @@
 ## How to run the project
 1. Clone the repository
 2. Open the project in an IDE (IntelliJ IDEA is recommended)
-3. Rename the .envtemp file to .env and fill in the API keys as provided (I added the key in the notes section of the submission box along with the link to this repository)
+3. Rename the .envtemp file (in "src/Server") to .env and fill in the API keys as provided (I added the key in the notes section of the submission box along with the link to this repository)
 4. Run ServerMain.java to start the server
 5. Run UsainWoltMain.java to start the client
 6. Use the client GUI to interact with the system
