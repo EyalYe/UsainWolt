@@ -187,13 +187,13 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "items": [
       {
         "name": "item_name",
-        "price": item_price,
-        "quantity": item_quantity
+        "price": "item_price",
+        "quantity": "item_quantity"
       }
     ],
     "customerNote": "optional_note",
     "sendHome": "true_or_false",
-    "useSavedCard": "true_or_false",  // Whether to use a saved credit card
+    "useSavedCard": "true_or_false",  
     "creditCardNumber": "card_number_if_not_saved",
     "expirationDate": "MM/YY",
     "cvv": "cvv_code"
@@ -220,7 +220,7 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "password": "restaurant_password",
     "restaurantName": "restaurant_name",
     "itemName": "item_name",
-    "price": item_price,
+    "price": "item_price",
     "description": "item_description",
     "isAvailable": "true_or_false"
   }
@@ -277,13 +277,13 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "success": true,
     "message": [
       {
-        "orderId": order_id,
+        "orderId": "order_id",
         "orderDate": "order_date",
         "items": [
           {
             "name": "item_name",
-            "quantity": item_quantity,
-            "price": item_price
+            "quantity": "item_quantity",
+            "price": "item_price"
           }
         ],
         "status": "order_status",
@@ -305,7 +305,7 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "username": "restaurant_username",
     "password": "restaurant_password",
     "order": {
-      "orderId": order_id
+      "orderId": "order_id"
     }
   }
   ```
@@ -382,11 +382,11 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "success": true,
     "message": [
       {
-        "orderId": order_id,
+        "orderId": "order_id",
         "items": [
           {
             "name": "item_name",
-            "quantity": item_quantity
+            "quantity": "item_quantity"
           }
         ],
         "status": "order_status"
@@ -587,12 +587,12 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "success": true,
     "message": [
       {
-        "orderId": order_id,
+        "orderId": "order_id",
         "customerName": "customer_name",
         "items": [
           {
             "name": "item_name",
-            "quantity": item_quantity
+            "quantity": "item_quantity"
           }
         ],
         "status": "order_status"
@@ -612,7 +612,7 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "type": "pickupOrder",
     "username": "delivery_username",
     "password": "delivery_password",
-    "orderId": order_id
+    "orderId": "order_id"
   }
   ```
 - **Response**:
@@ -655,7 +655,7 @@ This API allows clients to interact with the UsainWolt server to manage users, r
     "type": "markOrderDelivered",
     "username": "delivery_username",
     "password": "delivery_password",
-    "orderId": order_id
+    "orderId": "order_id"
   }
   ```
 - **Response**:
@@ -684,7 +684,7 @@ This API allows clients to interact with the UsainWolt server to manage users, r
   {
     "success": true,
     "message": {
-      "income": total_income
+      "income": "total_income"
     }
   }
   ```
