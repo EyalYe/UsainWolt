@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ServerApp {
     public static final String USERS_PATH = "server_logs/users";
@@ -26,8 +27,8 @@ public class ServerApp {
     public static List<Order> readyForPickupOrders = new ArrayList<>();
     public static Gson gson = new Gson();
 
-    public static List<User> allUsers = new ArrayList<>();
-    public static List<Map<RestaurantUser,Socket>> loggedInRestaurants = new ArrayList<>();
+    public static List<User> allUsers = new CopyOnWriteArrayList<>();
+    public static List<Map<RestaurantUser,Socket>> loggedInRestaurants = new CopyOnWriteArrayList<>();
 
     public static void createFileIfNotExists(String fileName) throws IOException {
         File file = new File(fileName);
@@ -35,6 +36,14 @@ public class ServerApp {
             file.createNewFile();
             System.out.println(fileName + " created.");
         }
+    }
+
+    public static void cleanUpLoggedInRestaurants() {
+        loggedInRestaurants.removeIf(entry -> {
+            RestaurantUser restaurant = entry.keySet().iterator().next();
+            Socket socket = entry.get(restaurant);
+            return socket.isClosed();
+        });
     }
 
     public static void loadUsersFromJSON() throws IOException {

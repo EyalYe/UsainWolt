@@ -1,5 +1,7 @@
 package Server.Models;
 
+import Server.Models.Order;
+import Server.Models.User;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

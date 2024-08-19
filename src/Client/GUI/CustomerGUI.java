@@ -85,7 +85,7 @@ public class CustomerGUI {
     private void showPlaceOrder() {
         if (availableCuisines == null || availableCuisines.length == 0) {
             Map<String, Object> request = new HashMap<>();
-            request.put("type", "getCuisines");
+            request.put("type", "getAvailableCuisines");
             clientApp.addRequest(request);
             this.availableCuisines = logoutCallback.getCuisines();
         }
