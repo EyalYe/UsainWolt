@@ -81,9 +81,8 @@ Ensure API keys are correct, dependencies are installed, and the specified ports
 5. **Inheritance and Polymorphism**:
    Inheritance is demonstrated in `CustomerUser` and `RestaurantUser`, both inheriting from `User`, allowing the system to use polymorphism by referencing users generically as `User` objects.
 
-6. **User-Friendly (JOptionPane)**:
-   `JOptionPane` is incorporated to provide a graphical interface for interactions like input dialogs during login, sign-up, and placing orders. For example, customers can enter their payment information using a pop-up dialog.
-
+6. **User-Friendly**:
+    The prject uses 'JFrame' and 'JOptionPane' to create a user-friendly interface. The GUI is intuitive and easy to navigate, with clear instructions and feedback messages. The system also provides error messages for incorrect input.
 7. **Exception Handling**:
    Exception handling is implemented for edge cases such as duplicate restaurant names, incorrect login credentials, and invalid input data. For example:
    ```java
