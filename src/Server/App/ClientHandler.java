@@ -232,7 +232,7 @@ public class ClientHandler implements Runnable {
     }
 
     private boolean checkToken(String token) {
-        if (token.length() < 4)
+        if (token.length() < 3)
             return false;
         File file = new File("Token.txt");
         List<String> lines = new ArrayList<>();
@@ -251,8 +251,7 @@ public class ClientHandler implements Runnable {
             // Read all lines and store them, skipping the line with the token
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
-                System.out.println(token);
-                if (line.replace("\n", "").equals(token)) {
+                if (line.replace("\n", "").equals(token) && !tokenFound) {
                     tokenFound = true;
                 } else {
                     lines.add(line);
@@ -265,6 +264,8 @@ public class ClientHandler implements Runnable {
                 for (String l : lines) {
                     writer.println(l);
                 }
+                writer.flush();
+                writer.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }

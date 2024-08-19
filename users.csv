@@ -1,0 +1,55 @@
+Username,Password,Role,Location,,RestaurantName
+customer1,password,customer,Hertzel St, Rishon LeZion,
+customer2,password,customer,HaShalom St, Netanya,
+customer3,password,customer,HaShalom St, Netanya,
+customer4,password,customer,King George St, Netanya,
+customer5,password,customer,HaArbaa St, Bnei Brak,
+customer6,password,customer,HaYarkon St, Tel Aviv,
+customer7,password,customer,HaYarkon St, Ashdod,
+customer8,password,customer,Allenby St, Bnei Brak,
+customer9,password,customer,King George St, Beer Sheva,
+customer10,password,customer,HaShalom St, Petah Tikva,
+customer11,password,customer,HaShalom St, Tel Aviv,
+customer12,password,customer,HaMaccabi St, Haifa,
+customer13,password,customer,King George St, Netanya,
+customer14,password,customer,Hertzel St, Tel Aviv,
+customer15,password,customer,Allenby St, Tel Aviv,
+customer16,password,customer,Rothschild St, Holon,
+customer17,password,customer,HaArbaa St, Jerusalem,
+customer18,password,customer,Allenby St, Petah Tikva,
+customer19,password,customer,HaYarkon St, Jerusalem,
+customer20,password,customer,Rothschild St, Rishon LeZion,
+customer21,password,customer,Hertzel St, Jerusalem,
+customer22,password,customer,HaArbaa St, Jerusalem,
+customer23,password,customer,HaArbaa St, Jerusalem,
+customer24,password,customer,Dizengoff St, Rishon LeZion,
+customer25,password,customer,Hertzel St, Rishon LeZion,
+restaurant1,password,restaurant,King George St, Bnei Brak,Starlight Diner
+restaurant2,password,restaurant,Allenby St, Ashdod,Luna's Bistro
+restaurant3,password,restaurant,HaMaccabi St, Beer Sheva,The Green Olive
+restaurant4,password,restaurant,Dizengoff St, Holon,The Golden Spoon
+restaurant5,password,restaurant,Hertzel St, Ashdod,Driftwood Tavern
+restaurant6,password,restaurant,Rothschild St, Ashdod,Savory Street
+restaurant7,password,restaurant,Ben Gurion St, Netanya,The Copper Pot
+restaurant8,password,restaurant,HaYarkon St, Ashdod,Citrus & Thyme
+restaurant9,password,restaurant,King George St, Holon,The Sizzle Spot
+restaurant10,password,restaurant,HaArbaa St, Holon,Blue Horizon Grill
+restaurant11,password,restaurant,HaShalom St, Holon,Urban Bites
+restaurant12,password,restaurant,Dizengoff St, Netanya,Rustic Roots Café
+restaurant13,password,restaurant,HaShalom St, Petah Tikva,Blue Horizon Grill
+restaurant14,password,restaurant,Allenby St, Tel Aviv,The Hungry Owl
+restaurant15,password,restaurant,Dizengoff St, Bnei Brak,Spice Junction
+restaurant16,password,restaurant,Ben Gurion St, Holon,Terra Cotta Kitchen
+restaurant17,password,restaurant,King George St, Netanya,Rustic Roots Café
+restaurant18,password,restaurant,Rothschild St, Ashdod,Cloud 9 Eatery
+restaurant19,password,restaurant,Dizengoff St, Netanya,The Green Olive
+restaurant20,password,restaurant,HaArbaa St, Rishon LeZion,The Velvet Fork
+restaurant21,password,restaurant,HaYarkon St, Petah Tikva,Urban Bites
+restaurant22,password,restaurant,Ben Gurion St, Rishon LeZion,Ocean Breeze Café
+restaurant23,password,restaurant,Allenby St, Tel Aviv,Scarlet Maple
+restaurant24,password,restaurant,Ben Gurion St, Netanya,Starlight Diner
+restaurant25,password,restaurant,Hertzel St, Jerusalem,Blue Horizon Grill
+delivery1,password,delivery,HaShalom St, Jerusalem,
+delivery2,password,delivery,King George St, Ashdod,
+delivery3,password,delivery,HaShalom St, Haifa,
+delivery4,password,delivery,HaYarkon St, Netanya,
