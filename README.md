@@ -75,14 +75,14 @@ Ensure API keys are correct, dependencies are installed, and the specified ports
 
 4. **Regular Class, Abstract Class, Interface**:
     - Regular class: `ServerApp` handles server-side logic.
-    - Abstract class: `User` is an abstract class with `CustomerUser` and `RestaurantUser` as subclasses.
-    - Interface: In future, an interface like `Orderable` could be implemented for common behaviors between `CustomerUser` and `RestaurantUser`.
+    - Abstract class: `User` is an abstract class with `CustomerUser` , `RestaurantUser`, `DeliveryUser`, and `AdminUser` as subclasses.
+    - Interface: 'LogoutCallback' is an interface used to implement logout functionality.
 
 5. **Inheritance and Polymorphism**:
-   Inheritance is demonstrated in `CustomerUser` and `RestaurantUser`, both inheriting from `User`, allowing the system to use polymorphism by referencing users generically as `User` objects.
+   Inheritance is demonstrated in `CustomerUser`, `RestaurantUser`, `DeliveryUser` and `AdminUser` , all inheriting from `User`, allowing the system to use polymorphism by referencing users generically as `User` objects.
 
 6. **User-Friendly**:
-    The prject uses 'JFrame' and 'JOptionPane' to create a user-friendly interface. The GUI is intuitive and easy to navigate, with clear instructions and feedback messages. The system also provides error messages for incorrect input.
+    The project uses 'JFrame' and 'JOptionPane' to create a user-friendly interface. The GUI is intuitive and easy to navigate, with clear instructions and feedback messages. The system also provides error messages for incorrect input.
 7. **Exception Handling**:
    Exception handling is implemented for edge cases such as duplicate restaurant names, incorrect login credentials, and invalid input data. For example:
    ```java
