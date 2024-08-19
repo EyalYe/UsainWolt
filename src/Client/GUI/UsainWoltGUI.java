@@ -219,14 +219,14 @@ public class UsainWoltGUI implements LogoutCallback {
                     JOptionPane.showMessageDialog(frame, "Error updating delivery order status: " + response.get("message"));
                 }
                 if (deliveryGUI != null){
-                    deliveryGUI.enableDeliveryFinishedButton();
+                    deliveryGUI.enableDeliveryFinishedButton(((String) response.get("message")).replace("Order picked up successfully for delivery to ", ""));
                     deliveryGUI.showAvailableDeliveries();
                 }
                 break;
             case "handleCheckIfOnDelivery":
                 if (deliveryGUI != null){
-                    if ("You are on a delivery".equals(response.get("message"))) {
-                        deliveryGUI.enableDeliveryFinishedButton();
+                    if (((String) response.get("message")).contains("You are on a delivery to ")) {
+                        deliveryGUI.enableDeliveryFinishedButton(((String) response.get("message")).replace("You are on a delivery to ", ""));
                     } else {
                         deliveryGUI.disableDeliveryFinishedButton();
                     }

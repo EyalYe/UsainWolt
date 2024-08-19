@@ -68,9 +68,7 @@ public class ServerApp {
                         CustomerUser customerUser = gson.fromJson(jsonUser.toString(), CustomerUser.class);
                         allUsers.add(customerUser);
                         for (Order order : customerUser.getOrderHistory()) {
-                            if (order.getStatus().equals("Pending")) {
-                                pending.add(order);
-                            } else if (order.getStatus().equals("Ready For Pickup")) {
+                             if (order.getStatus().equals("Ready For Pickup")) {
                                 readyForPickupOrders.add(order);
                             }
                         }
@@ -226,13 +224,36 @@ public class ServerApp {
 
     static boolean updateOrder(Order order) throws IOException {
         String status = order.getStatus();
+        System.out.println("Updating order " + order.getOrderId() + " to status " + status);
+        String restaurantName = order.getRestaurantName();
+        String customerName = order.getCustomerName();
+        String deliveryName = order.getDeliveryPerson();
+        RestaurantUser restaurant = null;
+        CustomerUser customer = null;
+        DeliveryUser delivery = null;
+        for (User user : allUsers) {
+            if (user instanceof RestaurantUser && user.getUserName().equals(restaurantName)) {
+                restaurant = (RestaurantUser) user;
+            } else if (user instanceof CustomerUser && user.getUserName().equals(customerName)) {
+                customer = (CustomerUser) user;
+            } else if (user instanceof DeliveryUser && user.getUserName().equals(deliveryName)) {
+                delivery = (DeliveryUser) user;
+            }
+        }
+        if (restaurant == null || customer == null) {
+            return false;
+        }
+        if (delivery != null) {
+            delivery.setCurrentOrder(order);
+        }
+        customer.removeOrder(order.getOrderId());
+        customer.addOrder(order);
         switch (status) {
             case "Pending":
                 pending.add(order);
                 return pending.contains(order);
             case "Ready For Pickup":
                 pending.remove(order);
-                String CustomerName = order.getCustomerName();
                 updateAllUsers();
                 readyForPickupOrders.add(order);
                 return readyForPickupOrders.contains(order);
@@ -242,11 +263,15 @@ public class ServerApp {
                 return !readyForPickupOrders.contains(order);
             case "Delivered":
                 readyForPickupOrders.remove(order);
+                if (delivery != null)
+                    delivery.setCurrentOrder(null);
                 updateAllUsers();
                 return !readyForPickupOrders.contains(order);
             case "Cancelled":
                 readyForPickupOrders.remove(order);
                 pending.remove(order);
+                if (delivery != null)
+                    delivery.setCurrentOrder(null);
                 updateAllUsers();
                 return !readyForPickupOrders.contains(order) && !pending.contains(order);
             default:
@@ -317,15 +342,29 @@ public class ServerApp {
         return !exists;
     }
 
-    public static List<Order> getPendingOrders(){
-       return readyForPickupOrders;
-    }
-
     public static void removeUser(User user) {
         allUsers.remove(user);
         File userFile = new File("server_logs/users/" + user.getUserName() + "." + user.getClass().getSimpleName() + ".json");
         if (userFile.exists()) {
             userFile.delete();
         }
+    }
+
+    public static Order[] getReadyForPickupOrders() {
+        return readyForPickupOrders.toArray(new Order[0]);
+    }
+
+    public static Order getOrderById(int orderId) {
+        for (Order order : readyForPickupOrders) {
+            if (order.getOrderId() == orderId) {
+                return order;
+            }
+        }
+        for (Order order : pending) {
+            if (order.getOrderId() == orderId) {
+                return order;
+            }
+        }
+        return null;
     }
 }

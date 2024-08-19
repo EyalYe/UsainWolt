@@ -5,6 +5,7 @@ public class Restaurant {
     private double distance;
     private String profilePictureUrl;
     private String address;
+    private String restaurantAddress;
     private String phoneNumber;
     private String cuisine;
     private String restaurantActualName;

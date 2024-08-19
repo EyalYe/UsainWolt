@@ -654,5 +654,17 @@ public class ClientApp implements Runnable {
 
         addRequest(request);
     }
+
+    public void updateCreditCardAsync(String username, String password, String creditCardNumber, String expirationDate, String cvv) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "updateCreditCard");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("creditCardNumber", creditCardNumber);
+        request.put("expirationDate", expirationDate);
+        request.put("cvv", cvv);
+
+        addRequest(request);
+    }
 }
 

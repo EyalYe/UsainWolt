@@ -720,6 +720,12 @@ public class CustomerGUI {
         gbc.gridy++;
         settingsPanel.add(changePhoneNumberButton, gbc);
 
+        // Add change phone number button
+        JButton changeCreditCardButton = new JButton("Change Credit Card");
+        changeCreditCardButton.addActionListener(e -> showChangeCreditCardDialog());
+        gbc.gridy++;
+        settingsPanel.add(changeCreditCardButton, gbc);
+
         // Add change address button
         JButton changeAddressButton = new JButton("Change Address");
         changeAddressButton.addActionListener(e -> showChangeAddressDialog());
@@ -737,6 +743,64 @@ public class CustomerGUI {
         mainContentPanel.revalidate();
         mainContentPanel.repaint();
 
+    }
+
+    private void showChangeCreditCardDialog() {
+        JDialog dialog = new JDialog(frame, "Change Password", true);
+        dialog.setLayout(new GridBagLayout());
+        dialog.setSize(400, 200);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        dialog.add(new JLabel("Card Number:"), gbc);
+
+        gbc.gridx = 1;
+        JTextField cardNumberField = new JTextField(15);
+        dialog.add(cardNumberField, gbc);
+
+        // expiration date
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        dialog.add(new JLabel("Expiration Date:"), gbc);
+
+        gbc.gridx = 1;
+        JTextField expirationDateField = new JTextField(5);
+        dialog.add(expirationDateField, gbc);
+
+        // cvv
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        dialog.add(new JLabel("CVV:"), gbc);
+
+        gbc.gridx = 1;
+        JTextField cvvField = new JTextField(3);
+        dialog.add(cvvField, gbc);
+
+        // Submit button
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JButton submitButton = new JButton("Change Credit Card");
+
+        submitButton.addActionListener(e -> {
+            String cardNumber = cardNumberField.getText();
+            String expirationDate = expirationDateField.getText();
+            String cvv = cvvField.getText();
+
+            clientApp.updateCreditCardAsync(usernameField.getText(), new String(passwordField.getPassword()), cardNumber, expirationDate, cvv);
+            showLoading();
+            dialog.dispose();
+        });
+
+        dialog.add(submitButton, gbc);
+
+        dialog.setLocationRelativeTo(frame);
+        dialog.setVisible(true);
     }
 
     private void showChangePasswordDialog() {

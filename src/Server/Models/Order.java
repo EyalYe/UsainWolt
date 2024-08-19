@@ -1,5 +1,7 @@
 package Server.Models;
 
+import Server.Utilities.GeoLocationService;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -15,11 +17,13 @@ public class Order {
     private String status; // e.g., "Pending", "In Progress", "Delivered"
     private String customerNote;
     private String address;
+    private String restaurantAddress;
     private String deliveryPerson;
     private double distance;
+    private double[] location = new double[2]; // [latitude, longitude]
 
     // Constructor
-    public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote, String address) {
+    public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote, String address, String restaurantAddress) {
         this.orderId = orderId;
         this.orderDate = orderDate;
         this.items = new ArrayList<>(items);
@@ -30,7 +34,15 @@ public class Order {
         this.customerNote = safeString(customerNote);
         this.address = stripAddress(address);
         this.deliveryPerson = null;
+        this.restaurantAddress = restaurantAddress;
+        GeoLocationService geoLocationService = new GeoLocationService();
+        try{
+        this.location = geoLocationService.getCoordinates(restaurantAddress);
+        } catch (Exception e){
+            this.location = new double[]{0,0};
+        }
     }
+
 
     // Constructor from string
     public Order(String orderString) {
@@ -57,6 +69,10 @@ public class Order {
     }
 
     // Getters and Setters
+
+    public String getRestaurantAddress(){
+        return restaurantAddress;
+    }
 
     public int getOrderId() {
         return orderId;
@@ -145,6 +161,10 @@ public class Order {
 
     public String getAddress() {
         return address;
+    }
+
+    public double[] getLocation(){
+        return location;
     }
 
     // Inner class to represent an item with its properties

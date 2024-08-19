@@ -70,6 +70,10 @@ public class DeliveryGUI {
         // Refresh the frame to display the new UI
         frame.revalidate();
         frame.repaint();
+
+        // Pre-check to make sure if the user is on a delivery then the correct UI is shown
+        clientApp.checkIfOnDeliveryAsync(usernameField.getText(), new String(passwordField.getPassword()));
+
     }
 
 
@@ -87,69 +91,81 @@ public class DeliveryGUI {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
 
-        // Add location label
-        JLabel locationLabel = new JLabel("Location:");
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        searchPanel.add(locationLabel, gbc);
+        if(!isOnDelivery){
 
-        // Add location field
-        JTextField locationField = new JTextField(20);
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        searchPanel.add(locationField, gbc);
+            // Add location label
+            JLabel locationLabel = new JLabel("Location:");
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            searchPanel.add(locationLabel, gbc);
 
-        // Add distance label
-        JLabel distanceLabel = new JLabel("Distance:");
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.fill = GridBagConstraints.NONE;
-        searchPanel.add(distanceLabel, gbc);
+            // Add location field
+            JTextField locationField = new JTextField(20);
+            gbc.gridx = 1;
+            gbc.gridy = 0;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            searchPanel.add(locationField, gbc);
 
-        // Add distance slider
-        JSlider distanceSlider = new JSlider(0, 30, 10); // 1 to 30 km, default 10 km
-        distanceSlider.setMajorTickSpacing(10);
-        distanceSlider.setMinorTickSpacing(1);
-        distanceSlider.setPaintTicks(true);
-        distanceSlider.setPaintLabels(true);
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        searchPanel.add(distanceSlider, gbc);
+            // Add distance label
+            JLabel distanceLabel = new JLabel("Distance:");
+            gbc.gridx = 0;
+            gbc.gridy = 1;
+            gbc.fill = GridBagConstraints.NONE;
+            searchPanel.add(distanceLabel, gbc);
 
-        // Add search button
-        JButton searchButton = new JButton("Search");
-        gbc.gridx = 2;
-        gbc.gridy = 0;
-        gbc.gridheight = 2;  // Span across two rows
-        gbc.fill = GridBagConstraints.VERTICAL;
-        searchPanel.add(searchButton, gbc);
+            // Add distance slider
+            JSlider distanceSlider = new JSlider(0, 30, 10); // 1 to 30 km, default 10 km
+            distanceSlider.setMajorTickSpacing(10);
+            distanceSlider.setMinorTickSpacing(1);
+            distanceSlider.setPaintTicks(true);
+            distanceSlider.setPaintLabels(true);
+            gbc.gridx = 1;
+            gbc.gridy = 1;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            searchPanel.add(distanceSlider, gbc);
 
-        // Add Delivery Finished button
-        JButton deliveryFinishedButton = new JButton("Delivery Finished");
-        deliveryFinishedButton.setEnabled(isOnDelivery);
-        gbc.gridx = 3;
-        gbc.gridy = 0;
-        gbc.gridheight = 2;  // Span across two rows
-        gbc.fill = GridBagConstraints.VERTICAL;
-        searchPanel.add(deliveryFinishedButton, gbc);
+            // Add search button
+            JButton searchButton = new JButton("Search");
+            gbc.gridx = 2;
+            gbc.gridy = 0;
+            gbc.gridheight = 2;  // Span across two rows
+            gbc.fill = GridBagConstraints.VERTICAL;
+            searchPanel.add(searchButton, gbc);
 
-        // Add action listener for search button
-        searchButton.addActionListener(e -> {
-            int distance = distanceSlider.getValue();
-            String location = locationField.getText();
-            try {
-                performDeliverySearch(distance, location);
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-        });
+            // Add action listener for search button
+            searchButton.addActionListener(e -> {
+                int distance = distanceSlider.getValue();
+                String location = locationField.getText();
+                try {
+                    performDeliverySearch(distance, location);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+        }
+        if (isOnDelivery) {
+            // Add Delivery Finished button
+            JButton deliveryFinishedButton = new JButton("Delivery Finished");
+            deliveryFinishedButton.setEnabled(isOnDelivery);
+            gbc.gridx = 3;
+            gbc.gridy = 0;
+            gbc.gridheight = 2;  // Span across two rows
+            gbc.fill = GridBagConstraints.VERTICAL;
+            searchPanel.add(deliveryFinishedButton, gbc);
 
-        // Add action listener for Delivery Finished button
-        deliveryFinishedButton.addActionListener(e -> {
-            markDeliveryAsFinished();
-        });
+
+            JLabel currentDeliveryLabel = new JLabel("Currently delivering to: " + CurrentDeliveryAddress);
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+
+            gbc.fill = GridBagConstraints.VERTICAL;   // Align to the top
+            searchPanel.add(currentDeliveryLabel, gbc);
+
+            // Add action listener for Delivery Finished button
+            deliveryFinishedButton.addActionListener(e -> {
+                markDeliveryAsFinished();
+            });
+        }
 
         // Add the search panel to the top of the main content panel
         mainContentPanel.add(searchPanel, BorderLayout.NORTH);
@@ -216,11 +232,15 @@ public class DeliveryGUI {
         clientApp.addRequest(request);
         showLoading();
     }
+
+    String CurrentDeliveryAddress = "";
     private boolean isOnDelivery = false;
-    void enableDeliveryFinishedButton() {
+    void enableDeliveryFinishedButton(String message) {
+        CurrentDeliveryAddress = message;
         isOnDelivery = true;
     }
     void disableDeliveryFinishedButton() {
+        CurrentDeliveryAddress = "";
         isOnDelivery = false;
     }
 
@@ -289,7 +309,7 @@ public class DeliveryGUI {
 
         gbc.gridx = 0;
         gbc.gridy = itemIndex++;
-        JLabel locationLabel = new JLabel("Location: " + order.getAddress());
+        JLabel locationLabel = new JLabel("Restaurant Location: " + order.getRestaurantAddress());
         itemsPanel.add(locationLabel, gbc);
 
         gbc.gridx = 0;

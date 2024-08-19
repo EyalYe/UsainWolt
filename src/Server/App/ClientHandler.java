@@ -338,6 +338,10 @@ public class ClientHandler implements Runnable {
             }
         }
 
+        if (userToLogIn == null) {
+            return createResponse(false, "Invalid username or password");
+        }
+
         switch (userToLogIn) {
             case CustomerUser customerUser -> {
                 return createResponse(true, "Logged in as customer");
@@ -628,13 +632,12 @@ public class ClientHandler implements Runnable {
         // Properly handling the JSON parsing
         List<Order.Item> itemsList = (ArrayList<Order.Item>) gson.fromJson(gson.toJson(items), new TypeToken<List<Order.Item>>(){}.getType());
 
-        Order order = new Order(orderId, new Date(), itemsList, customer.getUserName(), restaurantName, status, customerNote, address);
+        Order order = new Order(orderId, new Date(), itemsList, customer.getUserName(), restaurantName, status, customerNote, address, restaurant.getAddress());
 
         customer.addOrder(order);
         restaurant.addOrder(order);
 
-        ServerApp.updateUser(customer);
-        ServerApp.updateUser(restaurant);
+        ServerApp.updateOrder(order);
 
         if (!ServerApp.saveOrder(order)) {
             return createResponse(false, "Failed to save order");
@@ -786,7 +789,13 @@ public class ClientHandler implements Runnable {
         String username = params.get("username");
         String password = params.get("password");
         Type type = new TypeToken<Order>(){}.getType();
-        Order order = gson.fromJson(params.get("order"), type);
+        Order order_from_user = gson.fromJson(params.get("order"), type);
+        int orderId = order_from_user.getOrderId();
+        Order order = ServerApp.getOrderById(orderId);
+
+        if (order == null) {
+            return createResponse(false, "Order not found");
+        }
 
         RestaurantUser restaurant =  (RestaurantUser) authenticateUser(params);
         if(restaurant == null) {
@@ -795,13 +804,30 @@ public class ClientHandler implements Runnable {
 
         order.setStatus("Ready For Pickup");
         restaurant.removeOrder(order.getOrderId());
+        CustomerUser customer = getUserByUsername(order.getCustomerName());
+        if (customer == null) {
+            return createResponse(false, "Something went horribly wrong");
+        }
+        customer.removeOrder(order.getOrderId());
+        customer.addOrder(order);
         ServerApp.updateUser(restaurant);
+        ServerApp.updateUser(customer);
+        ServerApp.updateOrder(order);
         if (ServerApp.updateOrder(order)) {
             return createResponse(true, "Order status updated successfully");
         } else {
             return createResponse(false, "Failed to update order status");
         }
 
+    }
+
+    private CustomerUser getUserByUsername(String customerName) {
+        for (User user : ServerApp.allUsers) {
+            if (user instanceof CustomerUser && user.getUserName().equals(customerName)) {
+                return (CustomerUser) user;
+            }
+        }
+        return null;
     }
 
     private String handleDisableMenuItems(Map<String, String> params) {
@@ -1086,8 +1112,8 @@ public class ClientHandler implements Runnable {
         if (deliveryUser.getCurrentOrder() == null) {
             return createResponse(true, "You are not on a delivery");
         }
-
-        return createResponse(true, "You are on a delivery");
+        String address = deliveryUser.getCurrentOrder().getAddress();
+        return createResponse(true, "You are on a delivery to " + address);
     }
 
     private String handlePickupOrder(Map<String, String> request) throws IOException {
@@ -1105,7 +1131,7 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "You already have an order to deliver");
         }
 
-        List<Order> deliveryOrders = ServerApp.getPendingOrders();
+        List<Order> deliveryOrders = List.of(ServerApp.getReadyForPickupOrders());
         for (Order order : deliveryOrders) {
             if (order.getOrderId() == orderId) {
                 order.setStatus("Picked Up");
@@ -1114,8 +1140,8 @@ public class ClientHandler implements Runnable {
                 deliveryUser.setCurrentOrder(order);
             }
         }
-
-        return createResponse(true, "Order picked up successfully");
+        String address = deliveryUser.getCurrentOrder().getAddress();
+        return createResponse(true, "Order picked up successfully for delivery to " + address);
     }
 
     private String handleGetDeliveryOrders(Map<String, String> request) {
@@ -1130,8 +1156,14 @@ public class ClientHandler implements Runnable {
         }
         double desiredDistance = 0;
         List<Order> deliveryOrders = new ArrayList<>();
-        String currentLocation = request.get("address");
-        if (currentLocation == null || currentLocation.isEmpty()) {
+        double[] currentLocation = null;
+        try {
+            currentLocation = geoLocationService.getCoordinates(request.get("address"));
+        } catch (Exception e) {
+            return createResponse(false, "Invalid address");
+        }
+
+        if (currentLocation == null || currentLocation.equals(new double[]{0.0, 0.0})) {
             return createResponse(false, "Current location not provided");
         }
         try {
@@ -1142,13 +1174,23 @@ public class ClientHandler implements Runnable {
         }
 
         double distance = 999;
-        for (Order order : ServerApp.getPendingOrders()) {
+        for (Order order : ServerApp.getReadyForPickupOrders()) {
+            if (order.getLocation() == null) {
+                order.setStatus("Cancelled");
+                try {
+                    ServerApp.updateOrder(order);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             if (!order.getStatus().equals("Ready For Pickup")) {
                 System.out.println("order status: " + order.getStatus());
                 continue;
             }
             try {
-                distance = geoLocationService.calculateDistance(order.getAddress(), currentLocation);
+                System.out.println(currentLocation[0] + " " + currentLocation[1] + " " + order.getLocation()[0] + " " + order.getLocation()[1]);
+                distance = geoLocationService.calculateDistance(currentLocation[0], currentLocation[1], order.getLocation()[0], order.getLocation()[1]);
+                System.out.println("Distance: " + distance);
             }catch (Exception e){
                 deliveryOrders.remove(order);
                 continue;
