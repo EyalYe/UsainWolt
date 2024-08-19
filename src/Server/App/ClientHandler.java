@@ -258,6 +258,8 @@ public class ClientHandler implements Runnable {
     }
 
     private boolean checkToken(String token) {
+        if (token.length() < 4)
+            return false;
         File file = new File("Token.txt");
         List<String> lines = new ArrayList<>();
         if (!file.exists()) {
