@@ -190,15 +190,6 @@ public class ServerApp {
 
 
 
-    public static List<Order.Item> parseItems(String items) {
-        List<Order.Item> itemList = new ArrayList<>();
-        String[] itemStrings = items.split(";");
-        for (String itemString : itemStrings) {
-            itemList.add(new Order.Item(itemString));
-        }
-        return itemList;
-    }
-
     // Order handling
     public static boolean saveOrder(Order order) throws IOException {
         return updateOrder(order);

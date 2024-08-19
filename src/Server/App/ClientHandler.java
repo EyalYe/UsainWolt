@@ -45,92 +45,36 @@ public class ClientHandler implements Runnable {
                 String type = request.get("type");
                 String response;
                 try {
-                    switch (type) {
-                        case "login":
-                            response = handleLogin(request);
-                            break;
-                        case "signupCustomer":
-                            response = handleSignUp(request, "customer");
-                            break;
-                        case "signupRestaurant":
-                            response = handleSignUp(request, "restaurant");
-                            break;
-                        case "signupDelivery":
-                            response = handleSignUp(request, "delivery");
-                            break;
-                        case "getRestaurants":
-                            response = handleGetRestaurants(request);
-                            break;
-                        case "getMenu":
-                            response = handleGetMenu(request);
-                            break;
-                        case "placeOrder":
-                            response = handlePlaceOrder(request);
-                            break;
-                        case "updateMenu":
-                            response = handleUpdateMenu(request);
-                            break;
-                        case "updateCreditCard":
-                            response = handleUpdateCreditCard(request);
-                            break;
-                        case "getOrdersHistory":
-                            response = handleGetOrdersHistory(request);
-                            break;
-                        case "markOrderReadyForPickup":
-                            response = handleMarkOrderReadyForPickup(request);
-                            break;
-                        case "disableMenuItem":
-                            response = handleDisableMenuItems(request);
-                            break;
-                        case "enableMenuItem":
-                            response = handleEnableMenuItems(request);
-                            break;
-                        case "getCurrentOrders":
-                            response = handleGetCurrentOrders(request);
-                            break;
-                        case "getAvailableCuisines":
-                            response = handleGetAvailableCuisines();
-                            break;
-                        case "changePassword":
-                            response = handleChangePassword(request);
-                            break;
-                        case "changeEmail":
-                            response = handleChangeEmail(request);
-                            break;
-                        case "disconnect":
-                            response = handleDisconnect(request);
-                            break;
-                        case "uploadProfilePicture":
-                            response = handleProfilePictureUpload(request);
-                            break;
-                        case "getImage":
-                            response = handleGetImage(request);
-                            break;
-                        case "changeParameter":
-                            response = handleUpdateParameter(request);
-                            break;
-                        case "deleteAccount":
-                            response = handleDeleteAccount(request);
-                            break;
-                        case "getDeliveryOrders":
-                            response = handleGetDeliveryOrders(request);
-                            break;
-                        case "pickupOrder":
-                            response = handlePickupOrder(request);
-                            break;
-                        case "checkIfOnDelivery":
-                            response = handleCheckIfOnDelivery(request);
-                            break;
-                        case "markOrderDelivered":
-                            response = handleMarkOrderDelivered(request);
-                            break;
-                        case "getIncomeData":
-                            response = handleGetIncomeData(request);
-                            break;
-                        default:
-                            response = handleDefault();
-                            break;
-                    }
+                    response = switch (type) {
+                        case "login" -> handleLogin(request);
+                        case "signupCustomer" -> handleSignUp(request, "customer");
+                        case "signupRestaurant" -> handleSignUp(request, "restaurant");
+                        case "signupDelivery" -> handleSignUp(request, "delivery");
+                        case "getRestaurants" -> handleGetRestaurants(request);
+                        case "getMenu" -> handleGetMenu(request);
+                        case "placeOrder" -> handlePlaceOrder(request);
+                        case "updateMenu" -> handleUpdateMenu(request);
+                        case "updateCreditCard" -> handleUpdateCreditCard(request);
+                        case "getOrdersHistory" -> handleGetOrdersHistory(request);
+                        case "markOrderReadyForPickup" -> handleMarkOrderReadyForPickup(request);
+                        case "disableMenuItem" -> handleDisableMenuItems(request);
+                        case "enableMenuItem" -> handleEnableMenuItems(request);
+                        case "getCurrentOrders" -> handleGetCurrentOrders(request);
+                        case "getAvailableCuisines" -> handleGetAvailableCuisines();
+                        case "changePassword" -> handleChangePassword(request);
+                        case "changeEmail" -> handleChangeEmail(request);
+                        case "disconnect" -> handleDisconnect(request);
+                        case "uploadProfilePicture" -> handleProfilePictureUpload(request);
+                        case "getImage" -> handleGetImage(request);
+                        case "changeParameter" -> handleUpdateParameter(request);
+                        case "deleteAccount" -> handleDeleteAccount(request);
+                        case "getDeliveryOrders" -> handleGetDeliveryOrders(request);
+                        case "pickupOrder" -> handlePickupOrder(request);
+                        case "checkIfOnDelivery" -> handleCheckIfOnDelivery(request);
+                        case "markOrderDelivered" -> handleMarkOrderDelivered(request);
+                        case "getIncomeData" -> handleGetIncomeData(request);
+                        default -> handleDefault();
+                    };
 
                     // Send the response back to the client
                     System.out.println("Sending to client: " + response);
@@ -370,10 +314,10 @@ public class ClientHandler implements Runnable {
 
     private String handleSignUp(Map<String,String> params, String type) throws IOException{
         String username = params.get("username");
-        String password = params.get("password");
         String email = params.get("email");
         String address = params.get("address");
         String phoneNumber = params.get("phoneNumber");
+        String password = params.get("password");
 
         if (usernameExists(username)) {
             return createResponse(false, "Username already exists");
@@ -391,17 +335,20 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Username must contain only letters");
         }
 
-        switch (type)
-        {
-            case "customer":
-                return handleSignupCustomer(params);
-            case "delivery":
-                return handleSignupDelivery(params);
-            case "restaurant":
-                return handleSignupRestaurant(params);
-            default:
-                return createResponse(false, "Invalid user type");
+        if (phoneNumber.length() != 10) {
+            return createResponse(false, "Phone number must be 10 digits long");
         }
+
+        if (password.length() < 8) {
+            return createResponse(false, "Password must be at least 8 characters long");
+        }
+
+        return switch (type) {
+            case "customer" -> handleSignupCustomer(params);
+            case "delivery" -> handleSignupDelivery(params);
+            case "restaurant" -> handleSignupRestaurant(params);
+            default -> createResponse(false, "Invalid user type");
+        };
 
     }
 
@@ -452,9 +399,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleGetRestaurants(Map<String, String> params) throws IOException {
-        String username = params.get("username");
-        String password = params.get("password");
-
         User user = authenticateUser(params);
 
         if(user == null) {
@@ -469,7 +413,7 @@ public class ClientHandler implements Runnable {
 
         double[] customerCoordinates = new double[2];
         if (params.get("sendHome").equals("true")){
-            customerCoordinates = ((CustomerUser) user).getCoordinates();
+            customerCoordinates = user.getCoordinates();
         } else {
             if (params.get("address") == null || params.get("address").isEmpty() || !geoLocationService.validateAddress(params.get("address"))) {
                 return createResponse(false, "Invalid address");
@@ -536,7 +480,7 @@ public class ClientHandler implements Runnable {
         return null;
     }
 
-    private String handleGetMenu(Map<String, String> params) throws IOException {
+    private String handleGetMenu(Map<String, String> params) {
         String restaurantName = params.get("restaurantName");
 
         for (User user : ServerApp.allUsers) {
@@ -661,9 +605,6 @@ public class ClientHandler implements Runnable {
 
 
     private String handleUpdateMenu(Map<String, String> params) throws IOException {
-        String username = params.get("username");
-        String password = params.get("password");
-        String restaurantName = params.get("restaurantName");
         String itemName = params.get("itemName");
         boolean isAvailable = true;
         try{
@@ -756,8 +697,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleUpdateCreditCard(Map<String, String> params) {
-        String username = params.get("username");
-        String password = params.get("password");
         String creditCardNumber = params.get("creditCardNumber");
         String expirationDate = params.get("expirationDate");
         String cvv = params.get("cvv");
@@ -780,27 +719,17 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleGetOrdersHistory(Map<String, String> params) {
-        String username = params.get("username");
-        String password = params.get("password");
-
         User authenticatedUser = authenticateUser(params);
-        if (authenticatedUser == null) {
-            return createResponse(false, "Authentication failed or user not found");
-        }
-        if (authenticatedUser instanceof CustomerUser) {
-            return createResponse( true, gson.toJson(((CustomerUser) authenticatedUser).getOrderHistory()));
-        } else if (authenticatedUser instanceof RestaurantUser) {
-            return createResponse(true, gson.toJson(((RestaurantUser) authenticatedUser).getOrders()));
-        }  else if (authenticatedUser instanceof DeliveryUser) {
-            return createResponse(true, gson.toJson(((DeliveryUser) authenticatedUser).getCurrentOrder()));
-        } else {
-            return createResponse(false, "User type not recognized");
-        }
+        return switch (authenticatedUser) {
+            case null -> createResponse(false, "Authentication failed or user not found");
+            case CustomerUser customerUser -> createResponse(true, gson.toJson(customerUser.getOrderHistory()));
+            case RestaurantUser restaurantUser -> createResponse(true, gson.toJson(restaurantUser.getOrders()));
+            case DeliveryUser deliveryUser -> createResponse(true, gson.toJson(deliveryUser.getCurrentOrder()));
+            default -> createResponse(false, "User type not recognized");
+        };
     }
 
     private String handleMarkOrderReadyForPickup(Map<String, String> params) throws IOException {
-        String username = params.get("username");
-        String password = params.get("password");
         Type type = new TypeToken<Order>(){}.getType();
         Order order_from_user = gson.fromJson(params.get("order"), type);
         int orderId = order_from_user.getOrderId();
@@ -844,8 +773,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleDisableMenuItems(Map<String, String> params) {
-        String username = params.get("username");
-        String password = params.get("password");
 
         RestaurantUser restaurant = (RestaurantUser) authenticateUser(params);
 
@@ -863,8 +790,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleEnableMenuItems(Map<String, String> params) {
-        String username = params.get("username");
-        String password = params.get("password");
 
         RestaurantUser restaurant = (RestaurantUser) authenticateUser(params);
         if (restaurant == null) {
@@ -877,9 +802,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleGetCurrentOrders(Map<String, String> params) {
-        String username = params.get("username");
-        String password = params.get("password");
-
         RestaurantUser restaurant = (RestaurantUser) authenticateUser(params);
 
         if (restaurant == null) {
@@ -890,8 +812,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleDisconnect(Map<String, String> params) {
-        String username = params.get("username");
-        String password = params.get("password");
 
         User userToDisconnect = authenticateUser(params);
 
@@ -912,9 +832,8 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleChangePassword(Map<String, String> params) throws IOException {
-        String username = params.get("username");
-        String oldPassword = hashPassword(params.get("oldPassword"));
         String newPassword = params.get("newPassword");
+        params.put("password", params.get("oldPassword"));
 
         User user = authenticateUser(params);
 
@@ -929,8 +848,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleChangeEmail(Map<String, String> params) throws IOException {
-        String username = params.get("username");
-        String password = hashPassword(params.get("password"));
         String newEmail = params.get("newEmail");
 
         User user = authenticateUser(params);
@@ -948,7 +865,6 @@ public class ClientHandler implements Runnable {
     private String handleProfilePictureUpload(Map<String, String> params) {
         String username = params.get("username");
         String encodedImage = params.get("profilePicture");
-        String password = params.get("password");
 
         User user = authenticateUser(params);
 
@@ -1015,8 +931,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleDeleteAccount(Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
 
         User user = authenticateUser(request);
 
@@ -1030,8 +944,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleUpdateParameter(Map<String, String> request) throws IOException {
-        String username = request.get("username");
-        String password = request.get("password");
         String parameter = request.get("parameter");
         String value = request.get("newValue");
 
@@ -1041,34 +953,35 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Authentication failed or user not found");
         }
 
-        if (parameter.equals("address")) {
-            user.setAddress(value);
-        } else if (parameter.equals("phoneNumber")) {
-            user.setPhoneNumber(value);
-        } else if (parameter.equals("email")) {
-            user.setEmail(value);
-        } else if (parameter.equals("businessPhoneNumber")) {
-            if (user instanceof RestaurantUser) {
-                ((RestaurantUser) user).setBusinessPhoneNumber(value);
-            } else {
-                return createResponse(false, "User is not a restaurant");
+        switch (parameter) {
+            case "address" -> user.setAddress(value);
+            case "phoneNumber" -> user.setPhoneNumber(value);
+            case "email" -> user.setEmail(value);
+            case "businessPhoneNumber" -> {
+                if (user instanceof RestaurantUser) {
+                    ((RestaurantUser) user).setBusinessPhoneNumber(value);
+                } else {
+                    return createResponse(false, "User is not a restaurant");
+                }
             }
-        } else if (parameter.equals("cuisine")) {
-            if (user instanceof RestaurantUser) {
-                ((RestaurantUser) user).setCuisine(value);
-            } else {
-                return createResponse(false, "User is not a restaurant");
+            case "cuisine" -> {
+                if (user instanceof RestaurantUser) {
+                    ((RestaurantUser) user).setCuisine(value);
+                } else {
+                    return createResponse(false, "User is not a restaurant");
+                }
             }
-        } else if (parameter.equals("RestaurantName")) {
-            if (user instanceof RestaurantUser) {
-                ((RestaurantUser) user).setRestaurantName(value);
-            } else {
-                return createResponse(false, "User is not a restaurant");
+            case "RestaurantName" -> {
+                if (user instanceof RestaurantUser) {
+                    ((RestaurantUser) user).setRestaurantName(value);
+                } else {
+                    return createResponse(false, "User is not a restaurant");
+                }
             }
-        } else if (parameter.equals("password")) {
-            user.setHashedPassword(hashPassword(value));
-        } else {
-            return createResponse(false, "Invalid parameter");
+            case "password" -> user.setHashedPassword(hashPassword(value));
+            default -> {
+                return createResponse(false, "Invalid parameter");
+            }
         }
 
         ServerApp.updateUser(user);
@@ -1089,10 +1002,6 @@ public class ClientHandler implements Runnable {
     }
 
     private String handleMarkOrderDelivered(Map<String, String> request) throws IOException {
-        String username = request.get("username");
-        String password = request.get("password");
-        int orderId = Integer.parseInt(request.get("orderId"));
-
         DeliveryUser deliveryUser = (DeliveryUser) authenticateUser(request);
 
         if (deliveryUser == null) {
