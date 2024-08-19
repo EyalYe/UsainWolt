@@ -250,12 +250,17 @@ public class ServerApp {
         customer.addOrder(order);
         switch (status) {
             case "Pending":
-                pending.add(order);
+                if (!pending.contains(order)) {
+                    pending.add(order);
+                }
+                updateAllUsers();
                 return pending.contains(order);
             case "Ready For Pickup":
                 pending.remove(order);
+                if (!readyForPickupOrders.contains(order)) {
+                    readyForPickupOrders.add(order);
+                }
                 updateAllUsers();
-                readyForPickupOrders.add(order);
                 return readyForPickupOrders.contains(order);
             case "Picked Up":
                 readyForPickupOrders.remove(order);
@@ -278,6 +283,7 @@ public class ServerApp {
                 return false;
         }
     }
+
 
     public static void updateAllUsers() throws IOException {
         for (User user : allUsers) {

@@ -314,7 +314,7 @@ public class DeliveryGUI {
 
         gbc.gridx = 0;
         gbc.gridy = itemIndex++;
-        JLabel distanceLabel = new JLabel("Distance: " + String.format("%.2f km", order.getDistance()));
+        JLabel distanceLabel = new JLabel("The Restaurant is " + String.format("%.2f km", order.getDistance()) + " away");
         itemsPanel.add(distanceLabel, gbc);
 
         orderPanel.add(itemsPanel, BorderLayout.CENTER);
