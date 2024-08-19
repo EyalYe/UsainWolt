@@ -24,6 +24,7 @@ public class RestaurantGUI {
     private final LogoutCallback logoutCallback;
     private Gson gson = new Gson();
     private boolean passwordChanged = false;
+    private boolean showingOrders = false;
 
     public RestaurantGUI(JFrame frame, JTextField usernameField, JPasswordField passwordField, ClientApp clientApp, String[] availableCuisines , LogoutCallback logoutCallback) {
         this.frame = frame;
@@ -83,11 +84,13 @@ public class RestaurantGUI {
     }
 
     private void handleLogout() {
+        showingOrders = false;
         // Implement the logic to logout the restaurant
         logoutCallback.onLogout();
     }
 
     void showViewOrders() {
+        showingOrders = true;
         clientApp.getOrdersHistoryAsync(usernameField.getText(), new String(passwordField.getPassword()));
         showLoading();
     }
@@ -97,11 +100,13 @@ public class RestaurantGUI {
     }
 
     void showManageMenu() {
+        showingOrders = false;
         clientApp.getMenuAsync(usernameField.getText());
         showLoading();
     }
 
     void showRestaurantSettings() {
+        showingOrders = false;
         if (passwordChanged) {
             JOptionPane.showMessageDialog(frame, "Password changed successfully. Please login again.");
             handleLogout();
@@ -816,4 +821,9 @@ public class RestaurantGUI {
         }
     }
 
+    public void refreshOrders() {
+        if (showingOrders) {
+            showViewOrders();
+        }
+    }
 }

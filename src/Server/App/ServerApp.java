@@ -12,6 +12,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class ServerApp {
@@ -26,7 +27,7 @@ public class ServerApp {
     public static Gson gson = new Gson();
 
     public static List<User> allUsers = new ArrayList<>();
-    public static List<RestaurantUser> loggedInRestaurants = new ArrayList<>();
+    public static List<Map<RestaurantUser,Socket>> loggedInRestaurants = new ArrayList<>();
 
     public static void createFileIfNotExists(String fileName) throws IOException {
         File file = new File(fileName);
@@ -67,21 +68,9 @@ public class ServerApp {
                     } else if (name.contains("CustomerUser")) {
                         CustomerUser customerUser = gson.fromJson(jsonUser.toString(), CustomerUser.class);
                         allUsers.add(customerUser);
-                        for (Order order : customerUser.getOrderHistory()) {
-                             if (order.getStatus().equals("Ready For Pickup")) {
-                                readyForPickupOrders.add(order);
-                            }
-                        }
                     } else if (name.contains("DeliveryUser")) {
                         DeliveryUser deliveryUser = gson.fromJson(jsonUser.toString(), DeliveryUser.class);
                         allUsers.add(deliveryUser);
-                        if(deliveryUser.getCurrentOrder() != null) {
-                            if (deliveryUser.getCurrentOrder().getStatus().equals("Pending")) {
-                                pending.add(deliveryUser.getCurrentOrder());
-                            } else if (deliveryUser.getCurrentOrder().getStatus().equals("Ready For Pickup")) {
-                                readyForPickupOrders.add(deliveryUser.getCurrentOrder());
-                            }
-                        }
                     } else if (name.contains("AdminUser")) {
                         AdminUser adminUser = gson.fromJson(jsonUser.toString(), AdminUser.class);
                         allUsers.add(adminUser);
@@ -94,16 +83,6 @@ public class ServerApp {
         } catch (IOException e) {
            e.printStackTrace();
        }
-       for (Order order : pending) {
-            String restaurantName = order.getRestaurantName();
-            for (User user : allUsers) {
-                if (user instanceof RestaurantUser && user.getUserName().equals(restaurantName)) {
-                    ((RestaurantUser) user).addOrder(order);
-                    updateUser(user);
-                    break;
-                }
-            }
-        }
     }
 
     public static void loadMenusFromJSON() throws IOException {
@@ -198,8 +177,11 @@ public class ServerApp {
         }
     }
 
-    public static void addLoggedInRestaurant(RestaurantUser restaurant) {
-        loggedInRestaurants.add(restaurant);
+    public static void addLoggedInRestaurant(RestaurantUser restaurant, Socket socket) {
+        if (isLogged(restaurant)) {
+            loggedInRestaurants.removeIf(user -> user.containsKey(restaurant));
+        }
+        loggedInRestaurants.add(Map.of(restaurant, socket));
     }
 
     public static String getAvailableCuisines() {
@@ -372,5 +354,51 @@ public class ServerApp {
             }
         }
         return null;
+    }
+
+    public static boolean isLogged(RestaurantUser restaurantUser) {
+        for (Map<RestaurantUser, Socket> user : loggedInRestaurants) {
+            if (user.containsKey(restaurantUser)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static List<RestaurantUser> getLoggedInRestaurants() {
+        List<RestaurantUser> restaurants = new ArrayList<>();
+        for (Map<RestaurantUser, Socket> user : loggedInRestaurants) {
+            restaurants.add(user.keySet().iterator().next());
+        }
+        return restaurants;
+    }
+
+    public static Socket getRestaurantSocket(RestaurantUser restaurant) {
+        for (Map<RestaurantUser, Socket> user : loggedInRestaurants) {
+            if (user.containsKey(restaurant)) {
+                return user.get(restaurant);
+            }
+        }
+        return null;
+    }
+
+    public static void pushUpdateToRestaurant(RestaurantUser restaurant, String message) {
+        Socket socket = getRestaurantSocket(restaurant);
+        if (socket != null) {
+            try {
+                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                Map<String,String> response = new java.util.HashMap<>();
+                response.put("type", "update");
+                response.put("success", "true");
+                response.put("message", message);
+                writer.println(gson.toJson(response));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void logoutRestaurant(RestaurantUser userToDisconnect) {
+        loggedInRestaurants.removeIf(user -> user.containsKey(userToDisconnect));
     }
 }

@@ -164,7 +164,11 @@ public class UsainWoltGUI implements LogoutCallback {
                 if (restaurantGUI != null)
                     restaurantGUI.showOrdersFrame(orders);
                 break;
-                case "handleUpdateParameter":
+            case "update":
+                if (restaurantGUI != null)
+                    restaurantGUI.refreshOrders();
+                break;
+            case "handleUpdateParameter":
                 if ("true".equals(response.get("success"))) {
                     JOptionPane.showMessageDialog(frame, "Parameter updated successfully!");
                     if (restaurantGUI != null)
@@ -194,7 +198,7 @@ public class UsainWoltGUI implements LogoutCallback {
                 if (restaurantGUI != null)
                     restaurantGUI.showManageMenu();
                 break;
-            case "handleUpdateMenuItem":
+            case "handleUpdateMenu":
                 if (!"true".equals(response.get("success"))) {
                     JOptionPane.showMessageDialog(frame, "Error updating menu item: " + response.get("message"));
                 }

@@ -9,12 +9,11 @@ import java.io.*;
 import java.lang.reflect.Type;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import javax.swing.Timer;
+import java.util.concurrent.TimeUnit;
 
 
 public class ClientApp implements Runnable {
@@ -25,6 +24,7 @@ public class ClientApp implements Runnable {
     private String serverAddress;
     private int port;
     private boolean running;
+    private Timer responseTimer;
     // Queues for requests and responses
     private BlockingQueue<Map<String, Object>> requestQueue;
     private BlockingQueue<Map<String, Object>> responseQueue;
@@ -50,19 +50,26 @@ public class ClientApp implements Runnable {
                 running = true;
                 System.out.println("Connected to the server at " + serverAddress + ":" + port);
 
-                // Start processing requests
+                // Start the thread that listens for responses from the server
+                startListeningForMessages();
+
+                // Process requests (send them with a timeout)
                 while (running) {
-                    Map<String, Object> request = requestQueue.take(); // Blocking call
-                    Map<String, Object> response = sendRequest(request);
-                    responseQueue.put(response); // Enqueue response
+                    Map<String, Object> request = requestQueue.poll(5, TimeUnit.SECONDS);
+                    if (request != null) {
+                        Map<String, Object> response = sendRequest(request);
+                        responseQueue.put(response);
+                    } else {
+                        //System.out.println("No request available within the timeout period.");
+                        continue;
+                    }
                 }
             } catch (java.net.ConnectException e) {
                 System.err.println("Connection refused. Retrying in 5 seconds...");
                 try {
-                    Thread.sleep(5000); // Wait for 5 seconds before retrying
+                    Thread.sleep(5000);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    System.err.println("Retry attempt interrupted");
                     break;
                 }
             } catch (Exception e) {
@@ -72,6 +79,25 @@ public class ClientApp implements Runnable {
             }
         }
     }
+
+    private void startListeningForMessages() {
+        // Create a new thread for listening to server messages
+        Thread messageListener = new Thread(() -> {
+            while (running) {
+                try {
+                    if (in.ready()) {
+                       handleServerMessage();
+                    }
+                } catch (IOException e) {
+                    System.err.println("Error reading server message: " + e.getMessage());
+                    closeConnection();
+                    break;
+                }
+            }
+        });
+        messageListener.start();
+    }
+
 
     public void addRequest(Map<String, Object> request) {
         try {
@@ -93,21 +119,28 @@ public class ClientApp implements Runnable {
                 establishConnection();
             }
 
-            if (out != null) {
+            if (out != null && request != null) {
                 String jsonRequest = gson.toJson(request);
                 System.out.println("Sending request: " + jsonRequest);
                 out.println(jsonRequest);
+            }
 
                 // Read the response from the server
                 StringBuilder jsonResponseBuilder = new StringBuilder();
                 String line;
                 while ((line = in.readLine()) != null) {
+                    if (line.startsWith("update")) {
+                        System.out.println("Received update1: " + line);
+                        enqueueUpdate(line);
+                        char[] chars = new char[line.length() - "update".length()];
+                        line.getChars(line.indexOf("{"), line.indexOf("}"), chars, 0);
+                        line = new String(chars);
+                    }
                     jsonResponseBuilder.append(line);
                     if (line.endsWith("}")) { // Simple check for end of JSON object
                         break;
                     }
                 }
-
                 String jsonResponse = jsonResponseBuilder.toString();
                 System.out.println("Received response: " + jsonResponse);
 
@@ -118,10 +151,6 @@ public class ClientApp implements Runnable {
                     System.out.println("Unexpected server response: " + jsonResponse);
                     return createErrorResponse("Unexpected server response: " + jsonResponse);
                 }
-            } else {
-                System.out.println("Failed to initialize the output stream.");
-                return createErrorResponse("Failed to establish connection.");
-            }
         } catch (Exception e) {
             System.out.println("Exception occurred: " + e.getMessage());
             running = false;
@@ -158,28 +187,25 @@ public class ClientApp implements Runnable {
     }
 
     // Handle messages received from the server
-    private void handleServerMessage(String serverMessage) {
-        try {
-            // Assume the message is in JSON format
-            Map<String, Object> messageMap = gson.fromJson(serverMessage, Map.class);
-            String messageType = (String) messageMap.get("type");
+    private void handleServerMessage() {
+       try {
+           Map<String, Object> response = sendRequest(null);
+              if (response != null) {
+                responseQueue.put(response); // Enqueue response
+              }
+       } catch (Exception e) {
+           e.printStackTrace();
+       }
+    }
 
-            switch (messageType) {
-                case "notification":
-                    // Example: Display a notification to the user
-                    System.out.println("Notification from server: " + messageMap.get("content"));
-                    break;
-                case "update":
-                    // Example: Update local data based on the server's message
-                    System.out.println("Update from server: " + messageMap.get("content"));
-                    break;
-                default:
-                    // Handle unknown or unexpected messages
-                    System.out.println("Unknown message type received from server: " + serverMessage);
-                    break;
-            }
-        } catch (Exception e) {
-            System.out.println("Failed to handle server message: " + serverMessage);
+    private void enqueueUpdate(String serverMessage) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("type", "update");
+        response.put("message", serverMessage.replace("update", ""));
+        try{
+        responseQueue.put(response); // Enqueue response
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }

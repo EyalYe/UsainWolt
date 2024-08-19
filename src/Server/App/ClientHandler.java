@@ -18,9 +18,9 @@ import java.util.List;
 import static Server.App.ServerApp.DELIVERY_FEE;
 
 public class ClientHandler implements Runnable {
-    private Socket clientSocket;
+    private final Socket clientSocket;
     private Gson gson;
-    private GeoLocationService geoLocationService;
+    private final GeoLocationService geoLocationService;
 
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
@@ -38,6 +38,10 @@ public class ClientHandler implements Runnable {
 
                 // Parse the incoming JSON request
                 Map<String, String> request = parseRequest(inputLine);
+                if (request == null) {
+                    out.println(createResponse(false, "Invalid request format"));
+                    continue;
+                }
                 String type = request.get("type");
                 String response;
                 try {
@@ -138,7 +142,7 @@ public class ClientHandler implements Runnable {
                 }
 
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -350,9 +354,7 @@ public class ClientHandler implements Runnable {
                 return createResponse(true, "Logged in as delivery");
             }
             case RestaurantUser restaurantUser -> {
-                if (!ServerApp.loggedInRestaurants.contains(restaurantUser)) {
-                    ServerApp.loggedInRestaurants.add(restaurantUser);
-                }
+                ServerApp.addLoggedInRestaurant(restaurantUser, clientSocket);
                 return createResponse(true, "Logged in as restaurant");
             }
             case AdminUser adminUser -> {
@@ -474,7 +476,7 @@ public class ClientHandler implements Runnable {
 
         List<Map<String, Object>> restaurantInfoList = new ArrayList<>();
 
-        for (RestaurantUser restaurant : ServerApp.loggedInRestaurants) {
+        for (RestaurantUser restaurant : ServerApp.getLoggedInRestaurants()) {
             // Get the restaurant's coordinates
             double[] restaurantCoordinates = restaurant.getCoordinates();
             if (restaurantCoordinates != null) {
@@ -603,7 +605,7 @@ public class ClientHandler implements Runnable {
         }
 
         RestaurantUser restaurant = null;
-        for (RestaurantUser loggedInRestaurant : ServerApp.loggedInRestaurants) {
+        for (RestaurantUser loggedInRestaurant : ServerApp.getLoggedInRestaurants()) {
             if (loggedInRestaurant.getUserName().equals(restaurantName)) {
                 restaurant = loggedInRestaurant;
                 break;
@@ -643,9 +645,10 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Failed to save order");
         }
 
-
+        ServerApp.pushUpdateToRestaurant(restaurant, "New order received");
         return createResponse(true, "Order placed successfully with ID: " + orderId);
     }
+
 
     private String handleUpdateMenu(Map<String, String> params) throws IOException {
         String username = params.get("username");
@@ -671,7 +674,7 @@ public class ClientHandler implements Runnable {
         }
 
         // Check if the restaurant is logged in
-        if (!ServerApp.loggedInRestaurants.contains(restaurant)) {
+        if (!ServerApp.isLogged(restaurant)) {
             return createResponse(false, "Restaurant not logged in");
         }
 
@@ -887,7 +890,7 @@ public class ClientHandler implements Runnable {
         }
 
         if (userToDisconnect instanceof RestaurantUser) {
-            ServerApp.loggedInRestaurants.remove(userToDisconnect);
+            ServerApp.logoutRestaurant((RestaurantUser) userToDisconnect);
             System.out.println("Restaurant " + userToDisconnect.getUserName() + " has been logged out.");
         }
 
