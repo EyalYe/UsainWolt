@@ -17,7 +17,7 @@ public class CustomerGUI {
     private final JTextField usernameField;
     private final JPasswordField passwordField;
     private final ClientApp clientApp;
-    private final String[] availableCuisines;
+    private String[] availableCuisines;
     private final LogoutCallback logoutCallback;
 
     CustomerGUI(JFrame frame, JTextField usernameField, JPasswordField passwordField, ClientApp clientApp, String[] availableCuisines , LogoutCallback logoutCallback) {
@@ -83,6 +83,12 @@ public class CustomerGUI {
 
     // Method to show place order screen
     private void showPlaceOrder() {
+        if (availableCuisines == null || availableCuisines.length == 0) {
+            Map<String, Object> request = new HashMap<>();
+            request.put("type", "getCuisines");
+            clientApp.addRequest(request);
+            this.availableCuisines = logoutCallback.getCuisines();
+        }
         // Clear the main content panel first
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -718,8 +724,16 @@ public class CustomerGUI {
         return orderPanel;
     }
 
-    // Method to show user settings screen
     private void showUserSettings() {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getUserData");
+        request.put("username", usernameField.getText());
+        request.put("password", new String(passwordField.getPassword()));
+        clientApp.addRequest(request);
+    }
+
+    // Method to show user settings screen
+    private void showUserSettingsFrame() {
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
         mainContentPanel.setLayout(new BorderLayout());
@@ -774,6 +788,73 @@ public class CustomerGUI {
         mainContentPanel.revalidate();
         mainContentPanel.repaint();
 
+    }
+
+    void createUserDataPane(Map<String,String> userData){
+        JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
+        mainContentPanel.removeAll();
+        mainContentPanel.setLayout(new BorderLayout());
+
+        showUserSettingsFrame();
+
+        String username = userData.get("username");
+        String email = userData.get("email");
+        String phoneNumber = userData.get("phoneNumber");
+        String address = userData.get("address");
+        String cardNumber = userData.get("creditCardNumber");
+
+        JPanel userDataPanel = new JPanel();
+        userDataPanel.setLayout(new GridBagLayout());
+        userDataPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Add username
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        userDataPanel.add(new JLabel("Username:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(username), gbc);
+
+        // Add email
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        userDataPanel.add(new JLabel("Email:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(email), gbc);
+
+        // Add phone number
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        userDataPanel.add(new JLabel("Phone Number:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(phoneNumber), gbc);
+
+        // Add address
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        userDataPanel.add(new JLabel("Address:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(address), gbc);
+
+        // Add credit card number
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        userDataPanel.add(new JLabel("Credit Card Number:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(cardNumber), gbc);
+
+        mainContentPanel.add(userDataPanel, BorderLayout.NORTH);
+
+        mainContentPanel.revalidate();
+        mainContentPanel.repaint();
     }
 
     private void showChangeCreditCardDialog() {

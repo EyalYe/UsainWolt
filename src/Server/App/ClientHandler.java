@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.List;
 
 import static Server.App.ServerApp.DELIVERY_FEE;
+import static java.lang.Thread.sleep;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
@@ -72,6 +73,7 @@ public class ClientHandler implements Runnable {
                         case "pickupOrder" -> handlePickupOrder(request);
                         case "checkIfOnDelivery" -> handleCheckIfOnDelivery(request);
                         case "markOrderDelivered" -> handleMarkOrderDelivered(request);
+                        case "getUserData" -> handleGetUserData(request);
                         case "getIncomeData" -> handleGetIncomeData(request);
                         default -> handleDefault();
                     };
@@ -79,6 +81,7 @@ public class ClientHandler implements Runnable {
                     // Send the response back to the client
                     System.out.println("Sending to client: " + response);
                     out.println(response);
+                    Thread.sleep(500);
                 }
                 catch (Exception e) {
                     response = createResponse(false, "Error: " + e.getMessage());
@@ -95,6 +98,33 @@ public class ClientHandler implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    private String handleGetUserData(Map<String, String> request) {
+        String username = request.get("username");
+        User user = authenticateUser(request);
+        if (user == null) {
+            return createResponse(false, "User not found");
+        }
+        Map<String, String> userData = new HashMap<>();
+        userData.put("username", user.getUserName());
+        userData.put("email", user.getEmail());
+        userData.put("address", user.getAddress());
+        userData.put("phoneNumber", user.getPhoneNumber());
+        if (user instanceof CustomerUser customer) {
+            if (customer.getCreditCardNumber().length() < 16) {
+                userData.put("creditCardNumber", customer.getCreditCardNumber());
+            } else {
+                userData.put("creditCardNumber", "**** **** **** " + customer.getCreditCardNumber().substring(12));
+            }
+        }  else if (user instanceof RestaurantUser restaurant) {
+            userData.put("businessPhoneNumber", restaurant.getBusinessPhoneNumber());
+            userData.put("cuisine", restaurant.getCuisine());
+            userData.put("revenue", String.valueOf(restaurant.getRevenue()));
+            userData.put("restaurantName", (String) restaurant.getRestaurantName());
+        }
+
+        return createResponse(true, gson.toJson(userData));
     }
 
     private Map<String, String> parseRequest(String inputLine) {
@@ -246,12 +276,12 @@ public class ClientHandler implements Runnable {
         return tokenFound;
     }
 
-    public boolean containsOnlyLetters(String str) {
+    public boolean containsOnlyLettersAndNumbers(String str) {
         if (str.isEmpty()) {
             return false;
         }
         for (int i = 0; i < str.length(); i++) {
-            if (!Character.isLetter(str.charAt(i))) {
+            if (!Character.isLetter(str.charAt(i)) && !Character.isDigit(str.charAt(i))) {
                 return false;
             }
         }
@@ -331,7 +361,7 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Invalid address");
         }
 
-        if (!containsOnlyLetters(username)) {
+        if (!containsOnlyLettersAndNumbers(username)) {
             return createResponse(false, "Username must contain only letters");
         }
 

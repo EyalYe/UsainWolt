@@ -1,57 +1,47 @@
-import java.io.BufferedReader;
+import Client.network.ClientApp;
+import Server.ServerMain;
+import Client.UsainWoltMain;
+
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.List;
-
-import Server.Models.CustomerUser;
-import Server.Models.RestaurantUser;
-
+import java.io.FileWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
-        // fixing the users to fit the new structure
-        List<String> users = new ArrayList<>();
-        File usersFile = new File("users.csv");
-        if (usersFile.exists()) {
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(usersFile));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] fields = line.split(",");
-                    if (fields.length > 0) {
-                        String userType = fields[0];
-                        switch (userType) {
-                            case "Customer":
-                                CustomerUser customer = new CustomerUser(fields[1], fields[2], fields[3], fields[4], fields[5]);
-                                users.add(customer.toString());
-                                break;
-                            case "Restaurant":
-                                RestaurantUser restaurant = new RestaurantUser(fields[1], fields[2], fields[3], fields[4], fields[5], fields[8], fields[9], Double.parseDouble(fields[10]));
-                                users.add(restaurant.toString());
-                                break;
-                            default:
-                                System.out.println("Invalid user type: " + userType);
-                        }
-                    }
-                }
+        Thread serverThread = new Thread(() -> {
+            ServerMain.main(args);
+        });
+        serverThread.start();
+        for (int i = 0; i < 3; i++) {
+            Thread thread = new Thread(() -> {
+                UsainWoltMain.skipLogin("restaurant" + (new Random().nextInt(25) + 1), "password", "restaurant");
+            });
+            thread.start();
+        }
+        for (int i = 0; i < 3; i++) {
+            Thread thread = new Thread(() -> {
+                UsainWoltMain.skipLogin("customer" + (new Random().nextInt(25) + 1), "password", "customer");
+            });
+            thread.start();
+        }
+        try {
+            // Create an instance of ClientApp
+            ClientApp clientApp = new ClientApp("localhost", 12345);
 
-                reader.close();
+            // 25 restaurant usernames, all with the same password ("password")
+            for (int i = 0; i < 25; i++) {
+                String restaurantUsername = "restaurant" + (i + 1);
+                String restaurantPassword = "password";  // Consistent password
 
-                // Write the updated users back to the file
-                try (FileOutputStream fos = new FileOutputStream(usersFile)) {
-                    for (String user : users) {
-                        fos.write((user + "\n").getBytes());
-                    }
-                } catch (Exception e) {
-                    System.out.println("Error writing users file: " + e.getMessage());
-                }
-            } catch (Exception e) {
-                System.out.println("Error reading users file: " + e.getMessage());
+                // Log in to the restaurant account
+                Map<String, Object> loginResponse = clientApp.login(restaurantUsername, restaurantPassword);
+                System.out.println("Login Response for " + restaurantUsername + ": " + loginResponse);
             }
-        } else {
-            System.out.println("Users file not found.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

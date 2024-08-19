@@ -107,6 +107,106 @@ public class RestaurantGUI {
 
     void showRestaurantSettings() {
         showingOrders = false;
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getUserData");
+        request.put("username", usernameField.getText());
+        request.put("password", new String(passwordField.getPassword()));
+        clientApp.addRequest(request);
+    }
+
+    void createRestaurantSettingsFrame(Object message) {
+        JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
+        mainContentPanel.removeAll();
+        mainContentPanel.setLayout(new BorderLayout());
+
+        showRestaurantSettingsFrame();
+
+        Map<String, Object> userData = (Map<String, Object>) message;
+        String restaurantName = (String) userData.get("restaurantName");
+        String businessPhoneNumber = (String) userData.get("businessPhoneNumber");
+        String email = (String) userData.get("email");
+        String address = (String) userData.get("address");
+        String phoneNumber = (String) userData.get("phoneNumber");
+        String username = (String) userData.get("username");
+
+
+        JPanel userDataPanel = new JPanel();
+        userDataPanel.setLayout(new GridBagLayout());
+        userDataPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Add username
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        userDataPanel.add(new JLabel("Username:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(username), gbc);
+
+        // Add email
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        userDataPanel.add(new JLabel("Email:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(email), gbc);
+
+        // Add phone number
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        userDataPanel.add(new JLabel("Phone Number:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(phoneNumber), gbc);
+
+        // Add address
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        userDataPanel.add(new JLabel("Address:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(address), gbc);
+
+        // Add business phone number
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        userDataPanel.add(new JLabel("Business Phone Number:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(businessPhoneNumber), gbc);
+
+        // Add restaurant name
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        userDataPanel.add(new JLabel("Restaurant Name:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel(restaurantName), gbc);
+
+        // Add restaurant revenue
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        userDataPanel.add(new JLabel("Revenue:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel("$" + userData.get("revenue")), gbc);
+
+
+        // Add the user data panel to the main content panel
+        mainContentPanel.add(userDataPanel, BorderLayout.NORTH);
+
+        // Refresh the main content panel to display the new UI
+        mainContentPanel.revalidate();
+        mainContentPanel.repaint();
+    }
+
+
+
+    void showRestaurantSettingsFrame() {
+        showingOrders = false;
         if (passwordChanged) {
             JOptionPane.showMessageDialog(frame, "Password changed successfully. Please login again.");
             handleLogout();

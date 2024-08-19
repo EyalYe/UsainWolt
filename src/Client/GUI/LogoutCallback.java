@@ -7,4 +7,6 @@ import javax.swing.*;
 public interface LogoutCallback {
     void onLogout();
     void showLoadingScreen();
+
+    String[] getCuisines();
 }

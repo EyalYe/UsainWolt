@@ -27,6 +27,7 @@ public class UsainWoltGUI implements LogoutCallback {
     private RestaurantGUI restaurantGUI;
     private DeliveryGUI deliveryGUI;
     private AdminGUI adminGUI;
+    private boolean skipedLogin = false;
 
     @Override
     public void onLogout() {
@@ -36,6 +37,11 @@ public class UsainWoltGUI implements LogoutCallback {
     @Override
     public void showLoadingScreen() {
         showLoading();
+    }
+
+    @Override
+    public String[] getCuisines() {
+        return availableCuisines;
     }
 
     public UsainWoltGUI(ClientApp clientApp) {
@@ -48,7 +54,38 @@ public class UsainWoltGUI implements LogoutCallback {
         clientApp.addRequest(request);
     }
 
+    public UsainWoltGUI(ClientApp clientApp, String username, String password, String userType) {
+        this.clientApp = clientApp;
+        this.availableCuisines = new String[0];
+        usernameField = new JTextField();
+        this.usernameField.setText(username);
+        passwordField = new JPasswordField();
+        this.passwordField.setText(password);
+        initialize_noLogin(userType);
+        startResponsePolling();
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getAvailableCuisines");
+        skipedLogin = true;
+        clientApp.addRequest(request);
+
+    }
+
+    private void initialize_noLogin(String userType){
+      initialize();
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "login");
+        request.put("username", usernameField.getText());
+        request.put("password", new String(passwordField.getPassword()));
+        request.put("userType", userType);
+        clientApp.addRequest(request);
+    }
+
     private JLabel connectionStatusLabel;
+
+    private void updateConnectionStatus(String status) {
+        SwingUtilities.invokeLater(() -> connectionStatusLabel.setText(status));
+    }
+
 
     private void initialize() {
         // Setup the main frame
@@ -91,23 +128,39 @@ public class UsainWoltGUI implements LogoutCallback {
         frame.setVisible(true);
     }
 
-    private void updateConnectionStatus(String status) {
-        SwingUtilities.invokeLater(() -> connectionStatusLabel.setText(status));
+    private void startResponsePolling() {
+        SwingWorker<Void, Map<String, Object>> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                while (true) {
+                    Map<String, Object> response = clientApp.getResponse();
+                    if (response != null) {
+                        // Publish response to the GUI thread
+                        publish(response);
+                    }
+
+                    // Sleep for a while before the next poll to avoid excessive CPU usage
+                    Thread.sleep(100);
+                }
+            }
+
+            @Override
+            protected void process(List<Map<String, Object>> chunks) {
+                // This runs on the EDT
+                for (Map<String, Object> response : chunks) {
+                    closeLoading();  // Close the loading dialog
+                    processResponse(response);  // Process the response in the GUI
+                }
+            }
+        };
+
+        // Start the background worker
+        worker.execute();
     }
 
-    private void startResponsePolling() {
-        responsePoller = new Timer(100, e -> {
-            Map<String, Object> response = clientApp.getResponse();
-            if (response != null) {
-                processResponse(response);  // Process the response
-            }
-        });
-        responsePoller.start();  // Start the timer to poll responses
-    }
 
     private void processResponse(Map<String, Object> response) {
         String requestType = (String) response.get("type");
-        closeLoading();
         if("false".equals(response.get("success"))) {
             JOptionPane.showMessageDialog(frame, "Error: " + response.get("message"));
             if ("You are not on the specified delivery".equals(response.get("message")) && deliveryGUI != null) {
@@ -247,6 +300,15 @@ public class UsainWoltGUI implements LogoutCallback {
                     deliveryGUI.showUserSettingsFrame((String) response.get("message"));
                 }
                 break;
+            case "handleGetUserData":
+                if (customerGUI != null) {
+                    Type newType = new TypeToken<Map<String, String>>(){}.getType();
+                    customerGUI.createUserDataPane(gson.fromJson((String) response.get("message"), newType));
+                }
+                if (restaurantGUI != null) {
+                    Type newType = new TypeToken<Map<String, String>>(){}.getType();
+                    restaurantGUI.createRestaurantSettingsFrame(gson.fromJson((String) response.get("message"), newType));
+                }
         }
     }
 
@@ -254,8 +316,10 @@ public class UsainWoltGUI implements LogoutCallback {
         if ("true".equals(response.get("success"))) {
             JOptionPane.showMessageDialog(frame, "Login successful!");
             isLoggedIn = true;
-            this.usernameField = loginPanel.getUsernameField();
-            this.passwordField = loginPanel.getPasswordField();
+            if (!skipedLogin) {
+                this.usernameField = loginPanel.getUsernameField();
+                this.passwordField = loginPanel.getPasswordField();
+            }
             switch ((String) response.get("message")) {
                 case "Logged in as customer":
                     customerGUI = new CustomerGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);

@@ -55,7 +55,7 @@ public class ClientApp implements Runnable {
 
                 // Process requests (send them with a timeout)
                 while (running) {
-                    Map<String, Object> request = requestQueue.poll(5, TimeUnit.SECONDS);
+                    Map<String, Object> request = requestQueue.poll(1, TimeUnit.SECONDS);
                     if (request != null) {
                         Map<String, Object> response = sendRequest(request);
                         responseQueue.put(response);
