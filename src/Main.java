@@ -9,20 +9,33 @@ import java.util.Map;
 import java.util.Random;
 
 public class Main {
-    public static void Main(String[] args) {
+    public static final String SERVER_IP = "localhost";
+    public static final int SERVER_PORT = 12345;
+    public static final int RESTAURANTS_INSTANCES = 3;
+    public static final int CUSTOMERS_INSTANCES = 3;
+    public static final int DELIVERIES_INSTANCES = 3;
+
+    public static void main(String[] args) {
+
         Thread serverThread = new Thread(() -> {
             ServerMain.main(args);
         });
         serverThread.start();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < RESTAURANTS_INSTANCES; i++) {
             Thread thread = new Thread(() -> {
                 UsainWoltMain.skipLogin("restaurant" + (new Random().nextInt(25) + 1), "password", "restaurant");
             });
             thread.start();
         }
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < CUSTOMERS_INSTANCES; i++) {
             Thread thread = new Thread(() -> {
                 UsainWoltMain.skipLogin("customer" + (new Random().nextInt(25) + 1), "password", "customer");
+            });
+            thread.start();
+        }
+        for (int i = 0; i < DELIVERIES_INSTANCES; i++) {
+            Thread thread = new Thread(() -> {
+                UsainWoltMain.skipLogin("delivery" + (new Random().nextInt(4) + 1), "password", "delivery");
             });
             thread.start();
         }
@@ -45,7 +58,7 @@ public class Main {
         }
     }
 
-    public static  void main(String[] args) {
+    public static  void oldMain(String[] args) {
         try {
             // Create an instance of ClientApp
             ClientApp clientApp = new ClientApp("localhost", 12345);
