@@ -360,7 +360,7 @@ public class ClientApp implements Runnable {
         }
     }
     // Method to search restaurants
-    public void searchRestaurantsAsync(String username, String password, String cuisine, String distance) throws Exception {
+    public void searchRestaurantsAsync(String username, String password, String cuisine, String distance, boolean sendHome, String address) {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getRestaurants");
         request.put("username", username);
@@ -368,6 +368,8 @@ public class ClientApp implements Runnable {
         String distanceValue = distance.replace("km", "");
         request.put("distance", distanceValue);
         request.put("cuisine", cuisine);
+        request.put("sendHome", String.valueOf(sendHome));
+        request.put("address", address);
 
         addRequest(request);
 

@@ -130,12 +130,43 @@ public class CustomerGUI {
         gbc.fill = GridBagConstraints.NONE;
         searchPanel.add(searchButton, gbc);
 
+        // Add Send Home checkbox
+        JCheckBox sendHomeCheckbox = new JCheckBox("Send Home");
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        searchPanel.add(sendHomeCheckbox, gbc);
+
+        // Add Address label
+        JLabel addressLabel = new JLabel("Address:");
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        searchPanel.add(addressLabel, gbc);
+
+
+        // Add Address field
+        JTextField addressField = new JTextField();
+        addressField.setEnabled(!sendHomeCheckbox.isSelected());
+        sendHomeCheckbox.addActionListener(e -> {
+                addressField.setEnabled(!sendHomeCheckbox.isSelected());
+                addressLabel.setEnabled(!sendHomeCheckbox.isSelected());
+        });
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        searchPanel.add(addressField, gbc);
+
+
         // Add action listener for search button
         searchButton.addActionListener(e -> {
             int distance = distanceSlider.getValue();
             String selectedCuisine = (String) cuisineDropdown.getSelectedItem();
+            boolean sendHome = sendHomeCheckbox.isSelected();
+            String address = addressField.getText();
+
             try {
-                performSearch(distance, selectedCuisine);
+                performSearch(distance, selectedCuisine, sendHome, address);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -155,8 +186,8 @@ public class CustomerGUI {
         mainContentPanel.repaint();
     }
 
-    private void performSearch(int distance, String selectedCuisine) throws Exception {
-        clientApp.searchRestaurantsAsync(usernameField.getText(), new String(passwordField.getPassword()), selectedCuisine, String.valueOf(distance));
+    private void performSearch(int distance, String selectedCuisine, boolean sendHome, String address) {
+        clientApp.searchRestaurantsAsync(usernameField.getText(), new String(passwordField.getPassword()), selectedCuisine, String.valueOf(distance), sendHome, address);
         showLoading();
     }
 

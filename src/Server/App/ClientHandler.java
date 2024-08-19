@@ -465,7 +465,15 @@ public class ClientHandler implements Runnable {
 
         // Get customer coordinates
 
-        double[] customerCoordinates = user.getCoordinates();
+        double[] customerCoordinates = new double[2];
+        if (params.get("sendHome").equals("true")){
+            customerCoordinates = ((CustomerUser) user).getCoordinates();
+        } else {
+            if (params.get("address") == null || params.get("address").isEmpty() || !geoLocationService.validateAddress(params.get("address"))) {
+                return createResponse(false, "Invalid address");
+            }
+            customerCoordinates = geoLocationService.getCoordinates(params.get("address"));
+        }
         if (customerCoordinates == null) {
             return createResponse(false, "Unable to determine customer location");
         }
