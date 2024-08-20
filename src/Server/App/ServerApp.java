@@ -1,31 +1,31 @@
 package Server.App;
 
 import Server.Models.*;
-import Server.Utilities.GeoLocationService;
-import Server.Utilities.ImageServer;
+import Server.Utilities.CustomDateAdapter;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
 import java.lang.reflect.Type;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+
+
 
 public class ServerApp {
     public static final String USERS_PATH = "server_logs/users";
     private static final String[] RESTAURANT_CUISINES = {"All", "American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
-    public static final String SERVER_IP = "localhost";
-    public static final int SERVER_PORT = 12345;
-    public static final int IMAGE_SERVER_PORT = 8080;
     public static final double DELIVERY_FEE = 5.0;
     public static List<Order> pending = new ArrayList<>();
     public static List<Order> readyForPickupOrders = new ArrayList<>();
-    public static Gson gson = new Gson();
+    public static final String DATE_FORMAT = "MMM dd, yyyy, hh:mm:ss a";  // Matches 'Aug 18, 2024, 10:27:06 PM'
+    public static Gson gson = gsonCreator();
 
     public static List<User> allUsers = new CopyOnWriteArrayList<>();
     public static List<Map<RestaurantUser,Socket>> loggedInRestaurants = new CopyOnWriteArrayList<>();
@@ -44,6 +44,13 @@ public class ServerApp {
             Socket socket = entry.get(restaurant);
             return socket.isClosed();
         });
+    }
+
+    public static Gson gsonCreator() {
+        DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT, Locale.ENGLISH);
+        return new GsonBuilder()
+                .registerTypeAdapter(Date.class, new CustomDateAdapter())  // Use the custom adapter
+                .create();
     }
 
     public static void loadUsersFromJSON() throws IOException {

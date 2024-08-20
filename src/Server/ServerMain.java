@@ -16,6 +16,10 @@ import java.util.concurrent.Executors;
 import static Server.App.ServerApp.*;
 
 public class ServerMain {
+    public static final String SERVER_IP = "localhost";
+    public static final int SERVER_PORT = 12345;
+    public static final int IMAGE_SERVER_PORT = 8080;
+
     public static final int THREAD_POOL_SIZE = 10;
     public static void main(String[] args) {
         try {
