@@ -37,41 +37,41 @@ public class ClientApp implements Runnable {
 
     @Override
     public void run() {
-        while (!running) {
-            try {
-                System.out.println("Attempting to connect to the server at " + serverAddress + ":" + port);
-                clientSocket = new Socket(serverAddress, port);
-                out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                running = true;
-                System.out.println("Connected to the server at " + serverAddress + ":" + port);
+        while (true) {
+            connectToServer();
+        }
+    }
 
-                // Start the thread that listens for responses from the server
-                startListeningForMessages();
+    void connectToServer(){
+        try {
+            System.out.println("Attempting to connect to the server at " + serverAddress + ":" + port);
+            clientSocket = new Socket(serverAddress, port);
+            out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            running = true;
+            System.out.println("Connected to the server at " + serverAddress + ":" + port);
 
-                // Process requests (send them with a timeout)
-                while (running) {
-                    Map<String, Object> request = requestQueue.poll(1, TimeUnit.SECONDS);
-                    if (request != null) {
-                        sendRequest(request); // Just send request, no reading of response here
-                        if (!running)
-                            break;
-                    }
+            // Start the thread that listens for responses from the server
+            startListeningForMessages();
 
+            // Process requests (send them with a timeout)
+            while (running) {
+                Map<String, Object> request = requestQueue.poll(1, TimeUnit.SECONDS);
+                if (request != null) {
+                    sendRequest(request); // Just send request, no reading of response here
                 }
-            } catch (java.net.ConnectException e) {
-                System.err.println("Connection refused. Retrying in 5 seconds...");
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                closeConnection();
-                break;
+
             }
+        } catch (java.net.ConnectException e) {
+            System.err.println("Connection refused. Retrying in 5 seconds...");
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            closeConnection();
         }
     }
 
@@ -101,7 +101,7 @@ public class ClientApp implements Runnable {
     }
 
     public void addRequest(Map<String, Object> request) {
-        if(clientSocket.isClosed()){
+        if(clientSocket == null || clientSocket.isClosed()){
             System.out.println("Connection closed.");
             running = false;
         }

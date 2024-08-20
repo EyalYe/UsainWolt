@@ -13,7 +13,7 @@ public class Main {
     public static final int SERVER_PORT = 12345;
     public static final int RESTAURANTS_INSTANCES = 3;
     public static final int CUSTOMERS_INSTANCES = 3;
-    public static final int DELIVERIES_INSTANCES = 3;
+    public static final int DELIVERIES_INSTANCES = 2;
 
     public static void main(String[] args) {
 
