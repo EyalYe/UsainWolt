@@ -19,11 +19,13 @@ public class ServerMain {
     public static String SERVER_IP = "localhost";
     public static final int SERVER_PORT = 12345;
     public static final int IMAGE_SERVER_PORT = 8080;
+    public static final int THREAD_POOL_SIZE = 30;
+    public static final boolean RUNNING_ON_SERVER = false;
 
-    public static final int THREAD_POOL_SIZE = 10;
     public static void main(String[] args) {
         // Get the local IP address of the server
-        SERVER_IP = getLocalIpAddress();
+        if (RUNNING_ON_SERVER)
+            SERVER_IP = getLocalIpAddress();
         System.out.println("Server IP: " + SERVER_IP);
         try {
             // Start the image server in a new thread
