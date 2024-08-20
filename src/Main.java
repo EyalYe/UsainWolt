@@ -18,23 +18,30 @@ public class Main {
     public static void main(String[] args) {
 
         Thread serverThread = new Thread(() -> {
+            System.out.println("Thread " + Thread.currentThread().getName() + " running server");
             ServerMain.main(args);
         });
         serverThread.start();
         for (int i = 0; i < RESTAURANTS_INSTANCES; i++) {
+            int finalI = i;
             Thread thread = new Thread(() -> {
+                System.out.println("Thread " + Thread.currentThread().getName() + " running restaurant user " + finalI);
                 UsainWoltMain.skipLogin("restaurant" + (new Random().nextInt(25) + 1), "password", "restaurant");
             });
             thread.start();
         }
         for (int i = 0; i < CUSTOMERS_INSTANCES; i++) {
+            int finalI1 = i;
             Thread thread = new Thread(() -> {
+                System.out.println("Thread " + Thread.currentThread().getName() + " running customer user " + finalI1);
                 UsainWoltMain.skipLogin("customer" + (new Random().nextInt(25) + 1), "password", "customer");
             });
             thread.start();
         }
         for (int i = 0; i < DELIVERIES_INSTANCES; i++) {
+            int finalI = i;
             Thread thread = new Thread(() -> {
+                System.out.println("Thread " + Thread.currentThread().getName() + " running delivery user " + finalI);
                 UsainWoltMain.skipLogin("delivery" + (new Random().nextInt(4) + 1), "password", "delivery");
             });
             thread.start();
@@ -49,7 +56,7 @@ public class Main {
                 String restaurantPassword = "password";  // Consistent password
 
                 // Log in to the restaurant account
-                Map<String, Object> loginResponse = clientApp.login(restaurantUsername, restaurantPassword);
+                Map<String, Object> loginResponse = clientApp.loginAsync(restaurantUsername, restaurantPassword);
                 System.out.println("Login Response for " + restaurantUsername + ": " + loginResponse);
             }
 
@@ -94,7 +101,7 @@ public class Main {
                 String email = customerUsername + "@example.com";
 
                 // Sign up customer
-                Map<String, Object> signupResponse = clientApp.signupCustomer(customerUsername, customerPassword, address, phoneNumber, email);
+                Map<String, Object> signupResponse = clientApp.signupCustomerAsync(customerUsername, customerPassword, address, phoneNumber, email);
                 System.out.println("Customer Signup Response: " + signupResponse);
 
                 // Write customer details to CSV
@@ -111,7 +118,7 @@ public class Main {
                 String cuisine = foodTypes[random.nextInt(foodTypes.length)]; // Randomized cuisine
 
                 // Sign up restaurant
-                Map<String, Object> signupResponse = clientApp.signupRestaurant(restaurantUsername, restaurantPassword, address, phoneNumber, email, businessPhoneNumber, cuisine);
+                Map<String, Object> signupResponse = clientApp.signupRestaurantAsync(restaurantUsername, restaurantPassword, address, phoneNumber, email, businessPhoneNumber, cuisine);
                 System.out.println("Restaurant Signup Response: " + signupResponse);
 
                 // Assign a random fictional restaurant name
@@ -126,13 +133,13 @@ public class Main {
                     File itemImage = new File("temp/item" + (random.nextInt(36) + 1) + ".jpg");
 
                     // Add each item to the menu
-                    Map<String, Object> updateMenuResponse = clientApp.updateMenu(restaurantUsername, restaurantPassword, fictionalName, itemName, price, description, itemImage, "add");
+                    Map<String, Object> updateMenuResponse = clientApp.updateMenuAsync(restaurantUsername, restaurantPassword, fictionalName, itemName, price, description, itemImage, "add");
                     System.out.println("Add Menu Item Response: " + updateMenuResponse);
                 }
 
                 // Update profile picture for the restaurant
                 File profilePicture = new File("temp/profile_picture_" + (i + 1) + ".jpg");
-                Map<String, Object> updateProfilePictureResponse = clientApp.updateProfilePicture(restaurantUsername, restaurantPassword, profilePicture);
+                Map<String, Object> updateProfilePictureResponse = clientApp.updateProfilePictureAsync(restaurantUsername, restaurantPassword, profilePicture);
                 System.out.println("Update Profile Picture Response: " + updateProfilePictureResponse);
 
                 // Write restaurant details to CSV
@@ -147,7 +154,7 @@ public class Main {
                 String email = customerUsername + "@example.com";
 
                 // Sign up delivery
-                Map<String, Object> signupResponse = clientApp.signupDelivery(customerUsername, customerPassword, address, phoneNumber, email, "A1234");
+                Map<String, Object> signupResponse = clientApp.signupDeliveryAsync(customerUsername, customerPassword, address, phoneNumber, email, "A1234");
                 System.out.println("Delivery Signup Response: " + signupResponse);
 
                 // Write delivery details to CSV

@@ -13,12 +13,18 @@ public class LoginPanel {
     private JTextField usernameField;
     private JPasswordField passwordField;
     private final ClientApp clientApp;
+    private String[] availableCuisines;
 
-    LoginPanel(JFrame frame, ClientApp clientApp, JTextField usernameField, JPasswordField passwordField, LogoutCallback logoutCallback) {
+    LoginPanel(JFrame frame, ClientApp clientApp, JTextField usernameField, JPasswordField passwordField, LogoutCallback logoutCallback, String[] availableCuisines) {
         this.frame = frame;
         this.usernameField = usernameField;
         this.passwordField = passwordField;
         this.clientApp = clientApp;
+        this.availableCuisines = availableCuisines;
+    }
+
+    void updateCuisines(String[] availableCuisines) {
+        this.availableCuisines = availableCuisines;
     }
 
     public JTextField getUsernameField() {
@@ -179,13 +185,10 @@ public class LoginPanel {
 
         // Placeholder fields for additional fields
         JTextField businessPhoneField = new JTextField(20);
-        String cuisine_options = "";
-        try {
-            cuisine_options = ((String) clientApp.getAvailableCuisines().get("message")).replace(",All", "");
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (availableCuisines == null) {
+            clientApp.getAvailableCuisinesAsync();
         }
-        JComboBox<String> cuisineDropdown = new JComboBox<>(cuisine_options.split(","));
+        JComboBox<String> cuisineDropdown = new JComboBox<>(availableCuisines);
         JTextField tokenField = new JTextField(20);
 
         // Submit button

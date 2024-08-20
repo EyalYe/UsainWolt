@@ -33,8 +33,15 @@ public class ClientHandler implements Runnable {
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
+            String inputLine = " ";
+            while (inputLine != null) {
+                try {
+                    inputLine = in.readLine();
+                } catch (IOException e) {
+                    clientSocket.close();
+                    e.printStackTrace();
+                    break;
+                }
                 System.out.println("Received from client: " + inputLine);
 
                 // Parse the incoming JSON request

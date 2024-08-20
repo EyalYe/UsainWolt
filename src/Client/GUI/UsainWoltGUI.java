@@ -121,7 +121,7 @@ public class UsainWoltGUI implements LogoutCallback {
         frame.add(connectionStatusLabel, BorderLayout.NORTH);
 
         // Call the method to generate the login screen
-        this.loginPanel = new LoginPanel(frame, clientApp, usernameField, passwordField, this);
+        this.loginPanel = new LoginPanel(frame, clientApp, usernameField, passwordField, this, availableCuisines);
         loginPanel.generateLogin();
 
         // Set the frame visible at the end
@@ -141,6 +141,7 @@ public class UsainWoltGUI implements LogoutCallback {
 
                     // Sleep for a while before the next poll to avoid excessive CPU usage
                     Thread.sleep(100);
+                    closeLoading();
                 }
             }
 
@@ -172,6 +173,12 @@ public class UsainWoltGUI implements LogoutCallback {
             return;
         }
         switch (requestType) {
+            case "handleGetAvailableCuisines":
+                availableCuisines = ((String) response.get("message")).split(",");
+                if (loginPanel != null) {
+                    loginPanel.updateCuisines(availableCuisines);
+                }
+                break;
             case "handleLogin":
                 handleLoginResponse(response);
                 break;
@@ -183,9 +190,6 @@ public class UsainWoltGUI implements LogoutCallback {
                 break;
             case "handleSignupDelivery":
                 handleSignupResponse(response);
-                break;
-            case "handleGetAvailableCuisines":
-                availableCuisines = ((String) response.get("message")).split(",");
                 break;
             case "handleGetRestaurants":
                 Type restaurantListType = new TypeToken<java.util.List<Restaurant>>(){}.getType();
