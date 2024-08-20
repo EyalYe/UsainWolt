@@ -25,6 +25,7 @@ public class ClientHandler implements Runnable {
     private Gson gson;
     private final GeoLocationService geoLocationService;
 
+
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
         this.gson = ServerApp.gsonCreator();

@@ -724,7 +724,7 @@ public class CustomerGUI {
         return orderPanel;
     }
 
-    private void showUserSettings() {
+    void showUserSettings() {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getUserData");
         request.put("username", usernameField.getText());

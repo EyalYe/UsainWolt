@@ -25,11 +25,12 @@ public class UsainWoltGUI implements LogoutCallback {
     private Gson gson = gsonCreator();
     private boolean isLoggedIn = false;
     private LoginPanel loginPanel;
-    private CustomerGUI customerGUI;
-    private RestaurantGUI restaurantGUI;
-    private DeliveryGUI deliveryGUI;
+    private CustomerGUI customerGUI = null;
+    private RestaurantGUI restaurantGUI = null;
+    private DeliveryGUI deliveryGUI = null;
     private AdminGUI adminGUI;
     private boolean skipedLogin = false;
+    private boolean firstTimeLogin;
 
     @Override
     public void onLogout() {
@@ -49,11 +50,12 @@ public class UsainWoltGUI implements LogoutCallback {
     public UsainWoltGUI(ClientApp clientApp) {
         this.clientApp = clientApp;
         this.availableCuisines = new String[0];
-        initialize();
         startResponsePolling();
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getAvailableCuisines");
+        firstTimeLogin = true;
         clientApp.addRequest(request);
+        initialize();
     }
 
     public UsainWoltGUI(ClientApp clientApp, String username, String password, String userType) {
@@ -63,13 +65,13 @@ public class UsainWoltGUI implements LogoutCallback {
         this.usernameField.setText(username);
         passwordField = new JPasswordField();
         this.passwordField.setText(password);
-        initialize_noLogin(userType);
         startResponsePolling();
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getAvailableCuisines");
+        firstTimeLogin = false;
         skipedLogin = true;
         clientApp.addRequest(request);
-
+        initialize_noLogin(userType);
     }
 
     private void initialize_noLogin(String userType){
@@ -315,12 +317,23 @@ public class UsainWoltGUI implements LogoutCallback {
                     Type newType = new TypeToken<Map<String, String>>(){}.getType();
                     restaurantGUI.createRestaurantSettingsFrame(gson.fromJson((String) response.get("message"), newType));
                 }
+                break;
+            case "handleUpdateCreditCard":
+                if (customerGUI != null) {
+                    if ("true".equals(response.get("success"))) {
+                        JOptionPane.showMessageDialog(frame, "Credit card updated successfully!");
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "Error updating credit card: " + response.get("message"));
+                    }
+                }
+                break;
         }
     }
 
     public void handleLoginResponse(Map<String, Object> response) {
         if ("true".equals(response.get("success"))) {
-            JOptionPane.showMessageDialog(frame, "Login successful!");
+            if(firstTimeLogin)
+                JOptionPane.showMessageDialog(frame, "Login successful!");
             isLoggedIn = true;
             if (!skipedLogin) {
                 this.usernameField = loginPanel.getUsernameField();
@@ -332,8 +345,12 @@ public class UsainWoltGUI implements LogoutCallback {
                     customerGUI.generateCustomerUI();
                     break;
                 case "Logged in as restaurant":
-                    restaurantGUI = new RestaurantGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);
-                    restaurantGUI.generateRestaurantUI();
+                    clientApp.setRestaurant(true, usernameField.getText(), new String(passwordField.getPassword()));
+                    if(restaurantGUI == null) {
+                        restaurantGUI = new RestaurantGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);
+                        restaurantGUI.generateRestaurantUI();
+                        firstTimeLogin = false;
+                    }
                     break;
                 case "Logged in as delivery":
                     deliveryGUI = new DeliveryGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);

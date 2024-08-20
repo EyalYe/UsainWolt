@@ -28,6 +28,10 @@ public class ClientApp implements Runnable {
     private boolean running;
     private BlockingQueue<Map<String, Object>> requestQueue;
     private BlockingQueue<Map<String, Object>> responseQueue;
+    private boolean isRestaurant;
+    private Map<String,Object> restaurantReconnectRequests = new HashMap<>();
+    private Map<String,Object> latestRequest = new HashMap<>();
+    private boolean firstTime = true;
 
     public ClientApp(String serverAddress, int port) {
         this.serverAddress = serverAddress;
@@ -35,11 +39,25 @@ public class ClientApp implements Runnable {
         this.gson = gsonCreator();
         this.requestQueue = new LinkedBlockingQueue<>();
         this.responseQueue = new LinkedBlockingQueue<>();
+        this.running = true;
+        isRestaurant = false;
+        firstTime = true;
     }
 
     @Override
     public void run() {
+        do {
+            connectToServer();
+            firstTime = false;
+        } while (isRestaurant);
         while (true) {
+            while (running) {
+                try {
+                    wait(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             connectToServer();
         }
     }
@@ -52,6 +70,14 @@ public class ClientApp implements Runnable {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             running = true;
             System.out.println("Connected to the server at " + serverAddress + ":" + port);
+
+            if(isRestaurant && !firstTime && !restaurantReconnectRequests.isEmpty()){
+                requestQueue.put(restaurantReconnectRequests);
+            }
+            if (!latestRequest.isEmpty()){
+                requestQueue.put(latestRequest);
+                latestRequest = new HashMap<>();
+            }
 
             // Start the thread that listens for responses from the server
             startListeningForMessages();
@@ -106,6 +132,7 @@ public class ClientApp implements Runnable {
         if(clientSocket == null || clientSocket.isClosed()){
             System.out.println("Connection closed.");
             running = false;
+            latestRequest = request;
         }
         try {
             requestQueue.put(request); // Add request to the queue
@@ -170,6 +197,15 @@ public class ClientApp implements Runnable {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void setRestaurant(boolean restaurant, String username, String password){
+        isRestaurant = restaurant;
+        if(restaurant){
+            restaurantReconnectRequests.put("username", username);
+            restaurantReconnectRequests.put("password", password);
+            restaurantReconnectRequests.put("type", "login");
         }
     }
 
@@ -495,6 +531,8 @@ public class ClientApp implements Runnable {
         addRequest(request);
         return getResponse();
     }
+
+
 }
 
 
