@@ -15,6 +15,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.swing.Timer;
 import java.util.concurrent.TimeUnit;
 
+import static Server.Utilities.CustomDateAdapter.gsonCreator;
+
 
 public class ClientApp implements Runnable {
     private Socket clientSocket;
@@ -30,7 +32,7 @@ public class ClientApp implements Runnable {
     public ClientApp(String serverAddress, int port) {
         this.serverAddress = serverAddress;
         this.port = port;
-        this.gson = new Gson();
+        this.gson = gsonCreator();
         this.requestQueue = new LinkedBlockingQueue<>();
         this.responseQueue = new LinkedBlockingQueue<>();
     }
@@ -224,7 +226,7 @@ public class ClientApp implements Runnable {
     public static Map<String, Object> jsonStringToMap(String jsonString) {
         Type type = new TypeToken<Map<String, Object>>() {
         }.getType();
-        Gson gson = new Gson();
+        Gson gson = gsonCreator();
         return gson.fromJson(jsonString, type);
     }
 

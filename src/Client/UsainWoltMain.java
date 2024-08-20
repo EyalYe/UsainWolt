@@ -6,7 +6,7 @@ import Client.network.ClientApp;
 import javax.swing.*;
 
 public class UsainWoltMain {
-    public final static String SERVER_IP = "localhost";
+    public final static String SERVER_IP = "192.168.1.12";
     public final static int SERVER_PORT = 12345;
 
     public static void main(String[] args) {

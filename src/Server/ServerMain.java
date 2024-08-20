@@ -7,8 +7,10 @@ import Server.Utilities.ImageServer;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,12 +18,23 @@ import java.util.concurrent.Executors;
 import static Server.App.ServerApp.*;
 
 public class ServerMain {
-    public static final String SERVER_IP = "localhost";
+    public static String SERVER_IP = "localhost";
     public static final int SERVER_PORT = 12345;
     public static final int IMAGE_SERVER_PORT = 8080;
 
     public static final int THREAD_POOL_SIZE = 10;
     public static void main(String[] args) {
+        try {
+            // Get the IP address of the localhost (your machine)
+            InetAddress localHost = InetAddress.getLocalHost();
+            String ipAddress = localHost.getHostAddress();  // Get the actual IP address
+            System.out.println("Server IP Address: " + ipAddress);
+
+            // Now you can use this IP address instead of "localhost"
+            SERVER_IP = ipAddress; // Set SERVER_IP to actual IP
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
         try {
             // Start the image server in a new thread
             new Thread(() -> {

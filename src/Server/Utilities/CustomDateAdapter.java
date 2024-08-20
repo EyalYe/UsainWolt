@@ -5,6 +5,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -17,6 +18,12 @@ public class CustomDateAdapter extends TypeAdapter<Date> {
     public CustomDateAdapter() {
         // Define the date format with Locale.ENGLISH
         this.dateFormat = new SimpleDateFormat("MMM dd, yyyy, hh:mm:ss a", Locale.ENGLISH);
+    }
+
+    public static Gson gsonCreator() {
+        return new GsonBuilder()
+                .registerTypeAdapter(Date.class, new CustomDateAdapter())  // Use the custom adapter
+                .create();
     }
 
     @Override

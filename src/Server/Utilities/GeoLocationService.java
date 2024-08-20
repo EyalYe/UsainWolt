@@ -1,4 +1,5 @@
 package Server.Utilities;
+import Server.Utilities.CustomDateAdapter.*;
 
 import com.google.gson.Gson;
 
@@ -26,7 +27,7 @@ public class GeoLocationService {
 
     private static final String OPEN_CAGE_API_KEY = getApiKey();
     private static final String OPEN_CAGE_API_URL = "https://api.opencagedata.com/geocode/v1/json?q=%s&key=%s";
-    private final Gson gson = new Gson();
+    private final Gson gson = CustomDateAdapter.gsonCreator();
 
     // Validate the address using OpenCage API
     public boolean validateAddress(String address) throws IOException {

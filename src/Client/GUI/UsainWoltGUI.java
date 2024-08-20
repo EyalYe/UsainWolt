@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
+import static Server.Utilities.CustomDateAdapter.gsonCreator;
+
 public class UsainWoltGUI implements LogoutCallback {
     private JFrame frame;
     private ClientApp clientApp;
@@ -20,7 +22,7 @@ public class UsainWoltGUI implements LogoutCallback {
     private JPasswordField passwordField;
     private Timer responsePoller;
     private String[] availableCuisines;
-    private Gson gson = new Gson();
+    private Gson gson = gsonCreator();
     private boolean isLoggedIn = false;
     private LoginPanel loginPanel;
     private CustomerGUI customerGUI;

@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.List;
 
+import static Server.Utilities.CustomDateAdapter.gsonCreator;
+
 public class RestaurantGUI {
     private final JFrame frame;
     private final JTextField usernameField;
@@ -22,7 +24,7 @@ public class RestaurantGUI {
     private final ClientApp clientApp;
     private final String[] availableCuisines;
     private final LogoutCallback logoutCallback;
-    private Gson gson = new Gson();
+    private Gson gson = gsonCreator();
     private boolean passwordChanged = false;
     private boolean showingOrders = false;
 
@@ -637,7 +639,7 @@ public class RestaurantGUI {
         request.put("type", "markOrderReadyForPickup");
         request.put("username", usernameField.getText());
         request.put("password", new String(passwordField.getPassword()));
-        Gson gson = new Gson();
+        Gson gson = gsonCreator();
         request.put("order" , gson.toJson(order));
         clientApp.addRequest(request);
         showLoading();
