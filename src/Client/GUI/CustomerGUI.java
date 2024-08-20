@@ -81,6 +81,13 @@ public class CustomerGUI {
         logoutCallback.onLogout();
     }
 
+    private void showLoading() {
+        logoutCallback.showLoadingScreen();
+    }
+
+
+    // --------------------------------- Place Order ---------------------------------
+
     // Method to show place order screen
     private void showPlaceOrder() {
         if (availableCuisines == null || availableCuisines.length == 0) {
@@ -197,9 +204,6 @@ public class CustomerGUI {
         showLoading();
     }
 
-    private void showLoading() {
-        logoutCallback.showLoadingScreen();
-    }
 
     void showRestaurants(java.util.List<Restaurant> restaurants) {
         // Get the main content panel to clear and update
@@ -489,36 +493,57 @@ public class CustomerGUI {
     private void proceedToCheckout(java.util.List<Map<String, Object>> menu) {
         // Create a new JFrame for the checkout window
         JFrame checkoutFrame = new JFrame("Checkout");
-        checkoutFrame.setSize(700, 500);
+        checkoutFrame.setSize(600, 500);
         checkoutFrame.setLayout(new BorderLayout(5, 5));  // Reduced outer spacing
         checkoutFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         // Create a panel to list the ordered items
         JPanel orderPanel = new JPanel();
         orderPanel.setLayout(new BoxLayout(orderPanel, BoxLayout.Y_AXIS));  // Ensure vertical alignment
+        orderPanel.setAutoscrolls(true);
+        orderPanel.setMaximumSize(new Dimension(300, 500));  // Set maximum size to prevent stretching
 
         final double[] totalAmount = {0.0}; // Use an array to hold the total amount
 
         for (Map<String, Object> menuItem : menu) {
             int quantity = Integer.parseInt(menuItem.get("quantity").toString());
             if (quantity > 0) {
-                JPanel itemPanel = new JPanel(new BorderLayout(2, 2));  // Further reduced spacing between elements
-                itemPanel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));  // Reduced padding around items
+                // Create the item panel with a smaller fixed size and border
+                JPanel itemPanel = new JPanel(new BorderLayout());  // Use BorderLayout for item alignment
+                itemPanel.setPreferredSize(new Dimension(300, 40));  // Smaller fixed size for the item panel
+                itemPanel.setMaximumSize(new Dimension(300, 40));  // Set maximum size to prevent stretching
+
+                // Add a border around the panel
+                itemPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));  // Black border around the item panel
+
+                String photoUrl = (String) menuItem.get("photoUrl");
+                JLabel photoLabel = new JLabel(loadImageIcon(photoUrl, 40, 40));
                 JLabel itemName = new JLabel(menuItem.get("name") + " x" + quantity);
-                double price = (double) menuItem.get("price") * quantity;
-                totalAmount[0] += price;  // Access array to modify the value
-                JLabel itemPrice = new JLabel(String.format("$%.2f", price));
-                itemPanel.add(itemName, BorderLayout.WEST);
+                itemName.setHorizontalAlignment(SwingConstants.LEFT);  // Left align text
+                JLabel itemPrice = new JLabel(String.format("$%.2f", (double) menuItem.get("price") * quantity));
+                itemPrice.setHorizontalAlignment(SwingConstants.RIGHT);  // Right align price
+
+                // Add labels to the panel
+                itemPanel.add(photoLabel, BorderLayout.WEST);
+                itemPanel.add(itemName, BorderLayout.CENTER);
                 itemPanel.add(itemPrice, BorderLayout.EAST);
+
+                // Add the item panel to the order panel
                 orderPanel.add(itemPanel);
             }
         }
 
         // Display the total amount
+        JPanel totalPanel = new JPanel(new BorderLayout());
         JLabel totalLabel = new JLabel("Total: " + String.format("$%.2f", totalAmount[0]));
         totalLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        totalLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        orderPanel.add(totalLabel);
+        totalLabel.setHorizontalAlignment(SwingConstants.CENTER);  // Center the total amount
+        totalPanel.add(totalLabel, BorderLayout.SOUTH);
+
+        JPanel orderTotalPanel = new JPanel(new BorderLayout());
+        JScrollPane scrollPane = new JScrollPane(orderPanel);
+        orderTotalPanel.add(scrollPane, BorderLayout.CENTER);
+        orderTotalPanel.add(totalPanel, BorderLayout.SOUTH);
 
         // Create a panel for the right side with the address and payment fields
         JPanel rightPanel = new JPanel();
@@ -526,21 +551,23 @@ public class CustomerGUI {
         rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(2, 2, 2, 2);  // Tighten spacing around components
+        gbc.insets = new Insets(5, 5, 5, 5);  // Proper spacing around components
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.gridx = 0;
         gbc.gridy = 0;
+        gbc.gridwidth = 2;
 
         // Add "Send Home" checkbox and address field
         JCheckBox sendHomeCheckbox = new JCheckBox("Send Home");
         rightPanel.add(sendHomeCheckbox, gbc);
 
         gbc.gridy++;
+        rightPanel.add(new JLabel("Address:"), gbc);
+        gbc.gridy++;
+        gbc.gridwidth = 2;
         JTextField addressField = new JTextField();
         addressField.setEnabled(!sendHomeCheckbox.isSelected());  // Initially disabled if "Send Home" is checked
         sendHomeCheckbox.addActionListener(e -> addressField.setEnabled(!sendHomeCheckbox.isSelected()));
-        rightPanel.add(new JLabel("Address:"), gbc);
-        gbc.gridy++;
         rightPanel.add(addressField, gbc);
 
         // Add "Use Saved Card" checkbox and payment fields
@@ -549,32 +576,56 @@ public class CustomerGUI {
         rightPanel.add(useSavedCardCheckbox, gbc);
 
         gbc.gridy++;
-        JTextField cardNumberField = new JTextField();
+        gbc.gridwidth = 2;
         rightPanel.add(new JLabel("Card Number:"), gbc);
         gbc.gridy++;
+        gbc.gridwidth = 2;
+        JTextField cardNumberField = new JTextField();
         rightPanel.add(cardNumberField, gbc);
 
+        // Expiration Date and CVV panel
         gbc.gridy++;
-        JTextField expirationDateField = new JTextField();
-        rightPanel.add(new JLabel("Expiration Date:"), gbc);
-        gbc.gridy++;
-        rightPanel.add(expirationDateField, gbc);
+        gbc.gridwidth = 1;
+        rightPanel.add(new JLabel("Expiration Date (MM/YY):"), gbc);
 
+        // Create a panel for the expiration date fields
+        JPanel expirationDatePanel = new JPanel();
+        expirationDatePanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));  // Set left-aligned flow layout
+
+        JTextField expirationDateFieldMonth = new JTextField(2);
+        expirationDateFieldMonth.setPreferredSize(new Dimension(40, 25));  // Set exact size
+
+        JTextField expirationDateFieldYear = new JTextField(2);
+        expirationDateFieldYear.setPreferredSize(new Dimension(40, 25));  // Set exact size
+
+        expirationDatePanel.add(expirationDateFieldMonth);
+        expirationDatePanel.add(new JLabel("/"));
+        expirationDatePanel.add(expirationDateFieldYear);
+
+        gbc.gridx = 1;
+        rightPanel.add(expirationDatePanel, gbc);
+
+        // CVV Field
+        gbc.gridx = 0;
         gbc.gridy++;
-        JTextField cvvField = new JTextField();
         rightPanel.add(new JLabel("CVV:"), gbc);
-        gbc.gridy++;
+        gbc.gridx = 1;
+        JTextField cvvField = new JTextField(3);
+        cvvField.setPreferredSize(new Dimension(60, 25));
         rightPanel.add(cvvField, gbc);
 
         useSavedCardCheckbox.addActionListener(e -> {
             boolean useSaved = useSavedCardCheckbox.isSelected();
             cardNumberField.setEnabled(!useSaved);
-            expirationDateField.setEnabled(!useSaved);
+            expirationDateFieldMonth.setEnabled(!useSaved);
+            expirationDateFieldYear.setEnabled(!useSaved);
             cvvField.setEnabled(!useSaved);
         });
 
         // Add a field for additional notes
+        gbc.gridx = 0;
         gbc.gridy++;
+        gbc.gridwidth = 2;
         rightPanel.add(new JLabel("Note:"), gbc);
         gbc.gridy++;
         JTextField noteField = new JTextField();
@@ -582,12 +633,14 @@ public class CustomerGUI {
 
         // Add Place Order button
         gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
         JButton placeOrderButton = new JButton("Place Order");
 
         placeOrderButton.addActionListener(e -> {
             String address = addressField.getText();
             String cardNumber = cardNumberField.getText();
-            String expirationDate = expirationDateField.getText();
+            String expirationDate = expirationDateFieldMonth.getText() + "/" + expirationDateFieldYear.getText();
             String cvv = cvvField.getText();
             boolean sendHome = sendHomeCheckbox.isSelected();
             boolean useSavedCard = useSavedCardCheckbox.isSelected();
@@ -598,18 +651,18 @@ public class CustomerGUI {
             checkoutFrame.dispose();
         });
 
-
-
-        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));  // Adjust space before button
         rightPanel.add(placeOrderButton, gbc);
 
         // Add components to the checkout frame
-        checkoutFrame.add(new JScrollPane(orderPanel), BorderLayout.WEST);
+
+        checkoutFrame.add(orderTotalPanel, BorderLayout.WEST);
         checkoutFrame.add(rightPanel, BorderLayout.EAST);
 
         // Show the checkout frame
+        checkoutFrame.setLocationRelativeTo(frame);
         checkoutFrame.setVisible(true);
     }
+
 
     // Method to place the order
     private void placeOrder(double totalAmount, String address, String cardNumber, String expirationDate, String cvv, boolean sendHome, boolean useSavedCard, String note, java.util.List<Map<String, Object>> menu) {
@@ -640,6 +693,8 @@ public class CustomerGUI {
         clientApp.getOrdersHistoryAsync(usernameField.getText(), new String(passwordField.getPassword()));
         showLoading();
     }
+
+    //--------------------------------- Order History ---------------------------------
 
     void showOrderHistoryFrame(List<Order> orders){
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
@@ -790,6 +845,8 @@ public class CustomerGUI {
 
     }
 
+    // --------------------------------- User Settings ---------------------------------
+
     void createUserDataPane(Map<String,String> userData){
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -858,7 +915,7 @@ public class CustomerGUI {
     }
 
     private void showChangeCreditCardDialog() {
-        JDialog dialog = new JDialog(frame, "Change Password", true);
+        JDialog dialog = new JDialog(frame, "Change Credit Card", true);
         dialog.setLayout(new GridBagLayout());
         dialog.setSize(400, 200);
 
@@ -866,42 +923,56 @@ public class CustomerGUI {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Card Number
         gbc.gridx = 0;
         gbc.gridy = 0;
         dialog.add(new JLabel("Card Number:"), gbc);
 
         gbc.gridx = 1;
+        gbc.gridwidth = 3;  // Make the card number field span three columns
         JTextField cardNumberField = new JTextField(15);
         dialog.add(cardNumberField, gbc);
+        gbc.gridwidth = 1;  // Reset gridwidth for future components
 
-        // expiration date
+        // Expiration Date Label
         gbc.gridx = 0;
         gbc.gridy = 1;
-        dialog.add(new JLabel("Expiration Date:"), gbc);
+        dialog.add(new JLabel("Expiration Date (MM/YY):"), gbc);
 
+        // Expiration Date Fields
         gbc.gridx = 1;
-        JTextField expirationDateField = new JTextField(5);
-        dialog.add(expirationDateField, gbc);
+        gbc.gridwidth = 1;
+        JTextField expirationDateFieldMonth = new JTextField(2);
+        expirationDateFieldMonth.setPreferredSize(new Dimension(40, 20)); // Uniform size
+        dialog.add(expirationDateFieldMonth, gbc);
 
-        // cvv
+        gbc.gridx = 2;
+        JTextField expirationDateFieldYear = new JTextField(2);
+        expirationDateFieldYear.setPreferredSize(new Dimension(40, 20)); // Uniform size
+        dialog.add(expirationDateFieldYear, gbc);
+
+        // CVV
         gbc.gridx = 0;
         gbc.gridy = 2;
         dialog.add(new JLabel("CVV:"), gbc);
 
         gbc.gridx = 1;
+        gbc.gridwidth = 2;  // Make the CVV field span three columns
         JTextField cvvField = new JTextField(3);
+        cvvField.setPreferredSize(new Dimension(60, 20)); // Uniform size
         dialog.add(cvvField, gbc);
+        gbc.gridwidth = 1;  // Reset gridwidth
 
         // Submit button
         gbc.gridx = 0;
         gbc.gridy = 3;
-        gbc.gridwidth = 2;
+        gbc.gridwidth = 4;  // Make the submit button span across four columns
         gbc.anchor = GridBagConstraints.CENTER;
         JButton submitButton = new JButton("Change Credit Card");
 
         submitButton.addActionListener(e -> {
             String cardNumber = cardNumberField.getText();
-            String expirationDate = expirationDateField.getText();
+            String expirationDate = expirationDateFieldMonth.getText() + "/" + expirationDateFieldYear.getText();
             String cvv = cvvField.getText();
 
             clientApp.updateCreditCardAsync(usernameField.getText(), new String(passwordField.getPassword()), cardNumber, expirationDate, cvv);
