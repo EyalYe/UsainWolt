@@ -78,8 +78,8 @@ public class ServerMain {
             while (networkInterfaces.hasMoreElements()) {
                 NetworkInterface networkInterface = networkInterfaces.nextElement();
 
-                // Ignore loopback and non-up interfaces
-                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                // Skip loopback, down interfaces, and virtual interfaces
+                if (networkInterface.isLoopback() || !networkInterface.isUp() || networkInterface.isVirtual()) {
                     continue;
                 }
 
@@ -87,9 +87,14 @@ public class ServerMain {
                 while (inetAddresses.hasMoreElements()) {
                     InetAddress inetAddress = inetAddresses.nextElement();
 
-                    // Return only IPv4 addresses, skip link-local or site-local addresses
-                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
-                        return inetAddress.getHostAddress();  // Return the actual IP address
+                    // Return only IPv4 addresses and ensure it's in the private range
+                    if (inetAddress instanceof InetAddress && inetAddress.isSiteLocalAddress()) {
+                        String hostAddress = inetAddress.getHostAddress();
+
+                        // Filter to return only addresses in the 192.168.x.x range
+                        if (hostAddress.startsWith("192.168.")) {
+                            return hostAddress;  // Return the desired IP
+                        }
                     }
                 }
             }
