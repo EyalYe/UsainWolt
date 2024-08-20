@@ -24,6 +24,7 @@ public class ServerMain {
     public static void main(String[] args) {
         // Get the local IP address of the server
         SERVER_IP = getLocalIpAddress();
+        System.out.println("Server IP: " + SERVER_IP);
         try {
             // Start the image server in a new thread
             new Thread(() -> {
