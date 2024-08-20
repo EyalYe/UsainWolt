@@ -7,10 +7,8 @@ import Server.Utilities.ImageServer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,17 +22,8 @@ public class ServerMain {
 
     public static final int THREAD_POOL_SIZE = 10;
     public static void main(String[] args) {
-        try {
-            // Get the IP address of the localhost (your machine)
-            InetAddress localHost = InetAddress.getLocalHost();
-            String ipAddress = localHost.getHostAddress();  // Get the actual IP address
-            System.out.println("Server IP Address: " + ipAddress);
-
-            // Now you can use this IP address instead of "localhost"
-            SERVER_IP = ipAddress; // Set SERVER_IP to actual IP
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+        // Get the local IP address of the server
+        SERVER_IP = getLocalIpAddress();
         try {
             // Start the image server in a new thread
             new Thread(() -> {
@@ -76,11 +65,37 @@ public class ServerMain {
                 ServerApp.cleanUpLoggedInRestaurants();
             }
 
-
-
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String getLocalIpAddress() {
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+
+                // Ignore loopback and non-up interfaces
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+
+                Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+                while (inetAddresses.hasMoreElements()) {
+                    InetAddress inetAddress = inetAddresses.nextElement();
+
+                    // Return only IPv4 addresses, skip link-local or site-local addresses
+                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
+                        return inetAddress.getHostAddress();  // Return the actual IP address
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return "127.0.0.1";  // Fallback to loopback address if no other IP is found
     }
 
 }
