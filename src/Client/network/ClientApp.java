@@ -537,7 +537,59 @@ public class ClientApp implements Runnable {
         return getResponse();
     }
 
+    public void updateMenuItemAsync(String username, String password, String itemName, double itemPrice, String itemDescription, boolean isAvailable, String encodedImage, String action) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "updateMenu");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("itemName", itemName);
+        request.put("price", String.valueOf(itemPrice));  // Convert Double to String
+        request.put("description", itemDescription != null ? itemDescription : "");  // Handle null description
+        request.put("isAvailable", String.valueOf(isAvailable));  // Convert boolean to String
+        request.put("image", encodedImage != null ? encodedImage : "");  // Handle null image
+        request.put("action", action);  // Specify action as add
 
+        addRequest(request);
+    }
+
+    public void removeMenuItemAsync(String username, String password, String restaurantName, String itemName) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "updateMenu");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("restaurantName", restaurantName);
+        request.put("itemName", itemName);
+        request.put("action", "remove");  // Specify action as remove
+
+        addRequest(request);
+    }
+
+    public void markOrderAsReadyAsync(String username, String password, Order order) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "markOrderReadyForPickup");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("order" , gson.toJson(order));
+        addRequest(request);
+    }
+
+    public void getUserDataAsync(String username, String password) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "getUserData");
+        request.put("username", username);
+        request.put("password", password);
+        addRequest(request);
+    }
+
+    public void uploadProfilePictureAsync(String username, String password, String encodedImage) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("type", "uploadProfilePicture");
+        request.put("username", username);
+        request.put("password", password);
+        request.put("profilePicture", encodedImage);
+
+        addRequest(request);
+    }
 }
 
 

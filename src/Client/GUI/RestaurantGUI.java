@@ -109,11 +109,7 @@ public class RestaurantGUI {
 
     void showRestaurantSettings() {
         showingOrders = false;
-        Map<String, Object> request = new HashMap<>();
-        request.put("type", "getUserData");
-        request.put("username", usernameField.getText());
-        request.put("password", new String(passwordField.getPassword()));
-        clientApp.addRequest(request);
+        clientApp.getUserDataAsync(usernameField.getText(), new String(passwordField.getPassword()));
     }
 
     void createRestaurantSettingsFrame(Object message) {
@@ -130,6 +126,13 @@ public class RestaurantGUI {
         String address = (String) userData.get("address");
         String phoneNumber = (String) userData.get("phoneNumber");
         String username = (String) userData.get("username");
+
+        JPanel userImagePanel = new JPanel();
+        userImagePanel.setLayout(new BorderLayout());
+        userImagePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel profilePictureLabel = new JLabel(loadImageIcon((String) userData.get("profilePicture"), 200, 200));
+        userImagePanel.add(profilePictureLabel, BorderLayout.CENTER);
 
 
         JPanel userDataPanel = new JPanel();
@@ -198,7 +201,11 @@ public class RestaurantGUI {
 
 
         // Add the user data panel to the main content panel
-        mainContentPanel.add(userDataPanel, BorderLayout.NORTH);
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BorderLayout());
+        infoPanel.add(userDataPanel, BorderLayout.WEST);
+        infoPanel.add(userImagePanel, BorderLayout.EAST);
+        mainContentPanel.add(infoPanel, BorderLayout.NORTH);
 
         // Refresh the main content panel to display the new UI
         mainContentPanel.revalidate();
@@ -303,14 +310,8 @@ public class RestaurantGUI {
             try {
                 byte[] imageBytes = Files.readAllBytes(selectedFile.toPath());
                 String encodedImage = Base64.getEncoder().encodeToString(imageBytes);
+                clientApp.uploadProfilePictureAsync(usernameField.getText(), new String(passwordField.getPassword()), encodedImage);
 
-                Map<String, Object> request = new HashMap<>();
-                request.put("type", "uploadProfilePicture");
-                request.put("username", usernameField.getText());
-                request.put("password", new String(passwordField.getPassword()));
-                request.put("profilePicture", encodedImage);
-
-                clientApp.addRequest(request);
                 showLoading(); // Show a loading screen while processing
             } catch (IOException e) {
                 e.printStackTrace();
@@ -633,15 +634,7 @@ public class RestaurantGUI {
 
     // Method to mark the order as ready for pickup (you can customize this)
     private void markOrderAsReady(Order order) {
-        // Implement the logic to mark the order as ready for pickup
-        // For example, you could send a request to the server here
-        Map<String, Object> request = new HashMap<>();
-        request.put("type", "markOrderReadyForPickup");
-        request.put("username", usernameField.getText());
-        request.put("password", new String(passwordField.getPassword()));
-        Gson gson = gsonCreator();
-        request.put("order" , gson.toJson(order));
-        clientApp.addRequest(request);
+        clientApp.markOrderAsReadyAsync(usernameField.getText(), new String(passwordField.getPassword()), order);
         showLoading();
     }
 
@@ -761,14 +754,7 @@ public class RestaurantGUI {
     private void removeMenuItem(Order.Item menuItem) {
         try {
             Map<String, Object> request = new HashMap<>();
-            request.put("type", "updateMenu");
-            request.put("username", usernameField.getText());
-            request.put("password", new String(passwordField.getPassword()));
-            request.put("restaurantName", usernameField.getText());
-            request.put("itemName", menuItem.getName());
-            request.put("action", "remove");
-
-            clientApp.addRequest(request);
+            clientApp.updateMenuItemAsync(usernameField.getText(), new String(passwordField.getPassword()), menuItem.getName(), menuItem.getPrice(), menuItem.getDescription(), menuItem.isAvailable(), "", "remove");
             showLoading(); // Show a loading screen while processing
         } catch (Exception e) {
             e.printStackTrace();
@@ -806,19 +792,7 @@ public class RestaurantGUI {
                 byte[] imageBytes = Files.readAllBytes(selectedFile.toPath());
                 String encodedImage = Base64.getEncoder().encodeToString(imageBytes);
 
-                Map<String, Object> request = new HashMap<>();
-                request.put("type", "updateMenu");
-                request.put("username", usernameField.getText());
-                request.put("password", new String(passwordField.getPassword()));
-                request.put("restaurantName", usernameField.getText());
-                request.put("itemName", menuItem.getName());
-                request.put("action", "update");
-                request.put("price", String.valueOf(menuItem.getPrice()));  // Convert Double to String
-                request.put("description", menuItem.getDescription());
-                request.put("isAvailable", String.valueOf(menuItem.isAvailable()));  // Convert boolean to String
-                request.put("image", encodedImage);
-
-                clientApp.addRequest(request);
+                clientApp.updateMenuItemAsync(usernameField.getText(), new String(passwordField.getPassword()), menuItem.getName(), menuItem.getPrice(), menuItem.getDescription(), menuItem.isAvailable(), encodedImage, "update");
                 showLoading(); // Show a loading screen while processing
             } catch (IOException e) {
                 e.printStackTrace();
@@ -884,19 +858,7 @@ public class RestaurantGUI {
                     String itemDescription = itemDescriptionArea.getText();
                     boolean isAvailable = availabilityCheckBox.isSelected();
 
-                    Map<String, Object> request = new HashMap<>();
-                    request.put("type", "updateMenu");
-                    request.put("username", usernameField.getText());
-                    request.put("password", new String(passwordField.getPassword()));
-                    request.put("restaurantName", usernameField.getText());
-                    request.put("itemName", itemName);
-                    request.put("price", String.valueOf(itemPrice));  // Convert Double to String
-                    request.put("description", itemDescription != null ? itemDescription : "");  // Handle null description
-                    request.put("isAvailable", String.valueOf(isAvailable));  // Convert boolean to String
-                    request.put("image", encodedImage != null ? encodedImage : "");  // Handle null image
-                    request.put("action", "add");  // Specify action as add
-
-                    clientApp.addRequest(request);
+                    clientApp.updateMenuItemAsync(usernameField.getText(), new String(passwordField.getPassword()), itemName, itemPrice, itemDescription, isAvailable, encodedImage, "add");
                     showLoading(); // Show a loading screen while processing
                 }
             } catch (IOException e) {

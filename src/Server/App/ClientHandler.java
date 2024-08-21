@@ -134,6 +134,7 @@ public class ClientHandler implements Runnable {
             userData.put("cuisine", restaurant.getCuisine());
             userData.put("revenue", String.valueOf(restaurant.getRevenue()));
             userData.put("restaurantName", (String) restaurant.getRestaurantName());
+            userData.put("profilePicture", restaurant.getProfilePictureUrl());
         }
 
         return createResponse(true, gson.toJson(userData));
