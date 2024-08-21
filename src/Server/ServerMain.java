@@ -21,6 +21,7 @@ public class ServerMain {
     public static final int IMAGE_SERVER_PORT = 8080;
     public static final int THREAD_POOL_SIZE = 30;
     public static final boolean RUNNING_ON_SERVER = false;
+    public static final String IMAGE_URL = RUNNING_ON_SERVER ? "images.usainwolt.xyz" : SERVER_IP + ":" +   IMAGE_SERVER_PORT;
 
     public static void main(String[] args) {
         // Get the local IP address of the server

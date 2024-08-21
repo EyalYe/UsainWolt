@@ -17,8 +17,8 @@ import java.util.List;
 
 import static Server.App.ServerApp.DELIVERY_FEE;
 import static java.lang.Thread.sleep;
-import static Server.ServerMain.SERVER_IP;
-import static Server.ServerMain.IMAGE_SERVER_PORT;
+import static Server.ServerMain.IMAGE_URL;
+
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
@@ -498,7 +498,7 @@ public class ClientHandler implements Runnable {
 
                     // Include profile picture URL if it exists
                     if (restaurant.hasProfilePicture()) {
-                        String profilePictureUrl = "http://" + SERVER_IP + ":" + IMAGE_SERVER_PORT + "/profile_pictures/" + restaurant.getUserName() + ".jpg";
+                        String profilePictureUrl = "http://" + IMAGE_URL + "/profile_pictures/" + restaurant.getUserName() + ".jpg";
                         restaurantInfo.put("profilePictureUrl", profilePictureUrl);
                     } else {
 
@@ -546,7 +546,7 @@ public class ClientHandler implements Runnable {
 
                     if (itemImageFile.exists()) {
                         // Assuming you have a method or base URL that constructs the correct URL for accessing images
-                        String imageUrl = "http://" + SERVER_IP + ":" + IMAGE_SERVER_PORT + "/" + itemImagePath;
+                        String imageUrl = "http://" + IMAGE_URL + "/" + itemImagePath;
                         itemInfo.put("photoUrl", imageUrl.replace(" ", "%20"));
                     } else {
                         itemInfo.put("photoUrl", null); // Null if no image
