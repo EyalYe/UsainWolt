@@ -32,6 +32,7 @@ public class ClientApp implements Runnable {
     private Map<String,Object> restaurantReconnectRequests = new HashMap<>();
     private Map<String,Object> latestRequest = new HashMap<>();
     private boolean firstTime = true;
+    private boolean restartConnection = false;
 
     public ClientApp(String serverAddress, int port) {
         this.serverAddress = serverAddress;
@@ -49,15 +50,17 @@ public class ClientApp implements Runnable {
         do {
             connectToServer();
             firstTime = false;
+            System.out.println("First time: " + firstTime);
         } while (isRestaurant);
         while (true) {
-            while (running) {
+            while (!restartConnection) {
                 try {
-                    wait(1000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+            restartConnection = false;
             connectToServer();
         }
     }
@@ -133,6 +136,7 @@ public class ClientApp implements Runnable {
             System.out.println("Connection closed.");
             running = false;
             latestRequest = request;
+            restartConnection = true;
         }
         try {
             requestQueue.put(request); // Add request to the queue

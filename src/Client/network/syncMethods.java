@@ -4,6 +4,7 @@ import Client.model.Restaurant;
 import Server.Models.Order;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import static Server.Utilities.CustomDateAdapter.gsonCreator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,8 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 public class syncMethods {
-    public static Gson gson = new Gson();
+    public static Gson gson = gsonCreator();
 
     public  Map<String, Object> sendRequest(Map<String, Object> request) throws Exception {
         return null;
