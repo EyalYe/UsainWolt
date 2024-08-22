@@ -138,6 +138,7 @@ public class ClientApp implements Runnable {
             running = false;
             latestRequest = request;
             restartConnection = true;
+            return;
         }
         try {
             requestQueue.put(request); // Add request to the queue
