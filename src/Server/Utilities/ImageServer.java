@@ -34,12 +34,14 @@ public class ImageServer {
             String requestPath = exchange.getRequestURI().getPath();
             System.out.println("Requested path: " + requestPath);
 
+
             // Set the base directory for images
             File file = new File("." + requestPath);
             System.out.println("File path resolved to: " + file.getAbsolutePath());
 
+
             // Check if the requested file exists and is a file
-            if (file.exists() && file.isFile()) {
+            if (file.exists() && file.isFile() && isImage(file.getAbsolutePath())) {
                 System.out.println("File found: " + file.getAbsolutePath());
 
                 // Get the content type (e.g., "image/jpeg")
@@ -68,5 +70,13 @@ public class ImageServer {
                 }
             }
         }
+    }
+
+    private static boolean isImage(String path) {
+        String[] parts = path.split("\\.");
+        if(parts.length == 0) return false;
+        String extension = parts[parts.length - 1];
+        System.out.println("Extension: " + extension);
+        return extension.equals("jpg") || extension.equals("jpeg") || extension.equals("png");
     }
 }
