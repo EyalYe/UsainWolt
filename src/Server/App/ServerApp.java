@@ -19,6 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class ServerApp {
+    // Constants and configuration settings
     public static final String USERS_PATH = "server_logs/users";
     private static final String[] RESTAURANT_CUISINES = {"All", "American", "Chinese", "Italian", "Japanese", "Mexican", "Thai", "Israeli", "Indian"};
     public static final double DELIVERY_FEE = 5.0;
@@ -30,6 +31,7 @@ public class ServerApp {
     public static List<User> allUsers = new CopyOnWriteArrayList<>();
     public static List<Map<RestaurantUser,Socket>> loggedInRestaurants = new CopyOnWriteArrayList<>();
 
+    // Creates a file if it doesn't exist
     public static void createFileIfNotExists(String fileName) throws IOException {
         File file = new File(fileName);
         if (!file.exists()) {
@@ -38,6 +40,7 @@ public class ServerApp {
         }
     }
 
+    // Cleans up logged-in restaurants list by removing restaurants with closed sockets
     public static void cleanUpLoggedInRestaurants() {
         loggedInRestaurants.removeIf(entry -> {
             RestaurantUser restaurant = entry.keySet().iterator().next();
@@ -46,6 +49,7 @@ public class ServerApp {
         });
     }
 
+    // Configures and returns a Gson instance with custom date formatting
     public static Gson gsonCreator() {
         DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT, Locale.ENGLISH);
         return new GsonBuilder()
@@ -53,6 +57,7 @@ public class ServerApp {
                 .create();
     }
 
+    // Loads users from JSON files and initializes the server with them
     public static void loadUsersFromJSON() throws IOException {
         File usersDirectory = new File("server_logs/users");
        try {
@@ -87,9 +92,6 @@ public class ServerApp {
                     } else if (name.contains("DeliveryUser")) {
                         DeliveryUser deliveryUser = gson.fromJson(jsonUser.toString(), DeliveryUser.class);
                         allUsers.add(deliveryUser);
-                    } else if (name.contains("AdminUser")) {
-                        AdminUser adminUser = gson.fromJson(jsonUser.toString(), AdminUser.class);
-                        allUsers.add(adminUser);
                     }
                     else {
                         System.out.println("Unknown user type: " + name);
@@ -101,6 +103,7 @@ public class ServerApp {
        }
     }
 
+    // Loads menus from JSON files into corresponding restaurant users
     public static void loadMenusFromJSON() throws IOException {
         File menuDirectory = new File("menu_data");
         if (!menuDirectory.exists() || !menuDirectory.isDirectory()) {
@@ -145,6 +148,7 @@ public class ServerApp {
         }
     }
 
+    // Adds a new user if they don't already exist and saves their data
     public static void addUser(User user) throws IOException {
        if (checkIfUserExists(user.getUserName())) {
               throw new IllegalArgumentException("User already exists");
@@ -153,6 +157,7 @@ public class ServerApp {
           updateUser(user);
     }
 
+    // Checks if a user with a given username already exists
     public static boolean checkIfUserExists(String userName) {
         for (User user : allUsers) {
             if (user.getUserName().equals(userName)) {
@@ -162,6 +167,7 @@ public class ServerApp {
         return false;
     }
 
+    // Updates the JSON file for a given user
     public static void updateUser(User user) throws IOException {
        File usersDirectory = new File("server_logs/users");
         if (!usersDirectory.exists()) {
@@ -178,6 +184,7 @@ public class ServerApp {
         }
     }
 
+    // Saves a restaurants menu to a JSON file
     static void saveMenu(RestaurantUser restaurant) throws IOException {
         File directory = new File("menu_data");
         if (!directory.exists()) {
@@ -187,12 +194,13 @@ public class ServerApp {
 
         File menuFile = new File(directory, restaurant.getUserName() + ".json");
 
-        // Writing the restaurant's menu to its dedicated file
+        // Writing the restaurants menu to its dedicated file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(menuFile))) {
             writer.write(jsonMenu);
         }
     }
 
+    // Adds a logged-in restaurant and its socket to the list
     public static void addLoggedInRestaurant(RestaurantUser restaurant, Socket socket) {
         if (isLogged(restaurant)) {
             loggedInRestaurants.removeIf(user -> user.containsKey(restaurant));
@@ -200,17 +208,19 @@ public class ServerApp {
         loggedInRestaurants.add(Map.of(restaurant, socket));
     }
 
+    // Returns a comma-separated string of all available cuisines
     public static String getAvailableCuisines() {
         return String.join(",", RESTAURANT_CUISINES);
     }
 
 
 
-    // Order handling
+    // Saves an order and updates its status
     public static boolean saveOrder(Order order) throws IOException {
         return updateOrder(order);
     }
 
+    // Updates an orders status and moves it between lists accordingly
     static boolean updateOrder(Order order) throws IOException {
         String status = order.getStatus();
         System.out.println("Updating order " + order.getOrderId() + " to status " + status);
@@ -273,7 +283,7 @@ public class ServerApp {
         }
     }
 
-
+    // Updates JSON files for all users
     public static void updateAllUsers() throws IOException {
         for (User user : allUsers) {
             updateUser(user);
@@ -337,6 +347,7 @@ public class ServerApp {
         return !exists;
     }
 
+    // Removes a user from the server and deletes their JSON file
     public static void removeUser(User user) {
         allUsers.remove(user);
         File userFile = new File("server_logs/users/" + user.getUserName() + "." + user.getClass().getSimpleName() + ".json");
@@ -345,10 +356,12 @@ public class ServerApp {
         }
     }
 
+    // Retrieves orders that are ready for pickup
     public static Order[] getReadyForPickupOrders() {
         return readyForPickupOrders.toArray(new Order[0]);
     }
 
+    // Finds and returns an order by its ID
     public static Order getOrderById(int orderId) {
         for (Order order : readyForPickupOrders) {
             if (order.getOrderId() == orderId) {
@@ -363,6 +376,7 @@ public class ServerApp {
         return null;
     }
 
+    // Checks if a restaurant user is currently logged in
     public static boolean isLogged(RestaurantUser restaurantUser) {
         for (Map<RestaurantUser, Socket> user : loggedInRestaurants) {
             if (user.containsKey(restaurantUser)) {
@@ -372,6 +386,7 @@ public class ServerApp {
         return false;
     }
 
+    // Returns a list of all logged-in restaurant users
     public static List<RestaurantUser> getLoggedInRestaurants() {
         List<RestaurantUser> restaurants = new ArrayList<>();
         for (Map<RestaurantUser, Socket> user : loggedInRestaurants) {
@@ -380,15 +395,17 @@ public class ServerApp {
         return restaurants;
     }
 
+    // Retrieves the socket for a logged-in restaurant user
     public static Socket getRestaurantSocket(RestaurantUser restaurant) {
         for (Map<RestaurantUser, Socket> user : loggedInRestaurants) {
             if (user.containsKey(restaurant)) {
-                return user.get(restaurant);
+                return user.get(restaurant); // Return the associated socket
             }
         }
-        return null;
+        return null; // Return null if not found
     }
 
+    // Sends a message to a restaurant user through their socket
     public static void pushUpdateToRestaurant(RestaurantUser restaurant, String message) {
         Socket socket = getRestaurantSocket(restaurant);
         if (socket != null) {
@@ -405,6 +422,7 @@ public class ServerApp {
         }
     }
 
+    // Logs out a restaurant user by removing them from the logged-in list
     public static void logoutRestaurant(RestaurantUser userToDisconnect) {
         loggedInRestaurants.removeIf(user -> user.containsKey(userToDisconnect));
     }

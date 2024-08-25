@@ -35,6 +35,7 @@ public class LoginPanel {
         return passwordField;
     }
 
+    // Sets up and displays the login screen with a username and password field, and provides options to log in or sign up.
     public void generateLogin() {
         // Clear the existing components from the frame
         frame.getContentPane().removeAll();
@@ -122,6 +123,8 @@ public class LoginPanel {
         frame.repaint();
     }
 
+    // Sets up and displays the signup screen with fields to register a new user,
+    // including options based on user type (Customer, Restaurant, Delivery).
     private void generateSignup() {
         // Clear the existing components from the frame
         frame.getContentPane().removeAll();

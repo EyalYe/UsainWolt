@@ -19,6 +19,7 @@ import java.util.Map;
 public class syncMethods {
     public static Gson gson = gsonCreator();
 
+    // Method to send a request to the server and get a response
     public  Map<String, Object> sendRequest(Map<String, Object> request) throws Exception {
         return null;
     }
@@ -189,7 +190,7 @@ public class syncMethods {
         return sendRequest(request);
     }
 
-    // Change Password Method
+    // Method to change password
     public Map<String, Object> changePassword(String username, String oldPassword, String newPassword) throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "changePassword");
@@ -199,7 +200,7 @@ public class syncMethods {
         return sendRequest(request);
     }
 
-    // Change Email Method
+    // Method to change an email
     public Map<String, Object> changeEmail(String username, String password, String newEmail) throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "changeEmail");
@@ -209,7 +210,7 @@ public class syncMethods {
         return sendRequest(request);
     }
 
-    // Update Profile Picture Method
+    // Method to update a profile picture
     public Map<String, Object> updateProfilePicture(String username, String password, File profilePicture) throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "uploadProfilePicture");
@@ -230,7 +231,7 @@ public class syncMethods {
     }
 
 
-    // Get Menu Method
+    // Method to get menu
     public List<Order.Item> getMenu(String username, String password, String restaurantName) throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "getMenu");
@@ -249,7 +250,7 @@ public class syncMethods {
         }
     }
 
-
+    // Method to sign up a delivery
     public Map<String, Object> signupDelivery(String username, String password, String address, String phoneNumber, String email, String token) throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("type", "signupDelivery");

@@ -28,7 +28,6 @@ public class UsainWoltGUI implements LogoutCallback {
     private CustomerGUI customerGUI = null;
     private RestaurantGUI restaurantGUI = null;
     private DeliveryGUI deliveryGUI = null;
-    private AdminGUI adminGUI;
     private boolean skipedLogin = false;
     private boolean firstTimeLogin;
 
@@ -47,6 +46,7 @@ public class UsainWoltGUI implements LogoutCallback {
         return availableCuisines;
     }
 
+    // Constructor for initializing UsainWoltGUI
     public UsainWoltGUI(ClientApp clientApp) {
         this.clientApp = clientApp;
         this.availableCuisines = new String[0];
@@ -58,6 +58,7 @@ public class UsainWoltGUI implements LogoutCallback {
         initialize();
     }
 
+    // Constructor for initializing UsainWoltGUI with login details
     public UsainWoltGUI(ClientApp clientApp, String username, String password, String userType) {
         this.clientApp = clientApp;
         this.availableCuisines = new String[0];
@@ -74,6 +75,7 @@ public class UsainWoltGUI implements LogoutCallback {
         initialize_noLogin(userType);
     }
 
+    // Initializes GUI components without login
     private void initialize_noLogin(String userType){
       initialize();
         Map<String, Object> request = new HashMap<>();
@@ -86,11 +88,12 @@ public class UsainWoltGUI implements LogoutCallback {
 
     private JLabel connectionStatusLabel;
 
+    // Updates the connection status label
     private void updateConnectionStatus(String status) {
         SwingUtilities.invokeLater(() -> connectionStatusLabel.setText(status));
     }
 
-
+    // Initializes the main GUI frame
     private void initialize() {
         // Setup the main frame
         frame = new JFrame("Usain Wolt");
@@ -132,6 +135,7 @@ public class UsainWoltGUI implements LogoutCallback {
         frame.setVisible(true);
     }
 
+    // Starts polling for server responses in the background
     private void startResponsePolling() {
         SwingWorker<Void, Map<String, Object>> worker = new SwingWorker<>() {
             @Override
@@ -163,7 +167,7 @@ public class UsainWoltGUI implements LogoutCallback {
         worker.execute();
     }
 
-
+    // Processes server responses and updates GUI accordingly
     private void processResponse(Map<String, Object> response) {
         String requestType = (String) response.get("type");
         if("false".equals(response.get("success"))) {
@@ -330,6 +334,7 @@ public class UsainWoltGUI implements LogoutCallback {
         }
     }
 
+    // Handles login response from the server
     public void handleLoginResponse(Map<String, Object> response) {
         if ("true".equals(response.get("success"))) {
             if(firstTimeLogin)
@@ -356,17 +361,13 @@ public class UsainWoltGUI implements LogoutCallback {
                     deliveryGUI = new DeliveryGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);
                     deliveryGUI.generateDeliveryUI();
                     break;
-                case "Logged in as admin":
-                    adminGUI = new AdminGUI(frame, usernameField, passwordField, clientApp, availableCuisines, this);
-                    adminGUI.
-                    generateAdminUI();
-                    break;
             }
         } else {
             JOptionPane.showMessageDialog(frame, "Login failed: " + response.get("message"));
         }
     }
 
+    // Handles signup response from the server
     public void handleSignupResponse(Map<String, Object> response) {
         if ("true".equals(response.get("success"))) {
             JOptionPane.showMessageDialog(frame, "Signup successful!");
@@ -376,6 +377,7 @@ public class UsainWoltGUI implements LogoutCallback {
         }
     }
 
+    // Handles logout
     public void handleLogout() {
         Map<String,Object> request = new HashMap<>();
         request.put("type", "disconnect");
@@ -386,7 +388,6 @@ public class UsainWoltGUI implements LogoutCallback {
         customerGUI = null;
         restaurantGUI = null;
         deliveryGUI = null;
-        adminGUI = null;
     }
 
     // Method to add form fields for text fields and password fields

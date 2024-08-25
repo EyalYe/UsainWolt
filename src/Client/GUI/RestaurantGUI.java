@@ -28,6 +28,7 @@ public class RestaurantGUI {
     private boolean passwordChanged = false;
     private boolean showingOrders = false;
 
+    // Constructor for RestaurantGUI
     public RestaurantGUI(JFrame frame, JTextField usernameField, JPasswordField passwordField, ClientApp clientApp, String[] availableCuisines , LogoutCallback logoutCallback) {
         this.frame = frame;
         this.usernameField = usernameField;
@@ -37,6 +38,7 @@ public class RestaurantGUI {
         this.logoutCallback = logoutCallback;
     }
 
+    // Method to generate the restaurant UI
     void generateRestaurantUI() {
         // Clear the existing components from the frame
         frame.getContentPane().removeAll();
@@ -85,33 +87,39 @@ public class RestaurantGUI {
         frame.repaint();
     }
 
+    // Method to handle logout
     private void handleLogout() {
         showingOrders = false;
         // Implement the logic to logout the restaurant
         logoutCallback.onLogout();
     }
 
+    // Method to show view orders screen
     void showViewOrders() {
         showingOrders = true;
         clientApp.getOrdersHistoryAsync(usernameField.getText(), new String(passwordField.getPassword()));
         showLoading();
     }
 
+    // Method to show loading screen
     private void showLoading() {
         logoutCallback.showLoadingScreen();
     }
 
+    // Method to show manage menu screen
     void showManageMenu() {
         showingOrders = false;
         clientApp.getMenuAsync(usernameField.getText());
         showLoading();
     }
 
+    // Method to show restaurant settings screen
     void showRestaurantSettings() {
         showingOrders = false;
         clientApp.getUserDataAsync(usernameField.getText(), new String(passwordField.getPassword()));
     }
 
+    // Method to create and display the restaurant settings frame
     void createRestaurantSettingsFrame(Object message) {
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -213,7 +221,7 @@ public class RestaurantGUI {
     }
 
 
-
+    // Method to show restaurant settings frame
     void showRestaurantSettingsFrame() {
         showingOrders = false;
         if (passwordChanged) {
@@ -388,6 +396,7 @@ public class RestaurantGUI {
         dialog.setVisible(true);
     }
 
+    // Method to show dialog for changing password
     private void showChangePasswordDialog() {
         JDialog dialog = new JDialog(frame, "Change Password", true);
         dialog.setLayout(new GridBagLayout());
@@ -450,6 +459,7 @@ public class RestaurantGUI {
         dialog.setVisible(true);
     }
 
+    // Shows a dialog to change the email address
     private void showChangeEmailDialog() {
         JDialog dialog = new JDialog(frame, "Change Email", true);
         dialog.setLayout(new GridBagLayout());
@@ -487,6 +497,7 @@ public class RestaurantGUI {
         dialog.setVisible(true);
     }
 
+    // Shows a dialog to change the address
     private void showChangeAddressDialog() {
         JDialog dialog = new JDialog(frame, "Change Address", true);
         dialog.setLayout(new GridBagLayout());
@@ -524,6 +535,7 @@ public class RestaurantGUI {
         dialog.setVisible(true);
     }
 
+    // Shows a confirmation dialog for deleting the account
     private void showDeleteAccountDialog() {
         int confirm = JOptionPane.showConfirmDialog(frame,
                 "Are you sure you want to delete your account? This action cannot be undone.",
@@ -536,8 +548,7 @@ public class RestaurantGUI {
         }
     }
 
-
-
+    // Displays the list of orders in a new frame
     public void showOrdersFrame(List<Order> orders) {
         // Clear the main content panel first
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
@@ -569,6 +580,7 @@ public class RestaurantGUI {
         mainContentPanel.repaint();
     }
 
+    // Creates a panel for displaying individual order details
     private JPanel createOrderPanel(Order order) {
         JPanel orderPanel = new JPanel(new BorderLayout(10, 10));
         orderPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -638,12 +650,13 @@ public class RestaurantGUI {
         showLoading();
     }
 
-
+    //  Displays the menu items
     public void showMenu(Object message) {
         Type type = new TypeToken<List<Order.Item>>(){}.getType();
         List<Order.Item> menu = (ArrayList<Order.Item>) gson.fromJson(gson.toJson(message), new TypeToken<List<Order.Item>>(){}.getType());
         showManageMenuFrame(menu);
     }
+
 
     private void showManageMenuFrame(List<Order.Item> menu) {
         // Clear the main content panel first
@@ -683,6 +696,7 @@ public class RestaurantGUI {
         mainContentPanel.repaint();
     }
 
+    // Creates a panel for displaying individual menu items
     private JPanel createMenuItemPanel(Order.Item menuItem) {
         JPanel menuItemPanel = new JPanel(new BorderLayout(10, 10));
         menuItemPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -751,6 +765,7 @@ public class RestaurantGUI {
         }
     }
 
+    // Removes a menu item from the menu
     private void removeMenuItem(Order.Item menuItem) {
         try {
             Map<String, Object> request = new HashMap<>();
@@ -762,8 +777,7 @@ public class RestaurantGUI {
         }
     }
 
-
-
+    // Changes the image of a menu item
     private void changeItemImage(Order.Item menuItem) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Select a new image for " + menuItem.getName());
@@ -801,7 +815,7 @@ public class RestaurantGUI {
         }
     }
 
-
+    // Adds a new item to the menu
     private void addNewItem() {
         JTextField itemNameField = new JTextField(20);
         JTextField itemPriceField = new JTextField(20);
@@ -867,7 +881,6 @@ public class RestaurantGUI {
             }
         }
     }
-
 
     // Helper method to load and resize images
     private ImageIcon loadImageIcon(String pathOrUrl, int width, int height) {

@@ -19,29 +19,31 @@ import static Server.App.ServerApp.DELIVERY_FEE;
 import static java.lang.Thread.sleep;
 import static Server.ServerMain.IMAGE_URL;
 
-
+// ClientHandler is responsible for handling communication with a single client in a separate thread
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private Gson gson;
     private final GeoLocationService geoLocationService;
 
-
+    // Constructor to initialize client handler with the client's socket
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
         this.gson = ServerApp.gsonCreator();
         this.geoLocationService = new GeoLocationService(); // Initialize the GeoLocationService
     }
 
+    // The main method that handles client requests
     @Override
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
             String inputLine = " ";
+            // Continuously listen for client requests
             while (inputLine != null) {
                 try {
-                    inputLine = in.readLine();
+                    inputLine = in.readLine(); // Read client's request
                 } catch (IOException e) {
-                    clientSocket.close();
+                    clientSocket.close(); // Close socket on error
                     e.printStackTrace();
                     break;
                 }
@@ -56,6 +58,7 @@ public class ClientHandler implements Runnable {
                 String type = request.get("type");
                 String response;
                 try {
+                    // Handle request based on its type
                     response = switch (type) {
                         case "login" -> handleLogin(request);
                         case "signupCustomer" -> handleSignUp(request, "customer");
@@ -112,6 +115,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Handle fetching user data based on the request parameters
     private String handleGetUserData(Map<String, String> request) {
         String username = request.get("username");
         User user = authenticateUser(request);
@@ -140,11 +144,13 @@ public class ClientHandler implements Runnable {
         return createResponse(true, gson.toJson(userData));
     }
 
+    // Parse the client's JSON request into a Map
     private Map<String, String> parseRequest(String inputLine) {
         Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
         return gson.fromJson(inputLine, type);
     }
 
+    // Create a response JSON string
     private String createResponse(boolean success, String message) {
         Map<String, String> response = new HashMap<>();
         response.put("success", String.valueOf(success));
@@ -156,6 +162,7 @@ public class ClientHandler implements Runnable {
         return gson.toJson(response);
     }
 
+    // Save an image for a menu item to the server's file system
     public void saveMenuItemImage(InputStream imageInputStream, String restaurantName, String itemName) throws IOException {
         String directoryPath = "menu_item_images/";
         File directory = new File(directoryPath);
@@ -172,6 +179,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Hash a password using SHA-256
     public static String hashPassword(String password) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -190,6 +198,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Authenticate a user based on the provided credentials
     private User authenticateUser(Map<String, String> params) {
         String username = params.get("username");
         String password = hashPassword(params.get("password"));
@@ -202,6 +211,7 @@ public class ClientHandler implements Runnable {
         return null;
     }
 
+    // Check if an email already exists in the system
     private boolean emailExists(String email) {
         for (User user : ServerApp.allUsers) {
             if (user instanceof CustomerUser && user.getEmail().equals(email)) {
@@ -211,6 +221,7 @@ public class ClientHandler implements Runnable {
         return false;
     }
 
+    // Check if a username already exists in the system
     private boolean usernameExists(String username) {
         for (User user : ServerApp.allUsers) {
             if (user.getUserName().equals(username)) {
@@ -219,6 +230,7 @@ public class ClientHandler implements Runnable {
         }
         return false;
     }
+
 
     private int incrementOrderId() {
         String idFilePath = "server_logs/order_id.txt";
@@ -319,6 +331,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Handle a login request from the client
     private String handleLogin(Map<String, String> params) {
         String username = params.get("username");
         String password = params.get("password");
@@ -347,15 +360,13 @@ public class ClientHandler implements Runnable {
                 ServerApp.addLoggedInRestaurant(restaurantUser, clientSocket);
                 return createResponse(true, "Logged in as restaurant");
             }
-            case AdminUser adminUser -> {
-                return createResponse(true, "Logged in as admin");
-            }
             default -> {
                 return createResponse(false, "Invalid username or password");
             }
         }
     }
 
+    // Handle a sign-up request from a customer
     private String handleSignUp(Map<String,String> params, String type) throws IOException{
         String username = params.get("username");
         String email = params.get("email");
@@ -396,6 +407,7 @@ public class ClientHandler implements Runnable {
 
     }
 
+    // Create a new customer and add to the list of all users
     private String handleSignupCustomer(Map<String, String> params) throws IOException {
         String username = params.get("username");
         String password = params.get("password");
@@ -409,6 +421,7 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Customer signup successful");
     }
 
+    // Handles signup for a delivery user
     private String handleSignupDelivery(Map<String, String> params) throws IOException {
         String username = params.get("username");
         String password = params.get("password");
@@ -421,12 +434,14 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Not authorized to create a delivery account");
         }
 
+        // Create a new delivery user and add to server
         DeliveryUser newUser = new DeliveryUser(username, hashPassword(password), address, phoneNumber, email);
         ServerApp.addUser(newUser);
 
         return createResponse(true, "Customer signup successful");
     }
 
+    // Handles signup for a restaurant user
     private String handleSignupRestaurant(Map<String, String> params) throws IOException {
         String username = params.get("username");
         String password = params.get("password");
@@ -436,12 +451,14 @@ public class ClientHandler implements Runnable {
         String businessPhoneNumber = params.get("businessPhoneNumber");
         String cuisine = params.get("cuisine");
 
+        // Create a new restaurant user and add to server
         RestaurantUser newRestaurant = new RestaurantUser(username, hashPassword(password), address, phoneNumber, email, businessPhoneNumber, cuisine, 0.0);
         ServerApp.addUser(newRestaurant);
 
         return createResponse(true, "Restaurant signup successful");
     }
 
+    // Handles retrieval of restaurants based on distance and cuisine
     private String handleGetRestaurants(Map<String, String> params) throws IOException {
         User user = authenticateUser(params);
 
@@ -454,7 +471,6 @@ public class ClientHandler implements Runnable {
         String cuisine = params.get("cuisine");
 
         // Get customer coordinates
-
         double[] customerCoordinates = new double[2];
         if (params.get("sendHome").equals("true")){
             customerCoordinates = user.getCoordinates();
@@ -472,6 +488,7 @@ public class ClientHandler implements Runnable {
         double maxDistance = (maxDistanceStr != null && !maxDistanceStr.isEmpty()) ? Double.parseDouble(maxDistanceStr) : 30.0;
         System.out.println("Max distance: " + maxDistance);
 
+        // Prepare the list of restaurant information
         List<Map<String, Object>> restaurantInfoList = new ArrayList<>();
 
         for (RestaurantUser restaurant : ServerApp.getLoggedInRestaurants()) {
@@ -515,6 +532,8 @@ public class ClientHandler implements Runnable {
         return createResponse(true, gson.toJson(restaurantInfoList));
     }
 
+
+    // Retrieves the address of a user by username
     private String getUserNameAddress(String username) {
         for (User user : ServerApp.allUsers) {
             if (user.getUserName().equals(username)) {
@@ -524,6 +543,7 @@ public class ClientHandler implements Runnable {
         return null;
     }
 
+    // Retrieves the menu for a specific restaurant
     private String handleGetMenu(Map<String, String> params) {
         String restaurantName = params.get("restaurantName");
 
@@ -566,6 +586,7 @@ public class ClientHandler implements Runnable {
 
     private final CreditCardAuthenticator creditCardAuthenticator = new CreditCardAuthenticator(); // Initialize the mock authenticator
 
+    // Places a new order
     private String handlePlaceOrder(Map<String, String> params) throws IOException {
         String username = params.get("username");
         String password = params.get("password");
@@ -588,6 +609,7 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Authentication failed or customer not found");
         }
 
+        // Handle credit card information
         String creditCardNumber;
         String expirationDate;
         String cvv;
@@ -602,6 +624,7 @@ public class ClientHandler implements Runnable {
             cvv = customer.getCvv();
         }
 
+        // Find the restaurant
         RestaurantUser restaurant = null;
         for (RestaurantUser loggedInRestaurant : ServerApp.getLoggedInRestaurants()) {
             if (loggedInRestaurant.getUserName().equals(restaurantName)) {
@@ -613,10 +636,12 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Restaurant not logged in or does not exist");
         }
 
+        // Authenticate credit card
         if (!creditCardAuthenticator.authenticate(creditCardNumber, expirationDate, cvv)) {
             return createResponse(false, "Credit card authentication failed");
         }
 
+        // Validate address
         if(!geoLocationService.validateAddress(address)){
             return createResponse(false, "Invalid address");
         }
@@ -624,10 +649,12 @@ public class ClientHandler implements Runnable {
         System.out.println("Address: " + address);
         System.out.println("Restaurant Address: " + restaurant.getAddress());
 
+        // Check distance between customer and restaurant
         if(!GeoLocationService.checkSmallDistance(address, restaurant.getAddress(), 30.1)){
             return createResponse(false, "Restaurant is too far away");
         }
 
+        // Create and save the order
         int orderId = incrementOrderId();
         // Properly handling the JSON parsing
         List<Order.Item> itemsList = (ArrayList<Order.Item>) gson.fromJson(gson.toJson(items), new TypeToken<List<Order.Item>>(){}.getType());
@@ -643,11 +670,12 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Failed to save order");
         }
 
+        // Notify the restaurant
         ServerApp.pushUpdateToRestaurant(restaurant, "New order received");
         return createResponse(true, "Order placed successfully with ID: " + orderId);
     }
 
-
+    // Updates or removes a menu item for a restaurant
     private String handleUpdateMenu(Map<String, String> params) throws IOException {
         String itemName = params.get("itemName");
         boolean isAvailable = true;
@@ -735,16 +763,20 @@ public class ClientHandler implements Runnable {
                 restaurant.addMenuItem(newItem);
             }
 
+            // Save the updated menu
             ServerApp.saveMenu(restaurant);
             return createResponse(true, "Menu item added/updated successfully");
         }
     }
 
+    // Updates a customers credit card information
     private String handleUpdateCreditCard(Map<String, String> params) {
+        // Extract parameters
         String creditCardNumber = params.get("creditCardNumber");
         String expirationDate = params.get("expirationDate");
         String cvv = params.get("cvv");
 
+        // Authenticate the customer
         CustomerUser customer = (CustomerUser) authenticateUser(params);
 
         if (customer == null) {
@@ -755,6 +787,7 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Credit card authentication failed");
         }
 
+        // Update credit card details
         customer.setCreditCardNumber(creditCardNumber);
         customer.setExpirationDate(expirationDate);
         customer.setCvv(cvv);
@@ -762,6 +795,7 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Credit card updated successfully");
     }
 
+    // Retrieves the order history for a user
     private String handleGetOrdersHistory(Map<String, String> params) {
         User authenticatedUser = authenticateUser(params);
         return switch (authenticatedUser) {
@@ -773,32 +807,39 @@ public class ClientHandler implements Runnable {
         };
     }
 
+    // Marks an order as ready for pickup and updates the status in the system
     private String handleMarkOrderReadyForPickup(Map<String, String> params) throws IOException {
         Type type = new TypeToken<Order>(){}.getType();
         Order order_from_user = gson.fromJson(params.get("order"), type);
         int orderId = order_from_user.getOrderId();
         Order order = ServerApp.getOrderById(orderId);
 
+        // Check if the order exists
         if (order == null) {
             return createResponse(false, "Order not found");
         }
 
+        // Authenticate the restaurant user
         RestaurantUser restaurant =  (RestaurantUser) authenticateUser(params);
         if(restaurant == null) {
             return createResponse(false, "Authentication failed or restaurant not found");
         }
 
+        // Update the order status and remove it from the restaurant's orders
         order.setStatus("Ready For Pickup");
         restaurant.removeOrder(order.getOrderId());
+        // Update the customer's order history
         CustomerUser customer = getUserByUsername(order.getCustomerName());
         if (customer == null) {
             return createResponse(false, "Something went horribly wrong");
         }
         customer.removeOrder(order.getOrderId());
         customer.addOrder(order);
+        // Save changes for the restaurant, customer, and order
         ServerApp.updateUser(restaurant);
         ServerApp.updateUser(customer);
         ServerApp.updateOrder(order);
+        // Return success or failure response
         if (ServerApp.updateOrder(order)) {
             return createResponse(true, "Order status updated successfully");
         } else {
@@ -807,6 +848,7 @@ public class ClientHandler implements Runnable {
 
     }
 
+    // Retrieves a CustomerUser object based on username
     private CustomerUser getUserByUsername(String customerName) {
         for (User user : ServerApp.allUsers) {
             if (user instanceof CustomerUser && user.getUserName().equals(customerName)) {
@@ -816,13 +858,15 @@ public class ClientHandler implements Runnable {
         return null;
     }
 
+    // Disables a menu item for a restaurant
     private String handleDisableMenuItems(Map<String, String> params) {
-
+        // Authenticate the restaurant user
         RestaurantUser restaurant = (RestaurantUser) authenticateUser(params);
 
         if (restaurant == null) {
             return createResponse(false, "Authentication failed or restaurant not found");
         }
+        // Disable the menu item
         String menuItemName = params.get("menuItemName");
         restaurant.disableMenuItem(menuItemName);
         try {
@@ -833,32 +877,36 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Menu items disabled");
     }
 
+    // Enables a menu item for a restaurant
     private String handleEnableMenuItems(Map<String, String> params) {
-
+        // Authenticate the restaurant user
         RestaurantUser restaurant = (RestaurantUser) authenticateUser(params);
         if (restaurant == null) {
             return createResponse(false, "Authentication failed or restaurant not found");
         }
-
+        // Enable the menu item
         String menuItemName = params.get("menuItemName");
         restaurant.enableMenuItem(menuItemName);
         return createResponse(true, "Menu items enabled");
     }
 
+    // Retrieves the current orders for a restaurant
     private String handleGetCurrentOrders(Map<String, String> params) {
+        // Authenticate the restaurant user
         RestaurantUser restaurant = (RestaurantUser) authenticateUser(params);
 
         if (restaurant == null) {
             return createResponse(false, "Authentication failed or restaurant not found");
         }
-
+        // Return current orders as JSON
         return gson.toJson(restaurant.getCurrentOrders());
     }
 
+    // Handles user disconnection
     private String handleDisconnect(Map<String, String> params) {
-
+        // Authenticate the user
         User userToDisconnect = authenticateUser(params);
-
+        // Handle restaurant user logout
         if (userToDisconnect == null) {
             return createResponse(false, "Authentication failed or user not found");
         }
@@ -871,45 +919,50 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Disconnected successfully");
     }
 
+
+    // Retrieves available cuisines
     private String handleGetAvailableCuisines() {
         return createResponse(true, ServerApp.getAvailableCuisines());
     }
 
+    // Changes a user's password
     private String handleChangePassword(Map<String, String> params) throws IOException {
         String newPassword = params.get("newPassword");
         params.put("password", params.get("oldPassword"));
-
+        // Authenticate the user
         User user = authenticateUser(params);
 
         if (user == null) {
             return createResponse(false, "Authentication failed or user not found");
         }
-
+        // Update password
         user.setHashedPassword(hashPassword(newPassword));
         ServerApp.updateUser(user);
 
         return createResponse(true, "Password changed successfully");
     }
 
+    // Changes a user's email address
     private String handleChangeEmail(Map<String, String> params) throws IOException {
         String newEmail = params.get("newEmail");
-
+        // Authenticate the user
         User user = authenticateUser(params);
 
         if (user == null) {
             return createResponse(false, "Authentication failed or user not found");
         }
-
+        // Update email
         user.setEmail(newEmail);
         ServerApp.updateUser(user);
 
         return createResponse(true, "Email changed successfully");
     }
 
+    // Uploads and saves a user's profile picture
     private String handleProfilePictureUpload(Map<String, String> params) {
         String username = params.get("username");
         String encodedImage = params.get("profilePicture");
-
+        // Authenticate the user
         User user = authenticateUser(params);
 
         try {
@@ -926,7 +979,7 @@ public class ClientHandler implements Runnable {
                     try (OutputStream outputStream = new FileOutputStream(filePath)) {
                         outputStream.write(imageBytes);
                     }
-
+                    // Update user data
                     ServerApp.updateUser(user);  // Save updated user data
                     return createResponse(true, "Profile picture uploaded successfully");
                 } else {
@@ -939,6 +992,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Retrieves an image file from the server
     private String handleGetImage(Map<String, String> params) {
         String imagePath = params.get("imagePath"); // The path sent by the client, e.g., "profile_pictures/restaurant_name.jpg"
 
@@ -973,30 +1027,31 @@ public class ClientHandler implements Runnable {
             return gson.toJson(errorResponse);
         }
     }
-
+    // Deletes a user's account
     private String handleDeleteAccount(Map<String, String> request) {
-
+        // Authenticate the user
         User user = authenticateUser(request);
 
         if (user == null) {
             return createResponse(false, "Authentication failed or user not found");
         }
-
+        // Remove the user from the server
         ServerApp.removeUser(user);
 
         return createResponse(true, "Account deleted successfully");
     }
 
+    // Updates a specific user parameter based on request
     private String handleUpdateParameter(Map<String, String> request) throws IOException {
         String parameter = request.get("parameter");
         String value = request.get("newValue");
-
+        // Authenticate the user
         User user = authenticateUser(request);
 
         if (user == null) {
             return createResponse(false, "Authentication failed or user not found");
         }
-
+        // Update the specified parameter
         switch (parameter) {
             case "address" -> user.setAddress(value);
             case "phoneNumber" -> user.setPhoneNumber(value);
@@ -1027,35 +1082,40 @@ public class ClientHandler implements Runnable {
                 return createResponse(false, "Invalid parameter");
             }
         }
-
+        // Save updated user data
         ServerApp.updateUser(user);
 
         return createResponse(true, "Parameter updated successfully");
     }
 
+    // Retrieves income data for a delivery user
     private String handleGetIncomeData(Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
-
+        // Authenticate the delivery user
         DeliveryUser deliveryUser = (DeliveryUser) authenticateUser(request);
-       if (deliveryUser == null) {
+        if (deliveryUser == null) {
             return createResponse(false, "Authentication failed or delivery user not found");
         }
-
+        // Return income data as JSON
         return createResponse(true, gson.toJson(deliveryUser.getIncome()));
     }
 
-    private String handleMarkOrderDelivered(Map<String, String> request) throws IOException {
-        DeliveryUser deliveryUser = (DeliveryUser) authenticateUser(request);
 
+    // Marks an order as delivered and updates the delivery user's income
+    private String handleMarkOrderDelivered(Map<String, String> request) throws IOException {
+        // Authenticate the delivery user
+        DeliveryUser deliveryUser = (DeliveryUser) authenticateUser(request);
         if (deliveryUser == null) {
             return createResponse(false, "Authentication failed or delivery user not found");
         }
 
+        // Check if the delivery user has a current order
         if (deliveryUser.getCurrentOrder() == null) {
             return createResponse(false, "You are not on a delivery");
         }
 
+        // Update order status and delivery user's income
         deliveryUser.getCurrentOrder().setStatus("Delivered");
         deliveryUser.addIncome(DELIVERY_FEE);
         ServerApp.updateOrder(deliveryUser.getCurrentOrder());
@@ -1065,16 +1125,17 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Order marked as delivered");
     }
 
+    // Checks if a delivery user is currently on a delivery
     private String handleCheckIfOnDelivery(Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
-
+        // Authenticate the delivery user
         DeliveryUser deliveryUser = (DeliveryUser) authenticateUser(request);
-
         if (deliveryUser == null) {
             return createResponse(false, "Authentication failed or delivery user not found");
         }
 
+        // Check if the delivery user has a current order
         if (deliveryUser.getCurrentOrder() == null) {
             return createResponse(true, "You are not on a delivery");
         }
@@ -1082,21 +1143,24 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "You are on a delivery to " + address);
     }
 
+    // Picks up an order for delivery
     private String handlePickupOrder(Map<String, String> request) throws IOException {
         String username = request.get("username");
         String password = request.get("password");
         int orderId = Integer.parseInt(request.get("orderId"));
 
+        // Authenticate the delivery user
         DeliveryUser deliveryUser = (DeliveryUser) authenticateUser(request);
-
         if (deliveryUser == null) {
             return createResponse(false, "Authentication failed or delivery user not found");
         }
 
+        // Check if the delivery user is already on a delivery
         if (deliveryUser.getCurrentOrder() != null) {
             return createResponse(false, "You already have an order to deliver");
         }
 
+        // Update the order status
         List<Order> deliveryOrders = List.of(ServerApp.getReadyForPickupOrders());
         for (Order order : deliveryOrders) {
             if (order.getOrderId() == orderId) {
@@ -1110,13 +1174,13 @@ public class ClientHandler implements Runnable {
         return createResponse(true, "Order picked up successfully for delivery to " + address);
     }
 
+    // Retrieves orders available for delivery based on distance from the current location
     private String handleGetDeliveryOrders(Map<String, String> request) {
         String username = request.get("username");
         String password = request.get("password");
 
-
+        // Authenticate the delivery user
         DeliveryUser deliveryUser = (DeliveryUser) authenticateUser(request);
-
         if (deliveryUser == null) {
             return createResponse(false, "Authentication failed or delivery user not found");
         }
@@ -1129,9 +1193,12 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Invalid address");
         }
 
+        // Check if current location was provided
         if (currentLocation == null || currentLocation.equals(new double[]{0.0, 0.0})) {
             return createResponse(false, "Current location not provided");
         }
+
+        // Parse desired distance
         try {
             desiredDistance = Double.parseDouble(request.get("distance"));
         }
@@ -1139,6 +1206,7 @@ public class ClientHandler implements Runnable {
             return createResponse(false, "Invalid distance format");
         }
 
+        // Filter orders based on distance
         double distance = 999;
         for (Order order : ServerApp.getReadyForPickupOrders()) {
             if (order.getLocation() == null) {
@@ -1167,12 +1235,14 @@ public class ClientHandler implements Runnable {
             order.setDistance(distance);
             deliveryOrders.add(order);
         }
+        // Check if there are any delivery orders
         if (deliveryOrders == null || deliveryOrders.isEmpty()) {
             return createResponse(false, "No orders available for delivery");
         }
         return createResponse(true, gson.toJson(deliveryOrders));
     }
 
+    // Default handler for invalid request types
     private String handleDefault() {
         return createResponse(false, "Invalid request type");
     }

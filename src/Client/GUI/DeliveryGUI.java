@@ -27,6 +27,8 @@ public class DeliveryGUI {
     }
 
     // -------------------------------------- UI for Delivery --------------------------------------
+
+    // Generates the delivery UI for the frame, including sidebar navigation and main content panel
     void generateDeliveryUI() {
         // Clear the existing components from the frame
         frame.getContentPane().removeAll();
@@ -79,6 +81,7 @@ public class DeliveryGUI {
 
     //------------------------------------------ Available Deliveries ------------------------------------------
 
+    // Displays the available deliveries UI, including search filters and delivery list
     void showAvailableDeliveries() {
         clientApp.checkIfOnDeliveryAsync(usernameField.getText(), new String(passwordField.getPassword()));
         // Clear the main content panel first
@@ -181,6 +184,7 @@ public class DeliveryGUI {
         mainContentPanel.repaint();
     }
 
+    // Displays the frame containing the list of available deliveries after performing a search
     void showAvailableDeliveriesFrame(List<Order> orders) {
         // Get the main content panel to clear and update
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
@@ -214,6 +218,7 @@ public class DeliveryGUI {
         mainContentPanel.repaint();
     }
 
+    // Performs a search for deliveries based on distance and location, triggering a server request
     private void performDeliverySearch(int distance, String location) throws Exception {
         clientApp.searchDeliveriesAsync(usernameField.getText(), new String(passwordField.getPassword()), location, String.valueOf(distance));
         showLoading();
@@ -221,6 +226,8 @@ public class DeliveryGUI {
 
 
     private int orderId;
+
+    // Picks up an order by sending a request to the server
     private void pickUpOrder(Order order) {
         // Send a pickup order request to the server
         Map<String, Object> request = new HashMap<>();
@@ -244,6 +251,7 @@ public class DeliveryGUI {
         isOnDelivery = false;
     }
 
+    // Picks up an order by sending a request to the server
     private void markDeliveryAsFinished() {
         if(!isOnDelivery){
             JOptionPane.showMessageDialog(frame, "You are not on a delivery!");
@@ -273,6 +281,7 @@ public class DeliveryGUI {
         }
     }
 
+    // Creates a JPanel representing an individual order with details and a pickup button
     private JPanel createOrderPanel(Order order) {
         JPanel orderPanel = new JPanel(new BorderLayout(10, 10));
         orderPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -337,6 +346,7 @@ public class DeliveryGUI {
         showLoading();
     }
 
+    // Displays the user settings UI for updating user information
     void showUserSettingsFrame(String income) {
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -389,6 +399,7 @@ public class DeliveryGUI {
         mainContentPanel.repaint();
     }
 
+    // Displays a dialog to change the user's password
     private void showChangePasswordDialog() {
         JDialog dialog = new JDialog(frame, "Change Password", true);
         dialog.setLayout(new GridBagLayout());
@@ -450,6 +461,7 @@ public class DeliveryGUI {
         dialog.setVisible(true);
     }
 
+    // Displays a dialog to change the user's email address
     private void showChangeEmailDialog() {
         JDialog dialog = new JDialog(frame, "Change Email", true);
         dialog.setLayout(new GridBagLayout());
@@ -487,7 +499,7 @@ public class DeliveryGUI {
         dialog.setVisible(true);
     }
 
-
+    // Displays a dialog to change the delivery address
     private void showChangeAddressDialog() {
         JDialog dialog = new JDialog(frame, "Change Address", true);
         dialog.setLayout(new GridBagLayout());
@@ -524,7 +536,7 @@ public class DeliveryGUI {
         dialog.setLocationRelativeTo(frame);
         dialog.setVisible(true);
     }
-
+    // Displays a dialog to confirm and handle account deletion
     private void showDeleteAccountDialog() {
         int confirm = JOptionPane.showConfirmDialog(frame,
                 "Are you sure you want to delete your account? This action cannot be undone.",

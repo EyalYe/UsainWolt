@@ -13,13 +13,14 @@ import java.util.Map;
 
 
 public class CustomerGUI {
-    private final JFrame frame;
-    private final JTextField usernameField;
-    private final JPasswordField passwordField;
-    private final ClientApp clientApp;
-    private String[] availableCuisines;
-    private final LogoutCallback logoutCallback;
+    private final JFrame frame;  // The main window frame of the customer GUI
+    private final JTextField usernameField;  // Text field for entering the username
+    private final JPasswordField passwordField;  // Password field for entering the password
+    private final ClientApp clientApp;  // ClientApp instance to handle server communication
+    private String[] availableCuisines;  // Array holding available cuisine options
+    private final LogoutCallback logoutCallback;  // Callback interface to handle logout events
 
+    // Constructor to initialize CustomerGUI with necessary components and data
     CustomerGUI(JFrame frame, JTextField usernameField, JPasswordField passwordField, ClientApp clientApp, String[] availableCuisines , LogoutCallback logoutCallback) {
         this.frame = frame;
         this.usernameField = usernameField;
@@ -29,6 +30,7 @@ public class CustomerGUI {
         this.logoutCallback = logoutCallback;
     }
 
+    // Method to generate and display the customer UI
     void generateCustomerUI() {
         // Clear the existing components from the frame
         frame.getContentPane().removeAll();
@@ -77,10 +79,12 @@ public class CustomerGUI {
         frame.repaint();
     }
 
+    // Handle logout by triggering the logout callback
     private void handleLogout() {
         logoutCallback.onLogout();
     }
 
+    // Show a loading screen when needed
     private void showLoading() {
         logoutCallback.showLoadingScreen();
     }
@@ -90,6 +94,7 @@ public class CustomerGUI {
 
     // Method to show place order screen
     private void showPlaceOrder() {
+        // Check if cuisines are already loaded, if not, fetch from the server
         if (availableCuisines == null || availableCuisines.length == 0) {
             Map<String, Object> request = new HashMap<>();
             request.put("type", "getAvailableCuisines");
@@ -204,7 +209,7 @@ public class CustomerGUI {
         showLoading();
     }
 
-
+    // Method to display list of restaurants
     void showRestaurants(java.util.List<Restaurant> restaurants) {
         // Get the main content panel to clear and update
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
@@ -238,6 +243,7 @@ public class CustomerGUI {
         mainContentPanel.repaint();
     }
 
+    // Method to create a panel for each restaurant
     private JPanel createRestaurantPanel(Restaurant restaurant) {
         JPanel restaurantPanel = new JPanel(new BorderLayout(10, 10));
         restaurantPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -348,6 +354,8 @@ public class CustomerGUI {
     }
 
     private String chosenRestaurant;
+
+    // Method to handle clicks on a restaurant panel
     private void handleRestaurantClick(Restaurant restaurant) {
         try {
             showLoading();  // Show a loading screen while fetching the menu
@@ -359,6 +367,7 @@ public class CustomerGUI {
         }
     }
 
+    // Method to display the restaurant menu
     void showMenu(java.util.List<Map<String, Object>> menu) {
         // Clear the main content panel to show the menu
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
@@ -402,8 +411,9 @@ public class CustomerGUI {
         mainContentPanel.repaint();
     }
 
+    // Method to create a panel for each menu item
     private JPanel createMenuItemPanel(Map<String, Object> menuItem) {
-        menuItem.put("quantity", 0);  // Add a quantity field to the menu item (default 0
+        menuItem.put("quantity", 0);  // Add a quantity field to the menu item (default 0)
 
         JPanel menuItemPanel = new JPanel(new BorderLayout(10, 10));
         menuItemPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -490,6 +500,7 @@ public class CustomerGUI {
         return menuItemPanel;
     }
 
+    // Method to proceed to checkout with the selected menu items
     private void proceedToCheckout(java.util.List<Map<String, Object>> menu) {
         // Create a new JFrame for the checkout window
         JFrame checkoutFrame = new JFrame("Checkout");
@@ -505,6 +516,7 @@ public class CustomerGUI {
 
         final double[] totalAmount = {0.0}; // Use an array to hold the total amount
 
+        // Iterate over each menu item and create a panel for it
         for (Map<String, Object> menuItem : menu) {
             int quantity = Integer.parseInt(menuItem.get("quantity").toString());
             if (quantity > 0) {
@@ -697,28 +709,36 @@ public class CustomerGUI {
     //--------------------------------- Order History ---------------------------------
 
     void showOrderHistoryFrame(List<Order> orders){
+        // Get the main content panel from the frame and clear its current content
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
         mainContentPanel.setLayout(new BorderLayout());
 
+        // Create a panel to hold all order panels
         JPanel orderPanel = new JPanel();
         orderPanel.setLayout(new BoxLayout(orderPanel, BoxLayout.Y_AXIS));
 
+        // Loop through each order and create a panel for it
         for (Order order : orders) {
             JPanel orderItemPanel = createOrderPanel(order);
             orderPanel.add(orderItemPanel);
             orderPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         }
 
+        // Add a scroll pane to allow scrolling through the order list
         JScrollPane scrollPane = new JScrollPane(orderPanel);
 
+        // Add the scroll pane to the main content panel
         mainContentPanel.add(scrollPane, BorderLayout.CENTER);
 
+        // Refresh the main content panel to display the updated order history
         mainContentPanel.revalidate();
         mainContentPanel.repaint();
     }
 
+
     private JPanel createOrderPanel(Order order) {
+        // Create a new panel for an individual order with some padding
         JPanel orderPanel = new JPanel(new BorderLayout(10, 10));
         orderPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -847,6 +867,7 @@ public class CustomerGUI {
 
     // --------------------------------- User Settings ---------------------------------
 
+    // Method creates a panel that displays the user's data (username, email, phone number, address, and credit card number)
     void createUserDataPane(Map<String,String> userData){
         JPanel mainContentPanel = (JPanel) frame.getContentPane().getComponent(1);
         mainContentPanel.removeAll();
@@ -914,6 +935,7 @@ public class CustomerGUI {
         mainContentPanel.repaint();
     }
 
+    // Method creates and displays a dialog for changing the user's credit card details
     private void showChangeCreditCardDialog() {
         JDialog dialog = new JDialog(frame, "Change Credit Card", true);
         dialog.setLayout(new GridBagLayout());
@@ -970,6 +992,7 @@ public class CustomerGUI {
         gbc.anchor = GridBagConstraints.CENTER;
         JButton submitButton = new JButton("Change Credit Card");
 
+        // Handle submit button click event
         submitButton.addActionListener(e -> {
             String cardNumber = cardNumberField.getText();
             String expirationDate = expirationDateFieldMonth.getText() + "/" + expirationDateFieldYear.getText();
@@ -986,6 +1009,7 @@ public class CustomerGUI {
         dialog.setVisible(true);
     }
 
+    // Method creates and displays a dialog for changing the user's password
     private void showChangePasswordDialog() {
         JDialog dialog = new JDialog(frame, "Change Password", true);
         dialog.setLayout(new GridBagLayout());
@@ -1029,6 +1053,7 @@ public class CustomerGUI {
         gbc.anchor = GridBagConstraints.CENTER;
         JButton submitButton = new JButton("Change Password");
         submitButton.addActionListener(e -> {
+            // Handle submit button click event
             String currentPassword = new String(currentPasswordField.getPassword());
             String newPassword = new String(newPasswordField.getPassword());
             String confirmPassword = new String(confirmPasswordField.getPassword());
@@ -1047,6 +1072,7 @@ public class CustomerGUI {
         dialog.setVisible(true);
     }
 
+    // Method creates and displays a dialog for changing the user's email address
     private void showChangeEmailDialog() {
         JDialog dialog = new JDialog(frame, "Change Email", true);
         dialog.setLayout(new GridBagLayout());
@@ -1084,6 +1110,7 @@ public class CustomerGUI {
         dialog.setVisible(true);
     }
 
+    // Method creates and displays a dialog for changing the user's phone number
     private void showChangePhoneNumberDialog() {
         JDialog dialog = new JDialog(frame, "Change Phone Number", true);
         dialog.setLayout(new GridBagLayout());
@@ -1109,6 +1136,7 @@ public class CustomerGUI {
         gbc.anchor = GridBagConstraints.CENTER;
         JButton submitButton = new JButton("Change Phone Number");
         submitButton.addActionListener(e -> {
+            // Handle submit button click event
             String newPhoneNumber = newPhoneNumberField.getText();
 
             clientApp.changeParameterAsync(usernameField.getText(), new String(passwordField.getPassword()), "phoneNumber", newPhoneNumber);
@@ -1121,6 +1149,7 @@ public class CustomerGUI {
         dialog.setVisible(true);
     }
 
+    // Method creates and displays a dialog for changing the user's  address
     private void showChangeAddressDialog() {
         JDialog dialog = new JDialog(frame, "Change Address", true);
         dialog.setLayout(new GridBagLayout());
@@ -1146,6 +1175,7 @@ public class CustomerGUI {
         gbc.anchor = GridBagConstraints.CENTER;
         JButton submitButton = new JButton("Change Address");
         submitButton.addActionListener(e -> {
+            // Handles submit button click event to update the address.
             String newAddress = newAddressField.getText();
             clientApp.changeParameterAsync(usernameField.getText(), new String(passwordField.getPassword()), "address", newAddress);
             showLoading();
@@ -1158,6 +1188,7 @@ public class CustomerGUI {
         dialog.setVisible(true);
     }
 
+    // Method creates and displays a dialog for deleting user's account
     private void showDeleteAccountDialog() {
         int confirm = JOptionPane.showConfirmDialog(frame,
                 "Are you sure you want to delete your account? This action cannot be undone.",

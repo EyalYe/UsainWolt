@@ -3,13 +3,14 @@ package Server.Models;
 import Server.Utilities.GeoLocationService;
 
 public abstract class User {
-    private String userName;
-    private String hashedPassword;
-    private String address;
-    private String phoneNumber;
-    private String email;
-    private double[] location = new double[2]; // [latitude, longitude]
+    private String userName; // Username of the user
+    private String hashedPassword; // Hashed password for authentication
+    private String address; // Address of the user
+    private String phoneNumber; // Phone number of the user
+    private String email; // Email address of the user
+    private double[] location = new double[2]; // Geographic location [latitude, longitude]
 
+    // Constructor to initialize a User object with details and obtain coordinates from address
     public User(String userName, String hashedPassword, String address, String phoneNumber, String email) {
         this.userName = userName;
         this.hashedPassword = hashedPassword;
@@ -24,6 +25,7 @@ public abstract class User {
         }
     }
 
+    // Constructor to initialize a User object from a CSV line
     public User(String csvLine) {
         String[] fields = csvLine.split(",");
         this.userName = fields[1];
@@ -61,8 +63,10 @@ public abstract class User {
         this.address = address;
         GeoLocationService geoLocationService = new GeoLocationService();
         try {
+            // Update coordinates when address changes
             this.location = geoLocationService.getCoordinates(address);
         } catch (Exception e) {
+            // Handle errors in updating coordinates
             System.out.println("Error getting coordinates for address: " + address);
         }
     }
@@ -83,12 +87,14 @@ public abstract class User {
         this.email = email;
     }
 
+    // Method to check if the provided password matches the hashed password
     public boolean checkPassword(String password) {
         return hashedPassword.equals(password);
     }
 
 
     public String toString() {
+        // Return a string representation of the User object
         return userName + "," + hashedPassword + "," + address + "," + phoneNumber + "," + email + "," + location[0] + "," + location[1];
     }
 
@@ -100,6 +106,7 @@ public abstract class User {
         // Testing is not possible on abstract class. Create instances of subclasses to test.
     }
 
+    // Method to get the geographic coordinates of the user
     public double[] getCoordinates() {
         return location;
     }

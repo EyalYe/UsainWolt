@@ -13,7 +13,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * GeoLocationService provides utilities for working with geographic locations.
+ * This class includes methods for:
+ *
+ * 1. Retrieving an API key from a configuration file.
+ * 2. Validating an address using the OpenCage geocoding API.
+ * 3. Getting the latitude and longitude of an address using the OpenCage geocoding API.
+ * 4. Calculating the distance between two geographic coordinates using the Haversine formula.
+ * 5. Calculating the distance between two addresses by obtaining their coordinates first.
+ * 6. Checking if the distance between two addresses is within a specified range.
+ *
+ * The service relies on the OpenCage geocoding API and requires an API key, which should be
+ * stored in a file named ".env" in the "src/Server" directory. It uses the Gson library
+ * for JSON parsing and handles HTTP requests using HttpURLConnection.
+ */
 public class GeoLocationService {
+    // Retrieve the API key from a properties file
     public static String getApiKey() {
         Properties properties = new Properties();
         try (FileInputStream input = new FileInputStream("src/Server/.env")) {
@@ -25,19 +41,19 @@ public class GeoLocationService {
         }
     }
 
-    private static final String OPEN_CAGE_API_KEY = getApiKey();
-    private static final String OPEN_CAGE_API_URL = "https://api.opencagedata.com/geocode/v1/json?q=%s&key=%s";
-    private final Gson gson = CustomDateAdapter.gsonCreator();
+    private static final String OPEN_CAGE_API_KEY = getApiKey(); // API key for OpenCage geocoding service
+    private static final String OPEN_CAGE_API_URL = "https://api.opencagedata.com/geocode/v1/json?q=%s&key=%s"; // URL template for the API
+    private final Gson gson = CustomDateAdapter.gsonCreator(); // Gson instance for JSON parsing
 
     // Validate the address using OpenCage API
     public boolean validateAddress(String address) throws IOException {
         String url = String.format(OPEN_CAGE_API_URL, address.replace(" ", "%20"), OPEN_CAGE_API_KEY);
-        String response = sendGetRequest(url);
-        Map<String, Object> result = gson.fromJson(response, Map.class);
+        String response = sendGetRequest(url); // Send GET request to the API
+        Map<String, Object> result = gson.fromJson(response, Map.class); // Parse response JSON into a map
 
         if (result != null && result.containsKey("results")) {
             List<?> results = (List<?>) result.get("results");
-            return results != null && !results.isEmpty();
+            return results != null && !results.isEmpty(); // Check if results are present
         }
         return false;
     }
@@ -64,15 +80,16 @@ public class GeoLocationService {
     public double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         final int EARTH_RADIUS = 6371; // Radius of Earth in kilometers
 
-        double dLat = Math.toRadians(lat2 - lat1);
+        double dLat = Math.toRadians(lat2 - lat1); // Difference in latitude
         double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return EARTH_RADIUS * c;
+        return EARTH_RADIUS * c; // Return distance in kilometers
     }
 
+    // Calculate the distance between two addresses
     public double calculateDistance(String address1, String address2) {
         try {
             double[] coordinates1 = getCoordinates(address1);
@@ -87,7 +104,7 @@ public class GeoLocationService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return -1;
+        return -1; // Return -1 if distance cannot be calculated
     }
 
     // Send a GET request using HttpURLConnection
@@ -111,6 +128,7 @@ public class GeoLocationService {
         }
     }
 
+    // Check if the distance between two addresses is less than or equal to a specified distance
     public static boolean checkSmallDistance(String address1, String address2, double distance) {
         GeoLocationService geoLocationService = new GeoLocationService();
         try {
@@ -122,12 +140,13 @@ public class GeoLocationService {
                 double lat2 = coordinates2[0];
                 double lon2 = coordinates2[1];
                 double calculatedDistance = geoLocationService.calculateDistance(lat1, lon1, lat2, lon2);
+                // Check if calculated distance is within the specified distance
                 return calculatedDistance <= distance;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Print error if unable to get coordinates
         }
-        return false;
+        return false; // Return false if distance check fails
     }
 
     public static void main(String[] args) {

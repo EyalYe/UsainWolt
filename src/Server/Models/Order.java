@@ -8,21 +8,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Order {
-    private int orderId;
-    private Date orderDate;
-    private List<Item> items;
-    private double totalPrice;
-    private String customerName;
-    private String restaurantName;
-    private String status; // e.g., "Pending", "In Progress", "Delivered"
-    private String customerNote;
-    private String address;
-    private String restaurantAddress;
-    private String deliveryPerson;
-    private double distance;
-    private double[] location = new double[2]; // [latitude, longitude]
+    private int orderId; // Unique identifier for the order
+    private Date orderDate; // Date when the order was placed
+    private List<Item> items; // List of items in the order
+    private double totalPrice; // Total price of the order
+    private String customerName; // Name of the customer who placed the order
+    private String restaurantName; // Name of the restaurant fulfilling the order
+    private String status; // Current status of the order (e.g., "Pending", "In Progress", "Delivered")
+    private String customerNote; // Additional note from the customer
+    private String address; // Delivery address
+    private String restaurantAddress; // Address of the restaurant
+    private String deliveryPerson; // Name of the delivery person (if assigned)
+    private double distance; // Distance between restaurant and delivery address
+    private double[] location = new double[2]; // Geographical location [latitude, longitude]
 
-    // Constructor
+    // Constructor for creating an order with all details
     public Order(int orderId, Date orderDate, List<Item> items, String customerName, String restaurantName, String status, String customerNote, String address, String restaurantAddress) {
         this.orderId = orderId;
         this.orderDate = orderDate;
@@ -44,7 +44,7 @@ public class Order {
     }
 
 
-    // Constructor from string
+    // Constructor for creating an order from a string representation
     public Order(String orderString) {
         String[] parts = orderString.split(",");
         this.orderId = Integer.parseInt(parts[0]);
@@ -57,6 +57,7 @@ public class Order {
         this.deliveryPerson = parts[7];
         this.items = new ArrayList<>();
 
+        // Parse items from the string and add to the list
         for (int i = 8; i < parts.length; i++) {
             this.items.add(new Item(parts[i]));
         }
@@ -64,6 +65,7 @@ public class Order {
         this.totalPrice = calculateTotalPrice();
     }
 
+    // Constructor with only orderId
     public Order(int orderId){
         this.orderId = orderId;
     }
@@ -167,7 +169,7 @@ public class Order {
         return location;
     }
 
-    // Inner class to represent an item with its properties
+    // Inner class to represent an item within an order
     public static class Item {
         private String name;
         private double price;
@@ -176,7 +178,7 @@ public class Order {
         private String description;
         private int quantity;
 
-        // Constructor
+        // Constructor for an item with basic details
         public Item(String name, double price) {
             this.name = name;
             this.price = price;
@@ -184,7 +186,7 @@ public class Order {
             this.photoUrl = null;
         }
 
-        // Constructor with all fields
+        // Constructor with all item fields
         public Item(String name, double price, String photoUrl, String description, boolean available) {
             this.name = name;
             this.price = price;
@@ -193,7 +195,7 @@ public class Order {
             this.available = available;
         }
 
-        // Constructor from string
+        // Constructor for creating an item from a string representation
         public Item(String itemString) {
             String[] parts = itemString.split(";");
             this.name = parts[0];
@@ -252,7 +254,9 @@ public class Order {
         }
     }
 
-    // Additional methods
+    // Additional methods for managing the order
+
+    // Adds a new item to the order and updates the total price
     public void addItem(String itemName, double price) {
         if (itemName == null || itemName.isEmpty()) {
             throw new IllegalArgumentException("Item name cannot be null or empty");
@@ -262,6 +266,7 @@ public class Order {
         totalPrice += price;
     }
 
+    // Removes an item from the order by name and updates the total price
     public void removeItem(String itemName) {
         Item itemToRemove = null;
         for (Item item : items) {
@@ -276,6 +281,7 @@ public class Order {
         }
     }
 
+    // Prints the order details to the console
     public void printOrder() {
         System.out.println("Order ID: " + orderId);
         System.out.println("Order Date: " + orderDate);
@@ -287,22 +293,26 @@ public class Order {
         System.out.println("Customer Note: " + customerNote);
     }
 
+    // Searches for items in the order based on a keyword
     public List<Item> searchItems(String keyword) {
         return items.stream()
                 .filter(item -> item.getName().contains(keyword))
                 .collect(Collectors.toList());
     }
 
+    // Sorts the items in the order by their name
     public void sortItems() {
         items.sort((item1, item2) -> item1.getName().compareTo(item2.getName()));
     }
 
+    // Calculates the total price of the order based on item prices
     private double calculateTotalPrice() {
         return items.stream().mapToDouble(Item::getPrice).sum();
     }
 
     @Override
     public String toString() {
+        // Return a string representation of the order
         StringBuilder sb = new StringBuilder();
         sb.append(orderId).append(",")
                 .append(orderDate.getTime()).append(",")

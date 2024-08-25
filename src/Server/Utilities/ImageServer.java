@@ -34,11 +34,9 @@ public class ImageServer {
             String requestPath = exchange.getRequestURI().getPath();
             System.out.println("Requested path: " + requestPath);
 
-
             // Set the base directory for images
             File file = new File("." + requestPath);
             System.out.println("File path resolved to: " + file.getAbsolutePath());
-
 
             // Check if the requested file exists and is a file
             if (file.exists() && file.isFile() && isImage(file.getAbsolutePath())) {

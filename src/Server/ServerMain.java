@@ -15,6 +15,11 @@ import java.util.concurrent.Executors;
 
 import static Server.App.ServerApp.*;
 
+/**
+ * ServerMain is the entry point for the server application.
+ * It initializes and starts the server, sets up necessary directories,
+ * handles incoming client connections, and runs an image server.
+ */
 public class ServerMain {
     public static String SERVER_IP = "localhost";
     public static final int SERVER_PORT = 12345;
@@ -23,6 +28,11 @@ public class ServerMain {
     public static final boolean RUNNING_ON_SERVER = false;
     public static final String IMAGE_URL = RUNNING_ON_SERVER ? "images.usainwolt.xyz" : SERVER_IP + ":" +   IMAGE_SERVER_PORT;
 
+    /**
+     * The main method starts the server application.
+     * It sets up the server IP, starts the image server, initializes directories,
+     * loads data from JSON files, and begins listening for client connections.
+     */
     public static void main(String[] args) {
         // Get the local IP address of the server
         if (RUNNING_ON_SERVER)
@@ -47,18 +57,20 @@ public class ServerMain {
                 }
             }
 
+            // Load users and menus data from JSON files
             loadUsersFromJSON();
             loadMenusFromJSON();
 
 
-            // Set up server socket
+            // Set up server socket to listen for incoming client connections
             ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
             System.out.println("Server is listening on port " + SERVER_PORT);
 
+            // Initialize a thread pool for handling client connections
             ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
 
-            // Server loop to handle clients
+            // Main server loop to handle incoming client connections
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected");
@@ -74,6 +86,12 @@ public class ServerMain {
         }
     }
 
+    /**
+     * Retrieves the local IP address of the server.
+     * It filters out loopback, down, and virtual interfaces, and returns an IPv4 address in the private range.
+     *
+     * return A string representing the local IP address, or "127.0.0.1" if none is found.
+     */
     public static String getLocalIpAddress() {
         try {
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
