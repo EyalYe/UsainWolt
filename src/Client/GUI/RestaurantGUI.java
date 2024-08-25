@@ -207,6 +207,14 @@ public class RestaurantGUI {
         gbc.gridx = 1;
         userDataPanel.add(new JLabel("$" + userData.get("revenue")), gbc);
 
+        // Add cuisine
+        gbc.gridx = 0;
+        gbc.gridy = 7;
+        userDataPanel.add(new JLabel("Cuisine:"), gbc);
+
+        gbc.gridx = 1;
+        userDataPanel.add(new JLabel((String) userData.get("cuisine")), gbc);
+
 
         // Add the user data panel to the main content panel
         JPanel infoPanel = new JPanel();

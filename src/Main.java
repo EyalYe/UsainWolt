@@ -26,15 +26,15 @@ public class Main {
             int finalI = i;
             Thread thread = new Thread(() -> {
                 System.out.println("Thread " + Thread.currentThread().getName() + " running restaurant user " + finalI);
-                UsainWoltMain.skipLogin("restaurant" + (new Random().nextInt(25) + 1), "password", "restaurant");
+                UsainWoltMain.skipLogin("restaurant" + (finalI + 1), "password", "restaurant");
             });
             thread.start();
         }
         for (int i = 0; i < CUSTOMERS_INSTANCES; i++) {
-            int finalI1 = i;
+            int finalI = i;
             Thread thread = new Thread(() -> {
-                System.out.println("Thread " + Thread.currentThread().getName() + " running customer user " + finalI1);
-                UsainWoltMain.skipLogin("customer" + (new Random().nextInt(25) + 1), "password", "customer");
+                System.out.println("Thread " + Thread.currentThread().getName() + " running customer user " + finalI);
+                UsainWoltMain.skipLogin("customer" +( finalI +1) , "password", "customer");
             });
             thread.start();
         }
@@ -42,7 +42,7 @@ public class Main {
             int finalI = i;
             Thread thread = new Thread(() -> {
                 System.out.println("Thread " + Thread.currentThread().getName() + " running delivery user " + finalI);
-                UsainWoltMain.skipLogin("delivery" + (new Random().nextInt(4) + 1), "password", "delivery");
+                UsainWoltMain.skipLogin("delivery" + (finalI + 1), "password", "delivery");
             });
             thread.start();
         }

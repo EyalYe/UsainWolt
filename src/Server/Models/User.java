@@ -59,7 +59,7 @@ public abstract class User {
         return address;
     }
 
-    public void setAddress(String address) {
+    public void setAddress(String address) throws RuntimeException {
         this.address = address;
         GeoLocationService geoLocationService = new GeoLocationService();
         try {
@@ -67,7 +67,7 @@ public abstract class User {
             this.location = geoLocationService.getCoordinates(address);
         } catch (Exception e) {
             // Handle errors in updating coordinates
-            System.out.println("Error getting coordinates for address: " + address);
+            throw new RuntimeException("Error getting coordinates for address: " + address);
         }
     }
 

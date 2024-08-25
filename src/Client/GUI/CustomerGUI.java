@@ -458,12 +458,23 @@ public class CustomerGUI {
         infoPanel.add(descriptionIconLabel, gbc);
 
         gbc.gridx = 1;
-        JLabel descriptionLabel = new JLabel((String) menuItem.get("description"));
-        descriptionLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        infoPanel.add(descriptionLabel, gbc);
+
+        // Replace JLabel with JTextArea for text wrapping
+        JTextArea descriptionTextArea = new JTextArea((String) menuItem.get("description"));
+        descriptionTextArea.setFont(new Font("Arial", Font.PLAIN, 16));
+        descriptionTextArea.setLineWrap(true); // Enable line wrapping
+        descriptionTextArea.setWrapStyleWord(true); // Wrap by word boundaries
+        descriptionTextArea.setOpaque(false); // Make the background transparent (like JLabel)
+        descriptionTextArea.setEditable(false); // Disable editing
+        descriptionTextArea.setFocusable(false); // Disable focus
+        descriptionTextArea.setBorder(null); // Remove border for cleaner look
+        descriptionTextArea.setSize(200, 100); // Set preferred size
+
+        infoPanel.add(descriptionTextArea, gbc);
 
         // Add the infoPanel to the menuItemPanel center
         menuItemPanel.add(infoPanel, BorderLayout.CENTER);
+
 
         // Quantity Counter on the Right
         JPanel counterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -496,6 +507,7 @@ public class CustomerGUI {
         counterPanel.add(plusButton);
 
         menuItemPanel.add(counterPanel, BorderLayout.EAST);
+
 
         return menuItemPanel;
     }
