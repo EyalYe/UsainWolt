@@ -15,6 +15,7 @@ The system is designed to be scalable, secure, and user-friendly, with features 
 6. Interact with the system using the GUI.
 
 ***List of users is found in the `users.csv` file, with username, password, and role.***
+*** User Manual is found in the `UsainWoltUserManual.pdf` file.***
 
 ## Troubleshooting
 ### Dependencies:
