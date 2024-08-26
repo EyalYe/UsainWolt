@@ -1,3 +1,4 @@
+// Group: 6
 package Server.Models;
 
 public class DeliveryUser extends User {

@@ -1,725 +1,914 @@
-### UsainWolt API Documentation
+## API Documentation for `ClientHandler` Server
 
-This API allows clients to interact with the UsainWolt server to manage users, restaurants, orders, and delivery functionalities. The API supports customer, restaurant, and delivery signups, order placements, menu updates, and image handling. All communication is done through JSON over a socket connection.
+This documentation outlines the API endpoints provided by the `ClientHandler` class. Each endpoint is accessed via a JSON-formatted request, and the response is returned in JSON format as well.
+
+### Table of Contents
+
+1. [Login](#login)
+2. [Sign Up](#sign-up)
+  - Customer
+  - Restaurant
+  - Delivery
+3. [Get Restaurants](#get-restaurants)
+4. [Get Menu](#get-menu)
+5. [Place Order](#place-order)
+6. [Update Menu](#update-menu)
+7. [Update Credit Card](#update-credit-card)
+8. [Get Orders History](#get-orders-history)
+9. [Mark Order Ready For Pickup](#mark-order-ready-for-pickup)
+10. [Disable Menu Item](#disable-menu-item)
+11. [Enable Menu Item](#enable-menu-item)
+12. [Get Current Orders](#get-current-orders)
+13. [Disconnect](#disconnect)
+14. [Upload Profile Picture](#upload-profile-picture)
+15. [Get Image](#get-image)
+16. [Change Password](#change-password)
+17. [Change Email](#change-email)
+18. [Delete Account](#delete-account)
+19. [Get Delivery Orders](#get-delivery-orders)
+20. [Pickup Order](#pickup-order)
+21. [Check If On Delivery](#check-if-on-delivery)
+22. [Mark Order Delivered](#mark-order-delivered)
+23. [Get User Data](#get-user-data)
+24. [Get Income Data](#get-income-data)
+25. [Change Parameter](#change-parameter)
+26. [Get Available Cuisines](#get-available-cuisines)
 
 ---
 
-### General Request and Response Format
+### 1. **Login**
+
+**Request Type:** `login`
+
+**Description:** Authenticates a user based on username and password.
 
 **Request:**
-- All requests are sent as JSON objects.
-- Each request must include a `type` field that indicates the type of action being requested.
+
+```json
+{
+  "type": "login",
+  "username": "example_user",
+  "password": "example_password"
+}
+```
 
 **Response:**
-- Responses are JSON objects.
-- Each response will include a `success` field (`true` or `false`) and a `message` field containing additional details or error information.
-- Some responses may include additional fields based on the request.
+
+```json
+{
+  "success": true,
+  "message": "Logged in as customer"
+}
+```
+
+**Use Cases:**
+
+- Log in as a customer, restaurant, or delivery user.
 
 ---
 
-### API Endpoints
+### 2. **Sign Up**
 
-#### 1. **Login**
-- **Type**: `login`
-- **Description**: Authenticates a user with their username and password.
-- **Request**:
-  ```json
-  {
-    "type": "login",
-    "username": "user_name",
-    "password": "user_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Logged in as <role>"
-  }
-  ```
+**Request Type:** `signupCustomer`, `signupRestaurant`, `signupDelivery`
 
----
+**Description:** Registers a new user in the system.
 
-#### 2. **Signup Customer**
-- **Type**: `signupCustomer`
-- **Description**: Registers a new customer.
-- **Request**:
-  ```json
-  {
-    "type": "signupCustomer",
-    "username": "user_name",
-    "password": "user_password",
-    "email": "customer_email",
-    "address": "customer_address",
-    "phoneNumber": "customer_phone_number"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Customer signup successful"
-  }
-  ```
+**Request:**
 
----
+*For Customer:*
+```json
+{
+  "type": "signupCustomer",
+  "username": "customer1",
+  "email": "customer1@example.com",
+  "address": "123 Main St",
+  "phoneNumber": "1234567890",
+  "password": "securepassword"
+}
+```
 
-#### 3. **Signup Restaurant**
-- **Type**: `signupRestaurant`
-- **Description**: Registers a new restaurant.
-- **Request**:
-  ```json
-  {
-    "type": "signupRestaurant",
-    "username": "restaurant_name",
-    "password": "restaurant_password",
-    "email": "restaurant_email",
-    "address": "restaurant_address",
-    "phoneNumber": "restaurant_phone_number",
-    "businessPhoneNumber": "business_phone_number",
-    "cuisine": "cuisine_type"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Restaurant signup successful"
-  }
-  ```
+*For Restaurant:*
+```json
+{
+  "type": "signupRestaurant",
+  "username": "restaurant1",
+  "email": "restaurant1@example.com",
+  "address": "456 Elm St",
+  "phoneNumber": "0987654321",
+  "password": "securepassword",
+  "businessPhoneNumber": "1231231234",
+  "cuisine": "Italian"
+}
+```
+
+*For Delivery:*
+```json
+{
+  "type": "signupDelivery",
+  "username": "delivery1",
+  "email": "delivery1@example.com",
+  "address": "789 Oak St",
+  "phoneNumber": "4567891234",
+  "password": "securepassword",
+  "token": "validToken"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Customer signup successful"
+}
+```
+
+**Use Cases:**
+
+- Sign up as a customer, restaurant, or delivery user.
+- Validation of input data such as email, phone number, address, and password length.
 
 ---
 
-#### 4. **Signup Delivery**
-- **Type**: `signupDelivery`
-- **Description**: Registers a new delivery person.
-- **Request**:
-  ```json
-  {
-    "type": "signupDelivery",
-    "username": "delivery_username",
-    "password": "delivery_password",
-    "email": "delivery_email",
-    "address": "delivery_address",
-    "phoneNumber": "delivery_phone_number",
-    "token": "authorization_token"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Delivery signup successful"
-  }
-  ```
+### 3. **Get Restaurants**
+
+**Request Type:** `getRestaurants`
+
+**Description:** Retrieves a list of restaurants within a specified distance and optionally filters by cuisine.
+
+**Request:**
+
+```json
+{
+  "type": "getRestaurants",
+  "username": "customer1",
+  "password": "securepassword",
+  "distance": "10",
+  "cuisine": "Italian",
+  "sendHome": "true"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "[{...restaurant details...}]"
+}
+```
+
+**Use Cases:**
+
+- Retrieve nearby restaurants based on distance.
+- Filter restaurants by specific cuisine.
 
 ---
 
-#### 5. **Get Restaurants**
-- **Type**: `getRestaurants`
-- **Description**: Retrieves a list of restaurants filtered by distance and cuisine.
-- **Request**:
-  ```json
-  {
-    "type": "getRestaurants",
-    "username": "customer_username",
-    "password": "customer_password",
-    "distance": "max_distance_in_km",
-    "cuisine": "optional_cuisine_filter"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": [
-      {
-        "restaurantName": "restaurant_name",
-        "address": "restaurant_address",
-        "distance": "distance_in_km",
-        "cuisine": "cuisine_type",
-        "profilePictureUrl": "URL_or_null"
-      }
-    ]
-  }
-  ```
+### 4. **Get Menu**
+
+**Request Type:** `getMenu`
+
+**Description:** Retrieves the menu of a specified restaurant.
+
+**Request:**
+
+```json
+{
+  "type": "getMenu",
+  "restaurantName": "restaurant1"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "[{...menu items...}]"
+}
+```
+
+**Use Cases:**
+
+- View the menu of a specific restaurant.
 
 ---
 
-#### 6. **Get Menu**
-- **Type**: `getMenu`
-- **Description**: Retrieves the menu for a specific restaurant.
-- **Request**:
-  ```json
-  {
-    "type": "getMenu",
-    "restaurantName": "restaurant_name"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": [
-      {
-        "name": "menu_item_name",
-        "description": "menu_item_description",
-        "price": "menu_item_price",
-        "available": "true_or_false",
-        "photoUrl": "URL_or_null"
-      }
-    ]
-  }
-  ```
+### 5. **Place Order**
+
+**Request Type:** `placeOrder`
+
+**Description:** Places a new order for a customer.
+
+**Request:**
+
+```json
+{
+  "type": "placeOrder",
+  "username": "customer1",
+  "password": "securepassword",
+  "restaurantName": "restaurant1",
+  "items": "[{...item details...}]",
+  "customerNote": "Please add extra napkins.",
+  "sendHome": "true",
+  "useSavedCard": "true"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Order placed successfully with ID: 123"
+}
+```
+
+**Use Cases:**
+
+- Place an order for delivery to the customer's home or a specified address.
+- Use a saved credit card or provide new payment details.
 
 ---
 
-#### 7. **Place Order**
-- **Type**: `placeOrder`
-- **Description**: Places a new order for a customer.
-- **Request**:
-  ```json
-  {
-    "type": "placeOrder",
-    "username": "customer_username",
-    "password": "customer_password",
-    "restaurantName": "restaurant_name",
-    "items": [
-      {
-        "name": "item_name",
-        "price": "item_price",
-        "quantity": "item_quantity"
-      }
-    ],
-    "customerNote": "optional_note",
-    "sendHome": "true_or_false",
-    "useSavedCard": "true_or_false",  
-    "creditCardNumber": "card_number_if_not_saved",
-    "expirationDate": "MM/YY",
-    "cvv": "cvv_code"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Order placed successfully with ID: order_id"
-  }
-  ```
+### 6. **Update Menu**
+
+**Request Type:** `updateMenu`
+
+**Description:** Adds, updates, or removes a menu item for a restaurant.
+
+**Request:**
+
+*Add/Update:*
+```json
+{
+  "type": "updateMenu",
+  "username": "restaurant1",
+  "password": "securepassword",
+  "itemName": "Pizza Margherita",
+  "price": "9.99",
+  "description": "Classic Italian pizza",
+  "image": "base64EncodedImageString",
+  "isAvailable": "true"
+}
+```
+
+*Remove:*
+```json
+{
+  "type": "updateMenu",
+  "username": "restaurant1",
+  "password": "securepassword",
+  "itemName": "Pizza Margherita",
+  "action": "remove"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Menu item added/updated successfully"
+}
+```
+
+**Use Cases:**
+
+- Add or update a menu item, including uploading an image.
+- Remove an existing menu item.
 
 ---
 
-#### 8. **Update Menu**
-- **Type**: `updateMenu`
-- **Description**: Updates or adds a menu item for a restaurant.
-- **Request**:
-  ```json
-  {
-    "type": "updateMenu",
-    "username": "restaurant_username",
-    "password": "restaurant_password",
-    "restaurantName": "restaurant_name",
-    "itemName": "item_name",
-    "price": "item_price",
-    "description": "item_description",
-    "isAvailable": "true_or_false"
-  }
-  ```
-  - **Image**: Optional; can be sent as a binary stream after the request.
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Menu item added/updated successfully"
-  }
-  ```
+### 7. **Update Credit Card**
+
+**Request Type:** `updateCreditCard`
+
+**Description:** Updates the credit card information for a customer.
+
+**Request:**
+
+```json
+{
+  "type": "updateCreditCard",
+  "username": "customer1",
+  "password": "securepassword",
+  "creditCardNumber": "4111111111111111",
+  "expirationDate": "12/25",
+  "cvv": "123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Credit card updated successfully"
+}
+```
+
+**Use Cases:**
+
+- Update a customer's saved credit card information.
 
 ---
 
-#### 9. **Update Credit Card**
-- **Type**: `updateCreditCard`
-- **Description**: Updates the customer's credit card information.
-- **Request**:
-  ```json
-  {
-    "type": "updateCreditCard",
-    "username": "customer_username",
-    "password": "customer_password",
-    "creditCardNumber": "card_number",
-    "expirationDate": "MM/YY",
-    "cvv": "cvv_code"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Credit card updated successfully"
-  }
-  ```
+### 8. **Get Orders History**
+
+**Request Type:** `getOrdersHistory`
+
+**Description:** Retrieves the order history for a user.
+
+**Request:**
+
+```json
+{
+  "type": "getOrdersHistory",
+  "username": "customer1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "[{...order history details...}]"
+}
+```
+
+**Use Cases:**
+
+- View past orders for customers, restaurants, or delivery users.
 
 ---
 
-#### 10. **Get Orders History**
-- **Type**: `getOrdersHistory`
-- **Description**: Retrieves the order history for a customer, restaurant, or delivery person.
-- **Request**:
-  ```json
-  {
-    "type": "getOrdersHistory",
-    "username": "user_name",
-    "password": "user_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": [
-      {
-        "orderId": "order_id",
-        "orderDate": "order_date",
-        "items": [
-          {
-            "name": "item_name",
-            "quantity": "item_quantity",
-            "price": "item_price"
-          }
-        ],
-        "status": "order_status",
-        "customerNote": "optional_note"
-      }
-    ]
-  }
-  ```
+### 9. **Mark Order Ready For Pickup**
+
+**Request Type:** `markOrderReadyForPickup`
+
+**Description:** Marks an order as ready for pickup by a delivery user.
+
+**Request:**
+
+```json
+{
+  "type": "markOrderReadyForPickup",
+  "username": "restaurant1",
+  "password": "securepassword",
+  "order": "{...order details...}"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Order status updated successfully"
+}
+```
+
+**Use Cases:**
+
+- Update the status of an order to "Ready For Pickup."
 
 ---
 
-#### 11. **Mark Order Ready for Pickup**
-- **Type**: `markOrderReadyForPickup`
-- **Description**: Marks an order as ready for pickup by the delivery person.
-- **Request**:
-  ```json
-  {
-    "type": "markOrderReadyForPickup",
-    "username": "restaurant_username",
-    "password": "restaurant_password",
-    "order": {
-      "orderId": "order_id"
-    }
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Order marked as ready for pickup"
-  }
-  ```
+### 10. **Disable Menu Item**
+
+**Request Type:** `disableMenuItem`
+
+**Description:** Disables a menu item for a restaurant.
+
+**Request:**
+
+```json
+{
+  "type": "disableMenuItem",
+  "username": "restaurant1",
+  "password": "securepassword",
+  "menuItemName": "Pizza Margherita"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Menu items disabled"
+}
+```
+
+**Use Cases:**
+
+- Temporarily disable a menu item from being ordered.
 
 ---
 
-#### 12. **Disable Menu Item**
-- **Type**: `disableMenuItem`
-- **Description**: Disables a menu item in the restaurant's menu.
-- **Request**:
-  ```json
-  {
-    "type": "disableMenuItem",
-    "username": "restaurant_username",
-    "password": "restaurant_password",
-    "menuItemName": "item_name"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Menu item disabled"
-  }
-  ```
+### 11. **Enable Menu Item**
+
+**Request Type:** `enableMenuItem`
+
+**Description:** Enables a previously disabled menu item.
+
+**Request:**
+
+```json
+{
+  "type": "enableMenuItem",
+  "username": "restaurant1",
+  "password": "securepassword",
+  "menuItemName": "Pizza Margherita"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message":
+
+ "Menu items enabled"
+}
+```
+
+**Use Cases:**
+
+- Make a previously disabled menu item available again.
 
 ---
 
-#### 13. **Enable Menu Item**
-- **Type**: `enableMenuItem`
-- **Description**: Enables a previously disabled menu item.
-- **Request**:
-  ```json
-  {
-    "type": "enableMenuItem",
-    "username": "restaurant_username",
-    "password": "restaurant_password",
-    "menuItemName": "item_name"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Menu item enabled"
-  }
+### 12. **Get Current Orders**
 
+**Request Type:** `getCurrentOrders`
 
-  ```
+**Description:** Retrieves the current orders for a restaurant.
 
----
+**Request:**
 
-#### 14. **Get Current Orders**
-- **Type**: `getCurrentOrders`
-- **Description**: Retrieves the current active orders for a restaurant.
-- **Request**:
-  ```json
-  {
-    "type": "getCurrentOrders",
-    "username": "restaurant_username",
-    "password": "restaurant_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": [
-      {
-        "orderId": "order_id",
-        "items": [
-          {
-            "name": "item_name",
-            "quantity": "item_quantity"
-          }
-        ],
-        "status": "order_status"
-      }
-    ]
-  }
-  ```
+```json
+{
+  "type": "getCurrentOrders",
+  "username": "restaurant1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "[{...order details...}]"
+}
+```
+
+**Use Cases:**
+
+- View all orders that are currently active for a restaurant.
 
 ---
 
-#### 15. **Get Available Cuisines**
-- **Type**: `getAvailableCuisines`
-- **Description**: Retrieves the list of available cuisines.
-- **Request**:
-  ```json
-  {
-    "type": "getAvailableCuisines"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": ["American", "Chinese", "Italian", "Mexican"]
-  }
-  ```
+### 13. **Disconnect**
+
+**Request Type:** `disconnect`
+
+**Description:** Disconnects a user from the server.
+
+**Request:**
+
+```json
+{
+  "type": "disconnect",
+  "username": "restaurant1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Disconnected successfully"
+}
+```
+
+**Use Cases:**
+
+- Log out a restaurant or delivery user from the system.
 
 ---
 
-#### 16. **Change Password**
-- **Type**: `changePassword`
-- **Description**: Changes the password for a user.
-- **Request**:
-  ```json
-  {
-    "type": "changePassword",
-    "username": "user_name",
-    "oldPassword": "old_password",
-    "newPassword": "new_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Password changed successfully"
-  }
-  ```
+### 14. **Upload Profile Picture**
+
+**Request Type:** `uploadProfilePicture`
+
+**Description:** Uploads a profile picture for a restaurant user.
+
+**Request:**
+
+```json
+{
+  "type": "uploadProfilePicture",
+  "username": "restaurant1",
+  "password": "securepassword",
+  "profilePicture": "base64EncodedImageString"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Profile picture uploaded successfully"
+}
+```
+
+**Use Cases:**
+
+- Upload or update a restaurant's profile picture.
 
 ---
 
-#### 17. **Change Email**
-- **Type**: `changeEmail`
-- **Description**: Changes the email address for a user.
-- **Request**:
-  ```json
-  {
-    "type": "changeEmail",
-    "username": "user_name",
-    "password": "user_password",
-    "newEmail": "new_email_address"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Email changed successfully"
-  }
-  ```
+### 15. **Get Image**
+
+**Request Type:** `getImage`
+
+**Description:** Retrieves an image file from the server.
+
+**Request:**
+
+```json
+{
+  "type": "getImage",
+  "imagePath": "profile_pictures/restaurant1.jpg"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Image retrieved successfully",
+  "imageData": "base64EncodedImageString"
+}
+```
+
+**Use Cases:**
+
+- Retrieve a profile picture or menu item image.
 
 ---
 
-#### 18. **Disconnect**
-- **Type**: `disconnect`
-- **Description**: Disconnects a user from the server.
-- **Request**:
-  ```json
-  {
-    "type": "disconnect",
-    "username": "user_name",
-    "password": "user_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Disconnected successfully"
-  }
-  ```
+### 16. **Change Password**
+
+**Request Type:** `changePassword`
+
+**Description:** Changes the password of a user.
+
+**Request:**
+
+```json
+{
+  "type": "changePassword",
+  "username": "customer1",
+  "oldPassword": "oldpassword",
+  "newPassword": "newpassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Password changed successfully"
+}
+```
+
+**Use Cases:**
+
+- Change the password for any user (customer, restaurant, delivery).
 
 ---
 
-#### 19. **Upload Profile Picture**
-- **Type**: `uploadProfilePicture`
-- **Description**: Uploads a profile picture for a user.
-- **Request**:
-  ```json
-  {
-    "type": "uploadProfilePicture",
-    "username": "user_name",
-    "password": "user_password",
-    "profilePicture": "<base64_encoded_image>"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Profile picture uploaded successfully"
-  }
-  ```
+### 17. **Change Email**
+
+**Request Type:** `changeEmail`
+
+**Description:** Changes the email address of a user.
+
+**Request:**
+
+```json
+{
+  "type": "changeEmail",
+  "username": "customer1",
+  "password": "securepassword",
+  "newEmail": "newemail@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Email changed successfully"
+}
+```
+
+**Use Cases:**
+
+- Update the email address for any user.
 
 ---
 
-#### 20. **Get Image**
-- **Type**: `getImage`
-- **Description**: Retrieves an image from the server.
-- **Request**:
-  ```json
-  {
-    "type": "getImage",
-    "imagePath": "path_to_image"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Image retrieved successfully",
-    "imageData": "<base64_encoded_image>"
-  }
-  ```
+### 18. **Delete Account**
+
+**Request Type:** `deleteAccount`
+
+**Description:** Deletes a user's account from the system.
+
+**Request:**
+
+```json
+{
+  "type": "deleteAccount",
+  "username": "customer1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Account deleted successfully"
+}
+```
+
+**Use Cases:**
+
+- Remove a customer, restaurant, or delivery account.
 
 ---
 
-#### 21. **Change Parameter**
-- **Type**: `changeParameter`
-- **Description**: Updates a specific parameter (e.g., address, phone number, etc.) for the user.
-- **Request**:
-  ```json
-  {
-    "type": "changeParameter",
-    "username": "user_name",
-    "password": "user_password",
-    "parameter": "parameter_name",
-    "newValue": "new_value"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Parameter updated successfully"
-  }
-  ```
+### 19. **Get Delivery Orders**
+
+**Request Type:** `getDeliveryOrders`
+
+**Description:** Retrieves orders available for delivery within a specified distance.
+
+**Request:**
+
+```json
+{
+  "type": "getDeliveryOrders",
+  "username": "delivery1",
+  "password": "securepassword",
+  "address": "789 Oak St",
+  "distance": "10"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "[{...order details...}]"
+}
+```
+
+**Use Cases:**
+
+- View delivery orders based on the distance from the delivery user's current location.
 
 ---
 
-#### 22. **Delete Account**
-- **Type**: `deleteAccount`
-- **Description**: Deletes a user's account.
-- **Request**:
-  ```json
-  {
-    "type": "deleteAccount",
-    "username": "user_name",
-    "password": "user_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Account deleted successfully"
-  }
-  ```
+### 20. **Pickup Order**
+
+**Request Type:** `pickupOrder`
+
+**Description:** Marks an order as picked up by a delivery user.
+
+**Request:**
+
+```json
+{
+  "type": "pickupOrder",
+  "username": "delivery1",
+  "password": "securepassword",
+  "orderId": "123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Order picked up successfully for delivery to 123 Main St"
+}
+```
+
+**Use Cases:**
+
+- Update the status of an order to "Picked Up" for delivery.
 
 ---
 
-#### 23. **Get Delivery Orders**
-- **Type**: `getDeliveryOrders`
-- **Description**: Retrieves available delivery orders for a delivery person within a certain distance.
-- **Request**:
-  ```json
-  {
-    "type": "getDeliveryOrders",
-    "username": "delivery_username",
-    "password": "delivery_password",
-    "address": "current_location",
-    "distance": "max_distance_in_km"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": [
-      {
-        "orderId": "order_id",
-        "customerName": "customer_name",
-        "items": [
-          {
-            "name": "item_name",
-            "quantity": "item_quantity"
-          }
-        ],
-        "status": "order_status"
-      }
-    ]
-  }
-  ```
+### 21. **Check If On Delivery**
+
+**Request Type:** `checkIfOnDelivery`
+
+**Description:** Checks if a delivery user is currently on a delivery.
+
+**Request:**
+
+```json
+{
+  "type": "checkIfOnDelivery",
+  "username": "delivery1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "You are on a delivery to 123 Main St"
+}
+```
+
+**Use Cases:**
+
+- Verify if the delivery user is on an active delivery.
 
 ---
 
-#### 24. **Pickup Order**
-- **Type**: `pickupOrder`
-- **Description**: Marks an order as picked up by the delivery person.
-- **Request**:
-  ```json
-  {
-    "type": "pickupOrder",
-    "username": "delivery_username",
-    "password": "delivery_password",
-    "orderId": "order_id"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Order picked up successfully"
-  }
-  ```
+### 22. **Mark Order Delivered**
+
+**Request Type:** `markOrderDelivered`
+
+**Description:** Marks an order as delivered and updates the delivery user's income.
+
+**Request:**
+
+```json
+{
+  "type": "markOrderDelivered",
+  "username": "delivery1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Order marked as delivered"
+}
+```
+
+**Use Cases:**
+
+- Update the status of an order to "Delivered" and increase the delivery user's income.
 
 ---
 
-#### 25. **Check If On Delivery**
-- **Type**: `checkIfOnDelivery`
-- **Description**: Checks if the delivery person is currently on a delivery.
-- **Request**:
-  ```json
-  {
-    "type": "checkIfOnDelivery",
-    "username": "delivery_username",
-    "password": "delivery_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "You are on a delivery"
-  }
-  ```
+### 23. **Get User Data**
+
+**Request Type:** `getUserData`
+
+**Description:** Retrieves the profile information of a user.
+
+**Request:**
+
+```json
+{
+  "type": "getUserData",
+  "username": "customer1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "{...user data...}"
+}
+```
+
+**Use Cases:**
+
+- View the profile information of a customer or restaurant.
 
 ---
 
-#### 26. **Mark Order Delivered**
-- **Type**: `markOrderDelivered`
-- **Description**: Marks an order as delivered by the delivery person.
-- **Request**:
-  ```json
-  {
-    "type": "markOrderDelivered",
-    "username": "delivery_username",
-    "password": "delivery_password",
-    "orderId": "order_id"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": "Order marked as delivered"
-  }
-  ```
+### 24. **Get Income Data**
+
+**Request Type:** `getIncomeData`
+
+**Description:** Retrieves the income data for a delivery user.
+
+**Request:**
+
+```json
+{
+  "type": "getIncomeData",
+  "username": "delivery1",
+  "password": "securepassword"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "{...income data...}"
+}
+```
+
+**Use Cases:**
+
+- View the total income for a delivery user.
 
 ---
 
-#### 27. **Get Income Data**
-- **Type**: `getIncomeData`
-- **Description**: Retrieves the income data for a delivery person.
-- **Request**:
-  ```json
-  {
-    "type": "getIncomeData",
-    "username": "delivery_username",
-    "password": "delivery_password"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "success": true,
-    "message": {
-      "income": "total_income"
-    }
-  }
-  ```
+### 25. **Change Parameter**
+
+**Request Type:** `changeParameter`
+
+**Description:** Updates a specific profile parameter for a user.
+
+**Request:**
+
+```json
+{
+  "type": "changeParameter",
+  "username": "restaurant1",
+  "password": "securepassword",
+  "parameter": "address",
+  "newValue": "789 Oak St"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Parameter updated successfully"
+}
+```
+
+**Use Cases:**
+
+- Change a user’s address, phone number, email, or other parameters.
 
 ---
 
-#### 28. **Invalid Request (Default)**
-- **Type**: Any invalid `type`
-- **Description**: Handles invalid request types.
-- **Response**:
-  ```json
-  {
-    "success": false,
-    "message": "Invalid request type"
-  }
-  ```
+### 26. **Get Available Cuisines**
 
----
+**Request Type:** `getAvailableCuisines`
 
-### Image Handling
+**Description:** Retrieves a list of all available cuisines on the platform.
 
-- Images are uploaded using  `uploadProfilePicture`.
-- Image data is encoded in Base64 format in JSON responses.
+**Request:**
 
-### Error Handling
+```json
+{
+  "type": "getAvailableCuisines"
+}
+```
 
-- All requests must include valid parameters, or the server will return an error.
-- Example error response:
-  ```json
-  {
-    "success": false,
-    "message": "Error description"
-  }
-  ```
+**Response:**
 
-### Notes
-- Ensure that images (binary data) are handled correctly when sending or receiving requests.
-- Validate user credentials before processing requests that require authentication.
+```json
+{
+  "success": true,
+  "message": "[\"Italian\", \"Chinese\", \"Mexican\"]"
+}
+```
+
+**Use Cases:**
+
+- View the list of cuisines offered by restaurants on the platform.

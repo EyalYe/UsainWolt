@@ -18,6 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 
 
+// Group: 6
 public class ServerApp {
     // Constants and configuration settings
     public static final String USERS_PATH = "server_logs/users";

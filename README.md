@@ -1,23 +1,24 @@
 # UsainWolt
 
 ## Introduction
-**UsainWolt** is a Java-based clone of the Wolt food delivery application. It allows customers to browse nearby restaurants, view menus, place orders, and track order history. Restaurants can update menus, manage orders, and track revenue. The project uses object-oriented design principles and a client-server architecture, with distinct packages for client and server functionalities. It incorporates exception handling, containers, dynamic operations, and user-friendly interfaces using `JOptionPane`.
+**UsainWolt** is a Java-based clone of the Wolt food delivery application. It allows customers to browse nearby restaurants, view menus, place orders, and track order history. Restaurants can update menus, manage orders, and track revenue. The project uses object-oriented design principles and a client-server architecture, with distinct packages for client and server functionalities. It incorporates exception handling, containers, dynamic operations, and user-friendly interfaces.
+The system is designed to be scalable, secure, and user-friendly, with features for customers, restaurants, and delivery persons. The server manages multiple client connections, handles data backup and restore, and sends order notifications to clients. The client uses `JFrame` to create a user-friendly interface and communicates with the server using `Socket` connections. The project aims to provide a seamless user experience for ordering food online, with real-time updates and secure transactions.
 
 ## How to run the project
 1. Clone the repository.
 2. Open the project in an IDE (IntelliJ IDEA recommended).
-3. Rename the `.envtemp` file (in `src/Server`) to `.env` and add the provided API keys.
-4. To run the example test cases, execute `src/Main`.
-5. To run separately:
-    - Run the `src/Server/ServerMain.java` file for the server.
-    - Run the `src/Client/UsainWoltMain.java` file for the client.
+3. Rename the `.envtemp` file (in `src/Server`) to `.env` and add the provided API keys. (I also the .env file in the submission box)
+4. To run the example test cases, execute `src/Main`. This will run the server and several clients to demonstrate the system's functionality.
+5. To run separately and interact with the system:
+    - Run the `src/Server/ServerMain.java` file for the server. only run the server once.
+    - Run the `src/Client/UsainWoltMain.java` file for the client. You can run multiple clients to simulate multiple users.
 6. Interact with the system using the GUI.
 
 ***List of users is found in the `users.csv` file, with username, password, and role.***
 
 ## Troubleshooting
 ### Dependencies:
-- Gson
+- Gson (Approved by Haim)
 
 ### Ports:
 - 8080 for the image server.
@@ -57,11 +58,34 @@ Ensure API keys are correct, dependencies are installed, and the specified ports
 - Implement password hashing for security.
 - Serve images for restaurants and items.
 
+## Design
+### Server
+- We decided to use a client-server architecture to separate the server-side logic from the client-side GUI.
+- The server is implemented using `ServerSocket` and `Socket` classes to handle multiple client connections.
+- Using sockets allows for real-time communication between clients and the server.
+- The server times out any connection after 30 seconds of inactivity to prevent resource wastage.
+- It is the client's responsibility to handle reconnection attempts if the connection is lost.
+
+### Client
+- The client uses `JFrame` to create a user-friendly interface.
+- The client sends requests to the server using `Socket` and receives responses using `ObjectInputStream` and `ObjectOutputStream`.
+- Since the server disconnects inactive clients, the client automatically reconnects if the connection is lost (Only happens for restaurants users for now since we have not implemented any live features for customers and delivery users).
+- The selectivity of which user's connection to keep alive is based on the user's role for now. 
+This also happens to allow us for better testing of the server, as we can have many clients connected at the same time on the same machine and use fewer threads than we would have if we had to keep all connections alive.
+
+
 ## Future Features
 - Admin interface for user and restaurant management.
 - Integration of live order tracking for customers.
 - Improved revenue tracking with analytics.
 - Push notifications for real-time updates.
+- Integration with payment gateways.
+- Improved security with encryption and secure connections.
+- Improved image handling with caching and compression.
+- Improved error handling and logging.
+- Improved UI with more features and customization.
+- Improved users fetching and searching.
+- Improved memory management and performance optimization. (for example, we could use a database to store the data instead of storing it in memory)
 
 ## How the Project Meets the Code Guidelines
 1. **Collection of Classes**:
@@ -75,11 +99,11 @@ Ensure API keys are correct, dependencies are installed, and the specified ports
 
 4. **Regular Class, Abstract Class, Interface**:
     - Regular class: `ServerApp` handles server-side logic.
-    - Abstract class: `User` is an abstract class with `CustomerUser` , `RestaurantUser`, `DeliveryUser`, and `AdminUser` as subclasses.
+    - Abstract class: `User` is an abstract class with `CustomerUser` , `RestaurantUser` and `DeliveryUser` as subclasses.
     - Interface: 'LogoutCallback' is an interface used to implement logout functionality.
 
 5. **Inheritance and Polymorphism**:
-   Inheritance is demonstrated in `CustomerUser`, `RestaurantUser`, `DeliveryUser` and `AdminUser` , all inheriting from `User`, allowing the system to use polymorphism by referencing users generically as `User` objects.
+   Inheritance is demonstrated in `CustomerUser`, `RestaurantUser` and `DeliveryUser` , all inheriting from `User`, allowing the system to use polymorphism by referencing users generically as `User` objects.
 
 6. **User-Friendly**:
     The project uses 'JFrame' and 'JOptionPane' to create a user-friendly interface. The GUI is intuitive and easy to navigate, with clear instructions and feedback messages. The system also provides error messages for incorrect input.

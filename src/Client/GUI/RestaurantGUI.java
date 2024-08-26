@@ -1,3 +1,4 @@
+// Group: 6
 package Client.GUI;
 
 import Client.network.ClientApp;
@@ -205,7 +206,7 @@ public class RestaurantGUI {
         userDataPanel.add(new JLabel("Revenue:"), gbc);
 
         gbc.gridx = 1;
-        userDataPanel.add(new JLabel("$" + userData.get("revenue")), gbc);
+        userDataPanel.add(new JLabel("₪" + userData.get("revenue")), gbc);
 
         // Add cuisine
         gbc.gridx = 0;
@@ -722,7 +723,7 @@ public class RestaurantGUI {
         // Row 0: Item Name
         gbc.gridx = 0;
         gbc.gridy = 0;
-        JLabel nameLabel = new JLabel(menuItem.getName() + " - $" + menuItem.getPrice());
+        JLabel nameLabel = new JLabel(menuItem.getName() + " - ₪" + menuItem.getPrice());
         nameLabel.setFont(new Font("Arial", Font.BOLD, 16));
         infoPanel.add(nameLabel, gbc);
 

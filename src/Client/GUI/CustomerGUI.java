@@ -1,3 +1,4 @@
+// Group: 6
 package Client.GUI;
 
 import Client.model.Restaurant;
@@ -526,7 +527,7 @@ public class CustomerGUI {
         orderPanel.setAutoscrolls(true);
         orderPanel.setMaximumSize(new Dimension(300, 500));  // Set maximum size to prevent stretching
 
-        final double[] totalAmount = {0.0}; // Use an array to hold the total amount
+        double totalAmount = 0.0;
 
         // Iterate over each menu item and create a panel for it
         for (Map<String, Object> menuItem : menu) {
@@ -544,7 +545,8 @@ public class CustomerGUI {
                 JLabel photoLabel = new JLabel(loadImageIcon(photoUrl, 40, 40));
                 JLabel itemName = new JLabel(menuItem.get("name") + " x" + quantity);
                 itemName.setHorizontalAlignment(SwingConstants.LEFT);  // Left align text
-                JLabel itemPrice = new JLabel(String.format("$%.2f", (double) menuItem.get("price") * quantity));
+                JLabel itemPrice = new JLabel(String.format("₪%.2f", (double) menuItem.get("price") * quantity));
+                totalAmount += (double) menuItem.get("price") * quantity;
                 itemPrice.setHorizontalAlignment(SwingConstants.RIGHT);  // Right align price
 
                 // Add labels to the panel
@@ -559,7 +561,7 @@ public class CustomerGUI {
 
         // Display the total amount
         JPanel totalPanel = new JPanel(new BorderLayout());
-        JLabel totalLabel = new JLabel("Total: " + String.format("$%.2f", totalAmount[0]));
+        JLabel totalLabel = new JLabel("Total: " + String.format("₪%.2f", totalAmount));
         totalLabel.setFont(new Font("Arial", Font.BOLD, 16));
         totalLabel.setHorizontalAlignment(SwingConstants.CENTER);  // Center the total amount
         totalPanel.add(totalLabel, BorderLayout.SOUTH);
@@ -661,6 +663,7 @@ public class CustomerGUI {
         gbc.anchor = GridBagConstraints.CENTER;
         JButton placeOrderButton = new JButton("Place Order");
 
+        double finalTotalAmount = totalAmount;
         placeOrderButton.addActionListener(e -> {
             String address = addressField.getText();
             String cardNumber = cardNumberField.getText();
@@ -670,7 +673,7 @@ public class CustomerGUI {
             boolean useSavedCard = useSavedCardCheckbox.isSelected();
             String note = noteField.getText();
 
-            placeOrder(totalAmount[0], address, cardNumber, expirationDate, cvv, sendHome, useSavedCard, note, menu);
+            placeOrder(finalTotalAmount, address, cardNumber, expirationDate, cvv, sendHome, useSavedCard, note, menu);
             // Close the checkout window after placing the order
             checkoutFrame.dispose();
         });
@@ -782,7 +785,7 @@ public class CustomerGUI {
         infoPanel.add(totalIconLabel, gbc);
 
         gbc.gridx = 1;
-        JLabel totalLabel = new JLabel(String.format("$%.2f", order.getTotalPrice()));
+        JLabel totalLabel = new JLabel(String.format("₪%.2f", order.getTotalPrice()));
         totalLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         infoPanel.add(totalLabel, gbc);
 

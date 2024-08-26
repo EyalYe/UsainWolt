@@ -1,3 +1,4 @@
+// Group: 6
 package Server.App;
 
 import Server.Models.*;
@@ -658,8 +659,18 @@ public class ClientHandler implements Runnable {
         int orderId = incrementOrderId();
         // Properly handling the JSON parsing
         List<Order.Item> itemsList = (ArrayList<Order.Item>) gson.fromJson(gson.toJson(items), new TypeToken<List<Order.Item>>(){}.getType());
-
         Order order = new Order(orderId, new Date(), itemsList, customer.getUserName(), restaurantName, status, customerNote, address, restaurant.getAddress());
+
+        // make payment
+        double total = 0;
+        for (Order.Item item : itemsList) {
+            total += item.getPrice() * item.getQuantity();
+        }
+        if (!creditCardAuthenticator.makePayment(creditCardNumber, expirationDate, cvv, total)) {
+            return createResponse(false, "Payment failed");
+        }
+
+        order.setTotal(total);
 
         customer.addOrder(order);
         restaurant.addOrder(order);

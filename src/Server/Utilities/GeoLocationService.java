@@ -1,3 +1,4 @@
+// Group: 6
 package Server.Utilities;
 import Server.Utilities.CustomDateAdapter.*;
 
@@ -148,43 +149,4 @@ public class GeoLocationService {
         }
         return false; // Return false if distance check fails
     }
-
-    public static void main(String[] args) {
-        GeoLocationService geoLocationService = new GeoLocationService();
-
-        // Test address validation and retrieval of coordinates
-        String testAddress = "1600 Amphitheatre Parkway, Mountain View, CA";
-
-        try {
-            // Validate the address
-            boolean isValid = geoLocationService.validateAddress(testAddress);
-            System.out.println("Is the address valid? " + isValid);
-
-            if (isValid) {
-                // Get coordinates of the address
-                double[] coordinates = geoLocationService.getCoordinates(testAddress);
-                if (coordinates != null) {
-                    double latitude = coordinates[0];
-                    double longitude = coordinates[1];
-                    System.out.println("Latitude: " + latitude);
-                    System.out.println("Longitude: " + longitude);
-
-                    // Calculate the distance between this address and another location
-                    double anotherLatitude = 37.7749; // Latitude of San Francisco, CA
-                    double anotherLongitude = -122.4194; // Longitude of San Francisco, CA
-
-                    double distance = geoLocationService.calculateDistance(latitude, longitude, anotherLatitude, anotherLongitude);
-                    System.out.println("Distance to San Francisco: " + distance + " km");
-                } else {
-                    System.out.println("Could not retrieve coordinates.");
-                }
-            } else {
-                System.out.println("Invalid address.");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
 }

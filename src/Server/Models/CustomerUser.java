@@ -1,3 +1,4 @@
+// Group: 6
 package Server.Models;
 
 import Server.Models.Order;
@@ -63,7 +64,7 @@ public class CustomerUser extends User {
 
         // Simulated payment methods
         public void makePayment(double amount) {
-            System.out.println("Making payment of $" + amount + "...");
+            System.out.println("Making payment of ₪" + amount + "...");
         }
 
         public void printCreditCardInfo() {
@@ -73,7 +74,7 @@ public class CustomerUser extends User {
         }
 
         public void printPaymentConfirmation(double amount) {
-            System.out.println("Payment of $" + amount + " was successful!");
+            System.out.println("Payment of ₪" + amount + " was successful!");
         }
 
         public void printPaymentError() {

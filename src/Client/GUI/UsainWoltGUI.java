@@ -1,3 +1,4 @@
+// Group: 6
 package Client.GUI;
 
 import Client.model.Restaurant;

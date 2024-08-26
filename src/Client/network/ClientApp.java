@@ -1,3 +1,4 @@
+// Group: 6
 package Client.network;
 
 import Client.model.Restaurant;

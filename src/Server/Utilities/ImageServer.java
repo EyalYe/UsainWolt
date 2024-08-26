@@ -1,3 +1,4 @@
+// Group: 6
 package Server.Utilities;
 
 import com.sun.net.httpserver.HttpServer;
@@ -10,6 +11,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
+
+/**
+ * ImageServer is an HTTP server that serves image files from the local file system.
+ * It listens for requests at the root path and returns the requested image file.
+ */
 
 public class ImageServer {
 

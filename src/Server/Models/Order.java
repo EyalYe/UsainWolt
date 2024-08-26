@@ -1,3 +1,4 @@
+// Group: 6
 package Server.Models;
 
 import Server.Utilities.GeoLocationService;
@@ -169,6 +170,10 @@ public class Order {
         return location;
     }
 
+    public void setTotal(double total){
+        this.totalPrice = total;
+    }
+
     // Inner class to represent an item within an order
     public static class Item {
         private String name;
@@ -288,7 +293,7 @@ public class Order {
         System.out.println("Customer: " + customerName);
         System.out.println("Restaurant: " + restaurantName);
         System.out.println("Items: " + items);
-        System.out.println("Total Price: $" + totalPrice);
+        System.out.println("Total Price: ₪" + totalPrice);
         System.out.println("Status: " + status);
         System.out.println("Customer Note: " + customerNote);
     }
