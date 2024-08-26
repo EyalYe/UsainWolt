@@ -7,7 +7,7 @@ The system is designed to be scalable, secure, and user-friendly, with features 
 ## How to run the project
 1. Clone the repository.
 2. Open the project in an IDE (IntelliJ IDEA recommended).
-3. Rename the `.envtemp` file (in `src/Server`) to `.env` and add the provided API keys. (I also the .env file in the submission box)
+3. Rename the `.envtemp` file (in `src/Server`) to `.env` and add the provided API keys. (It is already in the submitted zip file so if you use the zip file you don't need to do this step)
 4. To run the example test cases, execute `src/Main`. This will run the server and several clients to demonstrate the system's functionality.
 5. To run separately and interact with the system:
     - Run the `src/Server/ServerMain.java` file for the server. only run the server once.
